@@ -11,6 +11,7 @@
             clearColor: 0x000000,
             clearAlpha: 1
         }),
+        data = { mouseX: 0, mouseY: 0 },
         requestFrame = window.requestAnimationFrame
                     || window.webkitRequestAnimationFrame
                     || window.mozRequestAnimationFrame
@@ -31,6 +32,12 @@
     renderer.setSize(canvasWidth, canvasHeight);
     document.getElementById("container").appendChild(renderer.domElement);
 
+    // Hookup mouse input
+    document.addEventListener("mousemove", function (event) {
+        data.mouseX = (event.clientX - window.innerWidth  / 2);
+        data.mouseY = (event.clientY - window.innerHeight / 2);
+    }, false);
+
     // Load resources
     // TODO: maybe just do in game init?
 
@@ -39,7 +46,7 @@
 
     // Enter main loop
     (function mainLoop() {
-        game.update();
+        game.update(data);
         requestFrame(mainLoop);
         game.render();
     }) ();

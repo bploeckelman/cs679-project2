@@ -30,7 +30,7 @@ function Game(renderer, canvas) {
 
         // Setup scene
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x555555, 1, 200);
+        this.scene.fog = new THREE.Fog(0x555555, 150, 300);
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -39,9 +39,12 @@ function Game(renderer, canvas) {
         this.scene.add(this.camera);
 
         // Setup some test lighting
-        this.lights[0] = new THREE.PointLight(0xffffff);
+        this.lights[0] = new THREE.PointLight(0xff0000);
         this.lights[0].position.set(-20, 0, -20);
+        this.lights[1] = new THREE.PointLight(0x0000ff);
+        this.lights[1].position.set(0, 50, 0);
         this.scene.add(this.lights[0]);
+        this.scene.add(this.lights[1]);
 
         // Create some test objects to draw 
         // --------------------------------
@@ -49,16 +52,16 @@ function Game(renderer, canvas) {
         // A Sphere
         this.objects[0] = new THREE.Mesh(
             new THREE.SphereGeometry(10, 32, 32),
-            new THREE.MeshLambertMaterial({ color: 0xcc1100 })
+            new THREE.MeshLambertMaterial({ color: 0xffffff })
         );
-        this.objects[0].position.set(25,30,25);
+        this.objects[0].position.set(20,30,20);
         this.scene.add(this.objects[0]);
 
         // A planar mesh
         meshGeometry = new THREE.Geometry();
         generateGeometry(
             meshGeometry,
-            { w: 20, h: 20, quadSize: 8 }
+            { w: 80, h: 80, quadSize: 16 }
         );
         this.objects[1] = new THREE.Mesh(
             meshGeometry,
@@ -74,8 +77,27 @@ function Game(renderer, canvas) {
     }
 
 
-    this.update = function () {
-        // TODO: update all dynamic stuff in scene
+    this.update = function (data) {
+        // Reorient camera
+        this.camera.position.set(
+            Math.cos(this.clock.getElapsedTime() * 0.5) * 200,
+            25 + Math.abs(Math.sin(this.clock.getElapsedTime() * 0.4)) * 100,
+            Math.sin(this.clock.getElapsedTime() * 0.5) * 200);
+
+        this.camera.lookAt(this.objects[0].position);
+
+        // Move the lights around
+        this.lights[0].position.set(
+            Math.sin(this.clock.getElapsedTime()) * 50,
+            0,
+            Math.cos(this.clock.getElapsedTime()) * 50);
+        this.lights[1].position.set(
+            Math.cos(this.clock.getElapsedTime()) * 50,
+            50,
+            Math.sin(this.clock.getElapsedTime()) * 50);
+
+        // TODO: mouselook
+        //this.camera.rotation.set(0, data.mouseX / 250, 0);
     }
 
 
@@ -98,13 +120,14 @@ function Game(renderer, canvas) {
 // ----------------------------------------------------------------------------
 
 function generateGeometry (geom, data) {
-    var size = data.quadSize, index = 0, i, j; 
+    var size = data.quadSize, index = 0, i, j;
 
     // Generate quads in geometry object 
     // for each cell in a data.w*data.h sized grid
     for(i = 0; i < data.w; ++i)
     for(j = 0; j < data.h; ++j, ++index) {
-        generateQuad(geom, index, { x: i*size, z: j*size }, size);
+        generateQuad(geom, index,
+            { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
     }
 }
 
