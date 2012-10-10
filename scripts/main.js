@@ -73,7 +73,8 @@ function setupInput (data) {
     data.theta = Math.PI/2;
     data.phi = 0;
     data.f = new THREE.Vector3(0,0,1);
-    data.trigger = { W: 0, S: 0, A: 0, D: 0 };
+    data.v = 0;
+    data.trigger = { W: 0, S: 0, A: 0, D: 0, Jump: 0 };
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
@@ -82,6 +83,7 @@ function setupInput (data) {
        case 83: data.trigger.S=1; break;
        case 65: data.trigger.A=1; break;
        case 68: data.trigger.D=1; break;
+       case 32: data.trigger.Jump=1; break;
        }            
     }, false);
     

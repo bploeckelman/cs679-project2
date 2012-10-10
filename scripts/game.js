@@ -102,14 +102,40 @@ function Game(renderer, canvas) {
         }            
         input.f.z=Math.sin(input.theta)*Math.sin(input.phi+input.center)
         input.f.x=Math.sin(input.theta)*Math.cos(input.phi+input.center);
-        input.f.y=Math.cos(input.theta);       
+        input.f.y=Math.cos(input.theta);
+	var highest=80;//do we need some global variables?
+	var lowest=20;
+	if (input.trigger.Jump==1){
+	    if (input.v==0){
+		input.v=Math.sqrt(highest-lowest);
+		this.camera.position.y+=input.v;
+	    }
+	    else{
+		//jump to the highest point
+		if (highest-this.camera.position.y<1){
+		    input.v=-1;
+		    this.camera.position.y=highest-1;
+		}
+		else{
+		    if (this.camera.position.y<lowest){
+			input.v=0;
+			input.trigger.Jump=0;
+			this.camera.position.y=lowest;
+		    }
+		    else{//energy function:v^2+h=H
+			input.v=Math.sqrt(highest-this.camera.position.y)*(input.v>0?1:-1);
+			this.camera.position.y+=input.v;
+		    }
+		}
+	    }
+	}
 
         xzNorm = Math.sqrt(input.f.x*input.f.x + input.f.z*input.f.z);
         this.camera.position.add(
             this.camera.position,
             new THREE.Vector3(
                 triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-                0,//triggerWS * input.f.y,
+                0,//previouly, triggerWS * input.f.y,
                 triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
             )
         );
