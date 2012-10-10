@@ -12,6 +12,7 @@
             clearAlpha: 1
         }),  
         stats = new Stats(),
+        inputData = {},
         requestFrame = window.requestAnimationFrame
                     || window.webkitRequestAnimationFrame
                     || window.mozRequestAnimationFrame
@@ -40,41 +41,61 @@
     stats.domElement.style.left = canvas.offsetLeft + "px";
     document.getElementById("container").appendChild(stats.domElement);
 
-    var data = { mouseX: canvas.offsetLeft+canvas.width/2, mouseY: canvas.offsetTop+canvas.height/2, center: Math.PI/2, theta: Math.PI/2, phi: 0, Fx: 0, Fy: 0, Fz: 1, triggerW: 0, triggerS: 0, triggerA: 0, triggerD: 0 };
+    // Setup input handlers and populate input data object
+    setupInput(inputData);
+
+    // Load resources
+    // TODO: maybe just do in game init?
+
+    // Create Game object
+    var game = new Game(renderer, canvas);
+
+    // Enter main loop
+    (function mainLoop() {
+        stats.begin();
+        game.update(inputData);
+        requestFrame(mainLoop);
+        game.render();
+        stats.end();
+    }) ();
+}) ();
+
+
+// ----------------------------------------------------------------------------
+// Setup input handlers and populate input data object
+// ----------------------------------------------------------------------------
+function setupInput (data) {
+    // Setup input data structure
+    data.mouseX = canvas.offsetLeft+canvas.width/2;
+    data.mouseY = canvas.offsetTop+canvas.height/2;
+    data.center = Math.PI/2;
+    data.theta = Math.PI/2;
+    data.phi = 0;
+    data.Fx = 0;
+    data.Fy = 0;
+    data.Fz = 1;
+    data.triggerW = 0;
+    data.triggerS = 0;
+    data.triggerA = 0;
+    data.triggerD = 0;
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
        switch(event.keyCode) {
-       case 87:
-            data.triggerW=1;
-            break;
-       case 83:
-            data.triggerS=1;
-            break;
-       case 65:
-            data.triggerA=1;
-            break;
-       case 68:
-            data.triggerD=1;
-            break;
+       case 87: data.triggerW=1; break;
+       case 83: data.triggerS=1; break;
+       case 65: data.triggerA=1; break;
+       case 68: data.triggerD=1; break;
        }            
     }, false);
     
     // Hookup key input
     document.addEventListener("keyup", function (event) {
        switch(event.keyCode) {
-       case 87:
-            data.triggerW=0;
-            break;
-       case 83:
-            data.triggerS=0;
-            break;
-       case 65:
-            data.triggerA=0;
-            break;
-       case 68:
-            data.triggerD=0;
-            break;
+       case 87: data.triggerW=0; break;
+       case 83: data.triggerS=0; break;
+       case 65: data.triggerA=0; break;
+       case 68: data.triggerD=0; break;
        }            
     }, false);
     
@@ -98,20 +119,5 @@
             data.phi-=2*Math.PI;
         }
     }, false);
-
-    // Load resources
-    // TODO: maybe just do in game init?
-
-    // Create Game object
-    var game = new Game(renderer, canvas);
-
-    // Enter main loop
-    (function mainLoop() {
-        stats.begin();
-        game.update(data);
-        requestFrame(mainLoop);
-        game.render();
-        stats.end();
-    }) ();
-}) ();
+}
 
