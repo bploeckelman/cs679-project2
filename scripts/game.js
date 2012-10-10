@@ -77,38 +77,45 @@ function Game(renderer, canvas) {
     }
 
 
-    this.update = function (data) {
+    this.update = function (input) {
+        var triggerAD = input.trigger.A - input.trigger.D,
+            triggerWS = input.trigger.W - input.trigger.S,
+            look = new THREE.Vector3(),
+            xzNorm;
+
         // Reorient camera
-       
-        if ((data.mouseX - canvas.offsetLeft)/canvas.width<0.2){
-          data.center-=0.1*(0.2-(data.mouseX - canvas.offsetLeft)/canvas.width);
+        if ((input.mouseX - canvas.offsetLeft)/canvas.width<0.2){
+            input.center-=0.1*(0.2-(input.mouseX - canvas.offsetLeft)/canvas.width);
         }
-        if ((data.mouseX - canvas.offsetLeft)/canvas.width>0.8){
-            data.center+=0.1*((data.mouseX - canvas.offsetLeft)/canvas.width-0.8);
+        if ((input.mouseX - canvas.offsetLeft)/canvas.width>0.8){
+            input.center+=0.1*((input.mouseX - canvas.offsetLeft)/canvas.width-0.8);
         }            
-        data.Fz=Math.sin(data.theta)*Math.sin(data.phi+data.center)
-        data.Fx=Math.sin(data.theta)*Math.cos(data.phi+data.center);
-        data.Fy=Math.cos(data.theta);       
-        
-        
-         this.camera.position.set(this.camera.position.x+(data.triggerW-data.triggerS)*data.Fx+(data.triggerA-data.triggerD)*data.Fz/Math.sqrt(data.Fx*data.Fx+data.Fz*data.Fz),
-         this.camera.position.y+(data.triggerW-data.triggerS)*data.Fy,
-         this.camera.position.z+(data.triggerW-data.triggerS)*data.Fz-(data.triggerA-data.triggerD)*data.Fx/Math.sqrt(data.Fx*data.Fx+data.Fz*data.Fz));
-        
-        this.camera.lookAt((new THREE.Vector3()).add(this.camera.position,new THREE.Vector3(data.Fx,data.Fy,data.Fz)));
+        input.f.z=Math.sin(input.theta)*Math.sin(input.phi+input.center)
+        input.f.x=Math.sin(input.theta)*Math.cos(input.phi+input.center);
+        input.f.y=Math.cos(input.theta);       
 
-//        // Move the lights around
-//        this.lights[0].position.set(
-//            Math.sin(this.clock.getElapsedTime()) * 50,
-//            0,
-//            Math.cos(this.clock.getElapsedTime()) * 50);
-//        this.lights[1].position.set(
-//            Math.cos(this.clock.getElapsedTime()) * 50,
-//            50,
-//            Math.sin(this.clock.getElapsedTime()) * 50);
+        xzNorm = Math.sqrt(input.f.x*input.f.x + input.f.z*input.f.z);
+        this.camera.position.add(
+            this.camera.position,
+            new THREE.Vector3(
+                triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
+                triggerWS * input.f.y,
+                triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
+            )
+        );
+        
+        look.add(this.camera.position, input.f);
+        this.camera.lookAt(look);
 
-        // TODO: mouselook
-        //this.camera.rotation.set(0, data.mouseX / 250, 0);
+        // Move the lights around
+        this.lights[0].position.set(
+            Math.sin(this.clock.getElapsedTime()) * 50,
+            0,
+            Math.cos(this.clock.getElapsedTime()) * 50);
+        this.lights[1].position.set(
+            Math.cos(this.clock.getElapsedTime()) * 50,
+            50,
+            Math.sin(this.clock.getElapsedTime()) * 50);
     }
 
 

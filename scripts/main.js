@@ -13,6 +13,7 @@
         }),  
         stats = new Stats(),
         inputData = {},
+        game = null;
         requestFrame = window.requestAnimationFrame
                     || window.webkitRequestAnimationFrame
                     || window.mozRequestAnimationFrame
@@ -48,7 +49,7 @@
     // TODO: maybe just do in game init?
 
     // Create Game object
-    var game = new Game(renderer, canvas);
+    game = new Game(renderer, canvas);
 
     // Enter main loop
     (function mainLoop() {
@@ -71,31 +72,26 @@ function setupInput (data) {
     data.center = Math.PI/2;
     data.theta = Math.PI/2;
     data.phi = 0;
-    data.Fx = 0;
-    data.Fy = 0;
-    data.Fz = 1;
-    data.triggerW = 0;
-    data.triggerS = 0;
-    data.triggerA = 0;
-    data.triggerD = 0;
+    data.f = new THREE.Vector3(0,0,1);
+    data.trigger = { W: 0, S: 0, A: 0, D: 0 };
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
        switch(event.keyCode) {
-       case 87: data.triggerW=1; break;
-       case 83: data.triggerS=1; break;
-       case 65: data.triggerA=1; break;
-       case 68: data.triggerD=1; break;
+       case 87: data.trigger.W=1; break;
+       case 83: data.trigger.S=1; break;
+       case 65: data.trigger.A=1; break;
+       case 68: data.trigger.D=1; break;
        }            
     }, false);
     
     // Hookup key input
     document.addEventListener("keyup", function (event) {
        switch(event.keyCode) {
-       case 87: data.triggerW=0; break;
-       case 83: data.triggerS=0; break;
-       case 65: data.triggerA=0; break;
-       case 68: data.triggerD=0; break;
+       case 87: data.trigger.W=0; break;
+       case 83: data.trigger.S=0; break;
+       case 65: data.trigger.A=0; break;
+       case 68: data.trigger.D=0; break;
        }            
     }, false);
     
