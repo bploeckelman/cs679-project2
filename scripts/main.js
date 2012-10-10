@@ -11,6 +11,7 @@
             clearColor: 0x000000,
             clearAlpha: 1
         }),  
+        stats = new Stats(),
         requestFrame = window.requestAnimationFrame
                     || window.webkitRequestAnimationFrame
                     || window.mozRequestAnimationFrame
@@ -31,6 +32,14 @@
     renderer.setSize(canvasWidth, canvasHeight);
     document.getElementById("container").appendChild(renderer.domElement);
     
+    // Setup stats (fps and ms render time graphs)
+    // TODO: update canvas top/left offsets when browser window resizes
+    stats.setMode(0); // mode 0 = fps, mode 1 = ms render time
+    stats.domElement.style.position = "absolute";
+    stats.domElement.style.top  = canvas.offsetTop  + 4 + "px";
+    stats.domElement.style.left = canvas.offsetLeft + "px";
+    document.getElementById("container").appendChild(stats.domElement);
+
     var data = { mouseX: canvas.offsetLeft+canvas.width/2, mouseY: canvas.offsetTop+canvas.height/2, center: Math.PI/2, theta: Math.PI/2, phi: 0, Fx: 0, Fy: 0, Fz: 1, triggerW: 0, triggerS: 0, triggerA: 0, triggerD: 0 };
 
     // Hookup key input
@@ -98,9 +107,11 @@
 
     // Enter main loop
     (function mainLoop() {
+        stats.begin();
         game.update(data);
         requestFrame(mainLoop);
         game.render();
+        stats.end();
     }) ();
 }) ();
 
