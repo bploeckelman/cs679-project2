@@ -34,13 +34,13 @@ function Game(renderer, canvas) {
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
-        this.camera.position.set(-30, 40, -30);
-        this.camera.lookAt(new THREE.Vector3(50,0,50));
+        this.camera.position.set(-30, 20, -30);
+	this.camera.lookAt(new THREE.Vector3(50,0,50));
         this.scene.add(this.camera);
 
         // Setup some test lighting
         this.lights[0] = new THREE.PointLight(0xff0000);
-        this.lights[0].position.set(-20, 0, -20);
+        this.lights[0].position.set(-20, 50, -20);
         this.lights[1] = new THREE.PointLight(0x0000ff);
         this.lights[1].position.set(0, 50, 0);
         this.scene.add(this.lights[0]);
@@ -58,20 +58,30 @@ function Game(renderer, canvas) {
         this.scene.add(this.objects[0]);
 
         // A planar mesh
-        meshGeometry = new THREE.Geometry();
-        generateGeometry(
-            meshGeometry,
-            { w: 80, h: 80, quadSize: 16 }
-        );
-        this.objects[1] = new THREE.Mesh(
-            meshGeometry,
-            new THREE.MeshBasicMaterial({
-                color: 0x00aa00,
-                shading: THREE.FlatShading,
-                wireframe: true
-            })
-        );
+        // meshGeometry = new THREE.Geometry();
+        // generateGeometry(
+        //     meshGeometry,
+        //     { w: 80, h: 80, quadSize: 16 }
+        // );
+        // this.objects[1] = new THREE.Mesh(
+        //     meshGeometry,
+        //     new THREE.MeshBasicMaterial({
+        //         color: 0x00aa00,
+        //         shading: THREE.FlatShading,
+        //         wireframe: true
+        //     })
+        // );
+	
+	//I tried to replace the triangle grid with an image
+	var geometry = new THREE.PlaneGeometry(1280,1280);
+	var texture = THREE.ImageUtils.loadTexture( "images/disturb.jpg" );
+	texture.anisotropy = renderer.getMaxAnisotropy();
+	var material = new THREE.MeshBasicMaterial( { map: texture } );
+	this.objects[1] = new THREE.Mesh(geometry,material);
+	this.objects[1].rotation.x = - Math.PI / 2;
         this.scene.add(this.objects[1]);
+
+
 
         console.log("Game initialized.");
     }
@@ -99,7 +109,7 @@ function Game(renderer, canvas) {
             this.camera.position,
             new THREE.Vector3(
                 triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-                triggerWS * input.f.y,
+                0,//triggerWS * input.f.y,
                 triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
             )
         );
@@ -110,7 +120,7 @@ function Game(renderer, canvas) {
         // Move the lights around
         this.lights[0].position.set(
             Math.sin(this.clock.getElapsedTime()) * 50,
-            0,
+            50,
             Math.cos(this.clock.getElapsedTime()) * 50);
         this.lights[1].position.set(
             Math.cos(this.clock.getElapsedTime()) * 50,
@@ -137,18 +147,17 @@ function Game(renderer, canvas) {
 // TODO: move to utility script
 // ----------------------------------------------------------------------------
 
-function generateGeometry (geom, data) {
-    var size = data.quadSize, index = 0, i, j;
+// function generateGeometry (geom, data) {
+//     var size = data.quadSize, index = 0, i, j;
 
-    // Generate quads in geometry object 
-    // for each cell in a data.w*data.h sized grid
-    for(i = 0; i < data.w; ++i)
-    for(j = 0; j < data.h; ++j, ++index) {
-        generateQuad(geom, index,
-            { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
-    }
-}
-
+//     // Generate quads in geometry object 
+//     // for each cell in a data.w*data.h sized grid
+//     for(i = 0; i < data.w; ++i)
+//     for(j = 0; j < data.h; ++j, ++index) {
+//         generateQuad(geom, index,
+//             { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
+//     }
+// }
 
 function generateQuad (geom, index, center, width) {
     var quad = [[ -1,  1],
