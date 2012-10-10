@@ -10,8 +10,7 @@
             canvas: canvas,
             clearColor: 0x000000,
             clearAlpha: 1
-        }),
-        data = { mouseX: 0, mouseY: 0, center: 0, theta: 0, phi: 0, Fx: 0, Fy: 0, Fz: 1, Sx: 1, Sy: 0, Sz: 0, triggerW: 0, triggerS: 0, triggerA: 0, triggerD: 0 },
+        }),  
         requestFrame = window.requestAnimationFrame
                     || window.webkitRequestAnimationFrame
                     || window.mozRequestAnimationFrame
@@ -31,6 +30,8 @@
     canvas.height = canvasHeight;
     renderer.setSize(canvasWidth, canvasHeight);
     document.getElementById("container").appendChild(renderer.domElement);
+    
+    var data = { mouseX: canvas.offsetLeft+canvas.width/2, mouseY: canvas.offsetTop+canvas.height/2, center: Math.PI/2, theta: Math.PI/2, phi: 0, Fx: 0, Fy: 0, Fz: 1, triggerW: 0, triggerS: 0, triggerA: 0, triggerD: 0 };
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {

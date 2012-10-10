@@ -79,7 +79,7 @@ function Game(renderer, canvas) {
 
     this.update = function (data) {
         // Reorient camera
-
+       
         if ((data.mouseX - canvas.offsetLeft)/canvas.width<0.2){
           data.center-=0.1*(0.2-(data.mouseX - canvas.offsetLeft)/canvas.width);
         }
@@ -91,9 +91,9 @@ function Game(renderer, canvas) {
         data.Fy=Math.cos(data.theta);       
         
         
-         this.camera.position.set(this.camera.position.x+(data.triggerW-data.triggerS)*data.Fx+(data.triggerA-data.triggerD)*data.Fz,
+         this.camera.position.set(this.camera.position.x+(data.triggerW-data.triggerS)*data.Fx+(data.triggerA-data.triggerD)*data.Fz/Math.sqrt(data.Fx*data.Fx+data.Fz*data.Fz),
          this.camera.position.y+(data.triggerW-data.triggerS)*data.Fy,
-         this.camera.position.z+(data.triggerW-data.triggerS)*data.Fz-(data.triggerA-data.triggerD)*data.Fx);
+         this.camera.position.z+(data.triggerW-data.triggerS)*data.Fz-(data.triggerA-data.triggerD)*data.Fx/Math.sqrt(data.Fx*data.Fx+data.Fz*data.Fz));
         
         this.camera.lookAt((new THREE.Vector3()).add(this.camera.position,new THREE.Vector3(data.Fx,data.Fy,data.Fz)));
 
