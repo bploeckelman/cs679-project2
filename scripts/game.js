@@ -79,22 +79,33 @@ function Game(renderer, canvas) {
 
     this.update = function (data) {
         // Reorient camera
-        this.camera.position.set(
-            Math.cos(this.clock.getElapsedTime() * 0.5) * 200,
-            25 + Math.abs(Math.sin(this.clock.getElapsedTime() * 0.4)) * 100,
-            Math.sin(this.clock.getElapsedTime() * 0.5) * 200);
 
-        this.camera.lookAt(this.objects[0].position);
+        if ((data.mouseX - canvas.offsetLeft)/canvas.width<0.2){
+          data.center-=0.1*(0.2-(data.mouseX - canvas.offsetLeft)/canvas.width);
+        }
+        if ((data.mouseX - canvas.offsetLeft)/canvas.width>0.8){
+            data.center+=0.1*((data.mouseX - canvas.offsetLeft)/canvas.width-0.8);
+        }            
+        data.Fz=Math.sin(data.theta)*Math.sin(data.phi+data.center)
+        data.Fx=Math.sin(data.theta)*Math.cos(data.phi+data.center);
+        data.Fy=Math.cos(data.theta);       
+        
+        
+         this.camera.position.set(this.camera.position.x+(data.triggerW-data.triggerS)*data.Fx+(data.triggerA-data.triggerD)*data.Fz,
+         this.camera.position.y+(data.triggerW-data.triggerS)*data.Fy,
+         this.camera.position.z+(data.triggerW-data.triggerS)*data.Fz-(data.triggerA-data.triggerD)*data.Fx);
+        
+        this.camera.lookAt((new THREE.Vector3()).add(this.camera.position,new THREE.Vector3(data.Fx,data.Fy,data.Fz)));
 
-        // Move the lights around
-        this.lights[0].position.set(
-            Math.sin(this.clock.getElapsedTime()) * 50,
-            0,
-            Math.cos(this.clock.getElapsedTime()) * 50);
-        this.lights[1].position.set(
-            Math.cos(this.clock.getElapsedTime()) * 50,
-            50,
-            Math.sin(this.clock.getElapsedTime()) * 50);
+//        // Move the lights around
+//        this.lights[0].position.set(
+//            Math.sin(this.clock.getElapsedTime()) * 50,
+//            0,
+//            Math.cos(this.clock.getElapsedTime()) * 50);
+//        this.lights[1].position.set(
+//            Math.cos(this.clock.getElapsedTime()) * 50,
+//            50,
+//            Math.sin(this.clock.getElapsedTime()) * 50);
 
         // TODO: mouselook
         //this.camera.rotation.set(0, data.mouseX / 250, 0);
