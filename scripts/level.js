@@ -37,6 +37,9 @@ function Level (numRooms) {
     // ------------------------------------------------------------------------
     // Level Methods ----------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    // Generates a new room with a random size within the min/max bounds
+    // -----------------------------------------------------------------
     this.createRandomlySizedRoom = function () {
         return new Room(new THREE.Vector2(
             randInt(MIN_ROOM_SIZE, MAX_ROOM_SIZE),
@@ -45,56 +48,59 @@ function Level (numRooms) {
     };
 
 
-    this.doesRoomFit = function (room) {
-        var i;
+    // Add the specified room to the level 
+    // if it doesn't intersect existing rooms
+    // --------------------------------------
+    this.addRoom = function (room) {
+        var i, intersects = false;
 
-        // Does room fit inside level bounds?
-        if (room.pos.x < 0 || room.pos.x + room.size.x >= NUM_CELLS.x
-         || room.pos.y < 0 || room.pos.y + room.size.y >= NUM_CELLS.y) {
-            return false;
-        }
-        
         // Does room intersect any existing rooms?
         for(i = 0; i < this.rooms.length; ++i) {
-            if (this.rooms[i].intersectsRoom(room)) {
-                return false;
+            if (room.intersectsRoom(this.rooms[i])) {
+                intersects = true;
+                break;
             }
         }
 
-        // The room fits!
-        return true;
-    };
-
-
-    this.addRoom = function (room) {
-        if (!this.doesRoomFit(room)) { 
-            return false;
-        } else {
-            if (room.pos.x < 0 || room.pos.y < 0) {
-                console.error("Room position is negative!");
-            }
+        // If it doesn't intersect, add it
+        if (!intersects) {
             this.rooms.push(room);
             return true;
+        } else {
+            return false;
         }
-        // TODO: keep track of where on the grid each room is?
     };
 
 
+    // Generate randomly sized rooms and try to add them 
+    // until one fits, or we've tried too many times
+    // -------------------------------------------------
     this.generateRoom = function () {
         var room = this.createRandomlySizedRoom(),
             iter = 200, // max # tries to place room
-            result;
+            r;
 
         while (iter-- > 0) {
-            room.pos = this.findRoomAttachment(room).position;
+            // Find a position to attach the new room
+            r = this.findRoomAttachment(room);
+
+            // Reject out of bound rooms
+            if (r.position.x < 0 || r.position.x + room.size.x >= NUM_CELLS.x
+             || r.position.y < 0 || r.position.y + room.size.y >= NUM_CELLS.y) {
+                continue;
+            }
+
+            // Room position is within level bounds, try to add it
+            room.pos = r.position;
             if (this.addRoom(room)) {
-                // TODO:
-                // this.addDoor(room);
+                break;
             }
         }
     };
 
 
+    // Find a position for the specified room next to an existing room
+    // ---------------------------------------------------------------
     this.findRoomAttachment = function (room) {
         var pos = new THREE.Vector2(0,0),
             rm;
@@ -124,6 +130,34 @@ function Level (numRooms) {
 
         // Return the position of the new room and its target room
         return { position: pos, target: rm };
+    };
+
+
+    // Populates grid with rooms
+    // TODO: this is a hack
+    // -------------------------------------------------------
+    this.populateGrid = function () {
+        var i, x, y, xx, yy, room;
+
+        // For each room
+        for(i = 0; i < this.rooms.length; ++i) {
+            room = this.rooms[i];
+
+            // For each cell of the room
+            for(y = 0; y < room.size.y; ++y)
+            for(x = 0; x < room.size.x; ++x) {
+                // Get associated grid position
+                xx = x + room.pos.x;
+                yy = y + room.pos.y;
+
+                // If the grid position is valid, 
+                // set the grid type to the room cell type
+                if (xx >= 0 && xx < NUM_CELLS.x
+                 && yy >= 0 && yy < NUM_CELLS.y) {
+                    this.grid[yy][xx].type = room.tiles[y][x];                    
+                }
+            }
+        }
     };
 
 
@@ -186,7 +220,7 @@ function Level (numRooms) {
 
         // Keep generating rooms until we reach the limit
         // or we've tried too many times
-        while (iters++ < numRooms * 10 && level.rooms.length < numRooms) {
+        while (level.rooms.length < numRooms && iters++ < numRooms * 10) {
             level.generateRoom();
         }
         console.log("Generated " + level.rooms.length + " rooms.");
@@ -199,7 +233,10 @@ function Level (numRooms) {
 
         console.info("Level generation completed.");
 
-        level.debugPrint("all");
+        // TODO: this is a hack... should link rooms directly to grid on creation
+        level.populateGrid();
+
+        level.debugPrint("grid");
     }) (this, numRooms);
 
 } // end Level object 
@@ -220,7 +257,7 @@ function Cell(x, y, type) {
 function Room (size) {
     this.size  = size;
     this.pos   = new THREE.Vector2(0,0);
-    this.tiles = new Array(this.size.y);
+    this.tiles = null;
 
 
     // Initialize this room with walls surrounding empty space
@@ -228,6 +265,7 @@ function Room (size) {
     (function init (room) {
         var x, y, row;
 
+        room.tiles = new Array(room.size.y);
         for(y = 0; y < room.size.y; ++y) {
             row = new Array(room.size.x);
             for(x = 0; x < room.size.x; ++x) {
@@ -242,6 +280,17 @@ function Room (size) {
         }
     }) (this);
 
+
+    // Does this room intersect the specified room?
+    // --------------------------------------------
+    this.intersectsRoom = function (room) {
+        // The +/- 1's are to allow overlapping walls
+        return !(this.left()   > room.right() - 1
+              || this.right()  < room.left() + 1
+              || this.top()    > room.bottom() - 1
+              || this.bottom() < room.top() + 1);
+    };
+
     
     // Are there stairs anywhere in this room?
     // ---------------------------------------
@@ -255,20 +304,6 @@ function Room (size) {
             }
         }
         return false;
-    };
-
-
-    // Does this room intersect the specified room?
-    // --------------------------------------------
-    this.intersectsRoom = function (room) {
-        if (this.pos.x + this.size.x <= room.pos.x + 1
-         || this.pos.x >= room.pos.x + room.size.x - 1
-         || this.pos.y + this.size.y <= room.pos.y + 1
-         || this.pos.y >= room.pos.y + room.size.y - 1) {
-            return false;
-        } else {
-            return true;
-        }
     };
 
 
@@ -291,7 +326,9 @@ function Room (size) {
     this.debugPrint = function () {
         var str = "Room: "
                 + "pos("+this.pos.x+","+this.pos.y+") "
-                + "size("+this.size.x+","+this.size.y+")\n",
+                + "size("+this.size.x+","+this.size.y+") "
+                + "lrtb("+this.left()+","+this.right()
+                +     ","+this.top()+","+this.bottom()+")\n",
             x, y;
         for(y = 0; y < this.tiles.length; ++y) {
             if (y != 0) { str += "\n"; }
@@ -301,7 +338,16 @@ function Room (size) {
         }
         console.log(str);
     };
-}
+
+
+    // Some helpers to get bounds of room
+    // ----------------------------------
+    this.left   = function () { return this.pos.x; };
+    this.right  = function () { return this.pos.x + this.size.x - 1; };
+    this.top    = function () { return this.pos.y; };
+    this.bottom = function () { return this.pos.y + this.size.y - 1; };
+
+} // end Room object
 
 
 
