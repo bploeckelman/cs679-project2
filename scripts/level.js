@@ -1,3 +1,12 @@
+var CELL_TYPES = { 
+        void: ".",
+        empty: " ",
+        wall: "#",
+        downstairs: "x",
+        upstairs: "^"
+    },
+    CELL_TYPE_KEYS = Object.keys(CELL_TYPES);
+
 // ----------------------------------------------------------------------------
 // Level 
 // ----------------------------------------------------------------------------
@@ -6,7 +15,6 @@ function Level () {
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
     this.grid  = null;
-    this.debug = true;
 
 
     // ------------------------------------------------------------------------
@@ -15,17 +23,12 @@ function Level () {
     var CELL_SIZE = 32,
         NUM_CELLS = new THREE.Vector2(100, 100),
         // Note: these are for level generation to represent cell types
-        CELL_TYPES = { 
-            void: ".",
-            empty: " ",
-            wall: "#"
-        },
-        CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
         GROUP_SIZE = 10; // Number of cells in a group of cells
         NUM_GROUPS = new THREE.Vector2(
             NUM_CELLS.x / GROUP_SIZE,
             NUM_CELLS.y / GROUP_SIZE
         );
+
 
     // ------------------------------------------------------------------------
     // Level Methods ----------------------------------------------------------
@@ -82,12 +85,8 @@ function Level () {
         var groupCells = new Array(GROUP_SIZE * GROUP_SIZE),
             i, j, xx, yy, ii = 0;
 
-        // Validate position
-        // TODO: write clamp(x, min, max) utility function
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-        if (x >= NUM_GROUPS.x) x = NUM_GROUPS.x - 1;
-        if (y >= NUM_GROUPS.y) y = NUM_GROUPS.y - 1;
+        x = clamp(x, 0, NUM_GROUPS.x - 1);
+        y = clamp(y, 0, NUM_GROUPS.y - 1);
 
         // Gather all the cells in this group
         xx = x * GROUP_SIZE;
@@ -117,5 +116,68 @@ function Level () {
 function Cell(x, y, type) {
     this.index = new THREE.Vector2(x,y);
     this.type = type;
+}
+
+
+// ----------------------------------------------------------------------------
+// Room
+// ----------------------------------------------------------------------------
+function Room (size) {
+    this.pos   = new THREE.Vector2(0,0);
+    this.size  = size;
+    this.tiles = new Array(this.size.y);
+
+    var x, y, row;
+
+    for(y = 0; y < this.size.y; ++y) {
+        row = new Array(this.size.x);
+        for(x = 0; x < this.size.x; ++x) {
+            if (y === 0 || y === this.size.y - 1
+             || x === 0 || x === this.size.x - 1) {
+                row[x] = CELL_TYPES.wall;
+            } else {
+                row[x] = CELL_TYPES.empty;
+            }
+        }
+        this.tiles[y] = row;
+    }
+
+    
+    this.hasStairs = function () {
+        var x, y;
+        for (y = 0; y < this.size.y; ++y)
+        for (x = 0; x < this.size.x; ++x) {
+            if (this.tiles[y][x] === CELL_TYPES.upstairs
+             || this.tiles[y][x] === CELL_TYPES.downstairs) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+
+    this.getDoorLocations = function () {
+        var doors = [];
+        for (y = 0; y < this.size.y; ++y)
+        for (x = 0; x < this.size.x; ++x) {
+            if (this.tiles[y][x] === CELL_TYPES.door) {
+               doors.push(new THREE.Vector2(x,y));
+            }
+        }
+        return doors;
+    };
+}
+
+
+
+// ----------------------------------------------------------------------------
+// TODO: move these to a utility script 
+function randInt(min, max) {
+    return Math.floor(Math.random() * Math.abs(max - min) + min);
+}
+function clamp(x, min, max) {
+    return (x < min) ? min
+         : (x > max) ? max 
+         : x;
 }
 
