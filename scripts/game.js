@@ -85,7 +85,7 @@ function Game(renderer, canvas) {
         this.scene.add(this.objects[1]);
 
         // TESTING:
-        this.level = new Level();
+        this.level = new Level(10);
 
         console.log("Game initialized.");
     }
