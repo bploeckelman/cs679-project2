@@ -9,7 +9,7 @@ function Game(renderer, canvas) {
     this.clock     = new THREE.Clock();
     this.scene     = null;
     this.camera    = null;
-    this.objects   = [];
+    this.objects   = []; // TODO: change to {}? name->object map
     this.lights    = [];
 
     // ------------------------------------------------------------------------
@@ -24,7 +24,9 @@ function Game(renderer, canvas) {
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
     this.init = function () {
-        var meshGeometry = null;
+        var meshGeometry = null,
+            texture = THREE.ImageUtils.loadTexture("images/disturb.jpg");
+        texture.anisotropy = renderer.getMaxAnisotropy();
 
         console.log("Game initializing...");
 
@@ -35,7 +37,7 @@ function Game(renderer, canvas) {
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
         this.camera.position.set(-30, 20, -30);
-	this.camera.lookAt(new THREE.Vector3(50,0,50));
+        this.camera.lookAt(new THREE.Vector3(50,0,50));
         this.scene.add(this.camera);
 
         // Setup some test lighting
@@ -58,30 +60,28 @@ function Game(renderer, canvas) {
         this.scene.add(this.objects[0]);
 
         // A planar mesh
-        // meshGeometry = new THREE.Geometry();
-        // generateGeometry(
-        //     meshGeometry,
-        //     { w: 80, h: 80, quadSize: 16 }
-        // );
-        // this.objects[1] = new THREE.Mesh(
-        //     meshGeometry,
-        //     new THREE.MeshBasicMaterial({
-        //         color: 0x00aa00,
-        //         shading: THREE.FlatShading,
-        //         wireframe: true
-        //     })
-        // );
+        meshGeometry = new THREE.Geometry();
+        generateGeometry(
+            meshGeometry,
+            { w: 80, h: 80, quadSize: 16 }
+        );
+        /*
+        this.objects[1] = new THREE.Mesh(
+            meshGeometry,
+            new THREE.MeshBasicMaterial({
+                color: 0x00aa00,
+                shading: THREE.FlatShading,
+                wireframe: true
+            })
+        );
+        */
 	
-	//I tried to replace the triangle grid with an image
-	var geometry = new THREE.PlaneGeometry(1280,1280);
-	var texture = THREE.ImageUtils.loadTexture( "images/disturb.jpg" );
-	texture.anisotropy = renderer.getMaxAnisotropy();
-	var material = new THREE.MeshBasicMaterial( { map: texture } );
-	this.objects[1] = new THREE.Mesh(geometry,material);
-	this.objects[1].rotation.x = - Math.PI / 2;
+        this.objects[1] = new THREE.Mesh(
+            new THREE.PlaneGeometry(1280, 1280),
+            new THREE.MeshBasicMaterial({ map: texture })
+        );
+        this.objects[1].rotation.x = - Math.PI / 2;
         this.scene.add(this.objects[1]);
-
-
 
         console.log("Game initialized.");
     }
@@ -103,32 +103,31 @@ function Game(renderer, canvas) {
         input.f.z=Math.sin(input.theta)*Math.sin(input.phi+input.center)
         input.f.x=Math.sin(input.theta)*Math.cos(input.phi+input.center);
         input.f.y=Math.cos(input.theta);
-	var highest=80;//do we need some global variables?
-	var lowest=20;
-	if (input.trigger.Jump==1){
-	    if (input.v==0){
-		input.v=Math.sqrt(highest-lowest);
-		this.camera.position.y+=input.v;
-	    }
-	    else{
-		//jump to the highest point
-		if (highest-this.camera.position.y<1){
-		    input.v=-1;
-		    this.camera.position.y=highest-1;
-		}
-		else{
-		    if (this.camera.position.y<lowest){
-			input.v=0;
-			input.trigger.Jump=0;
-			this.camera.position.y=lowest;
-		    }
-		    else{//energy function:v^2+h=H
-			input.v=Math.sqrt(highest-this.camera.position.y)*(input.v>0?1:-1);
-			this.camera.position.y+=input.v;
-		    }
-		}
-	    }
-	}
+
+        // TODO: move some of this into a player class
+        var highest=100;//do we need some global variables?
+        var lowest=20;
+        if (input.trigger.Jump==1){
+            if (input.v==0){
+                input.v=Math.sqrt(highest-lowest);
+                this.camera.position.y+=input.v;
+            }else{
+                //jump to the highest point
+                if (highest-this.camera.position.y<1){
+                    input.v=-1;
+                    this.camera.position.y=highest-1;
+                }else{
+                    if (this.camera.position.y<lowest){
+                        input.v=0;
+                        input.trigger.Jump=0;
+                        this.camera.position.y=lowest;
+                    }else{//energy function:v^2+h=H
+                        input.v=0.6*Math.sqrt(highest-this.camera.position.y)*(input.v>0?1:-1);
+                        this.camera.position.y+=input.v;
+                    }
+                }
+            }
+        }
 
         xzNorm = Math.sqrt(input.f.x*input.f.x + input.f.z*input.f.z);
         this.camera.position.add(
@@ -173,17 +172,17 @@ function Game(renderer, canvas) {
 // TODO: move to utility script
 // ----------------------------------------------------------------------------
 
-// function generateGeometry (geom, data) {
-//     var size = data.quadSize, index = 0, i, j;
+function generateGeometry (geom, data) {
+    var size = data.quadSize, index = 0, i, j;
 
-//     // Generate quads in geometry object 
-//     // for each cell in a data.w*data.h sized grid
-//     for(i = 0; i < data.w; ++i)
-//     for(j = 0; j < data.h; ++j, ++index) {
-//         generateQuad(geom, index,
-//             { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
-//     }
-// }
+    // Generate quads in geometry object 
+    // for each cell in a data.w*data.h sized grid
+    for(i = 0; i < data.w; ++i)
+    for(j = 0; j < data.h; ++j, ++index) {
+        generateQuad(geom, index,
+            { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
+    }
+}
 
 function generateQuad (geom, index, center, width) {
     var quad = [[ -1,  1],
