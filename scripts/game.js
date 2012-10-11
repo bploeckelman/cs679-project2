@@ -11,6 +11,7 @@ function Game(renderer, canvas) {
     this.camera    = null;
     this.objects   = []; // TODO: change to {}? name->object map
     this.lights    = [];
+    this.level     = null;
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -82,6 +83,9 @@ function Game(renderer, canvas) {
         );
         this.objects[1].rotation.x = - Math.PI / 2;
         this.scene.add(this.objects[1]);
+
+        // TESTING:
+        this.level = new Level();
 
         console.log("Game initialized.");
     }
