@@ -19,8 +19,8 @@ function Level (numRooms, scene) {
     this.rooms = null;
     this.scene = scene;
     this.geometry = {
-        floor: [],
-        ceil: [],
+        floors: [],
+        ceils: [],
         walls: []
     };
 
@@ -225,6 +225,7 @@ function Level (numRooms, scene) {
                 );
                 geom.rotation.x = -Math.PI / 2;
                 geom.position.set(xx, 0, yy);
+                this.geometry.floors.push(geom);
                 this.scene.add(geom);
                 
                 // Generate ceiling geometry
@@ -234,6 +235,7 @@ function Level (numRooms, scene) {
                 );
                 geom.rotation.x = Math.PI / 2;
                 geom.position.set(xx, CELL_SIZE, yy);
+                this.geometry.ceils.push(geom);
                 this.scene.add(geom);
             } else if (type === CELL_TYPES.wall) {
                 // TODO: figure out if this is a shared wall and 
@@ -248,6 +250,7 @@ function Level (numRooms, scene) {
                     new THREE.MeshBasicMaterial({ map: wallTexture })
                 );
                 geom.position.set(xx, CELL_SIZE / 2, yy);
+                this.geometry.walls.push(geom);
                 this.scene.add(geom);
             } else if (type === CELL_TYPES.door) {
                 // TODO: generate door cube
