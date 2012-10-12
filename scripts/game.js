@@ -11,6 +11,10 @@ function Game(renderer, canvas) {
     this.camera    = null;
     this.objects   = [];
     this.lights    = [];
+    this.player    = [];
+    this.playerDist = [];
+    this.oldplayer    = new THREE.Vector3;
+    this.oldplayerDist = [];
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -19,6 +23,9 @@ function Game(renderer, canvas) {
         ASPECT = canvas.width / canvas.height,
         NEAR   = 1,
         FAR    = 1000;
+
+    var eyeup;//eyeup=this.camera.position.y-this.player.position.y
+    var debug=-40;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
 
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
@@ -32,9 +39,17 @@ function Game(renderer, canvas) {
         this.scene = new THREE.Scene();
         this.scene.fog = new THREE.Fog(0x555555, 150, 300);
 
+	//put a green box indicate the volume of our player, for the purpose of collision detection
+	var box = new THREE.CubeGeometry(10,22,5);
+	material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+	this.player=new THREE.Mesh(box,material);
+	this.player.position.set(-30, 11, 10);
+        this.scene.add(this.player);
+
+
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
-        this.camera.position.set(-30, 20, -30);
+        this.camera.position.add(this.player.position,new THREE.Vector3(0,eyeup,debug));
 	this.camera.lookAt(new THREE.Vector3(50,0,50));
         this.scene.add(this.camera);
 
@@ -79,10 +94,18 @@ function Game(renderer, canvas) {
 	var material = new THREE.MeshBasicMaterial( { map: texture } );
 	this.objects[1] = new THREE.Mesh(geometry,material);
 	this.objects[1].rotation.x = - Math.PI / 2;
+	this.objects[1].position.y = 0;
         this.scene.add(this.objects[1]);
-
-
-
+	
+	//I tried to add some boxes and let our player jump on it, collision detection is crucial
+	box = new THREE.CubeGeometry(20,20,20);
+	texture = THREE.ImageUtils.loadTexture( "images/crate.gif" );
+	texture.anisotropy = renderer.getMaxAnisotropy();
+	material = new THREE.MeshBasicMaterial( { map: texture } );
+	this.objects[2] = new THREE.Mesh(box,material);
+	this.objects[2].position.set(50,10,20);
+        this.scene.add(this.objects[2]);
+	
         console.log("Game initialized.");
     }
 
@@ -103,32 +126,22 @@ function Game(renderer, canvas) {
         input.f.z=Math.sin(input.theta)*Math.sin(input.phi+input.center)
         input.f.x=Math.sin(input.theta)*Math.cos(input.phi+input.center);
         input.f.y=Math.cos(input.theta);
-	var highest=80;//do we need some global variables?
-	var lowest=20;
-	if (input.trigger.Jump==1){
-	    if (input.v==0){
-		input.v=Math.sqrt(highest-lowest);
+	var velocity=8;
+	if (input.hold==1) {
+	    if (input.trigger.Jump==1){
+		input.v=velocity;
+		input.trigger.Jump=0;
+		input.hold=0;
 		this.camera.position.y+=input.v;
-	    }
-	    else{
-		//jump to the highest point
-		if (highest-this.camera.position.y<1){
-		    input.v=-1;
-		    this.camera.position.y=highest-1;
-		}
-		else{
-		    if (this.camera.position.y<lowest){
-			input.v=0;
-			input.trigger.Jump=0;
-			this.camera.position.y=lowest;
-		    }
-		    else{//energy function:v^2+h=H
-			input.v=Math.sqrt(highest-this.camera.position.y)*(input.v>0?1:-1);
-			this.camera.position.y+=input.v;
-		    }
-		}
+		this.player.position.y+=input.v;
+		input.v-=1;
 	    }
 	}
+	else{
+	    this.camera.position.y+=input.v;
+	    this.player.position.y+=input.v;
+	    input.v-=1;
+	}	    
 
         xzNorm = Math.sqrt(input.f.x*input.f.x + input.f.z*input.f.z);
         this.camera.position.add(
@@ -139,6 +152,16 @@ function Game(renderer, canvas) {
                 triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
             )
         );
+
+
+	this.player.position.add(
+            this.player.position,
+            new THREE.Vector3(
+                triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
+                0,//previouly, triggerWS * input.f.y,
+                triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
+            )
+        );	
         
         look.add(this.camera.position, input.f);
         this.camera.lookAt(look);
@@ -152,6 +175,99 @@ function Game(renderer, canvas) {
             Math.cos(this.clock.getElapsedTime()) * 50,
             50,
             Math.sin(this.clock.getElapsedTime()) * 50);
+
+	//collision detection code
+	if (input.trigger.A || input.trigger.D || input.trigger.W || input.trigger.S || input.hold==0){
+	    input.hold=0;
+	    for (var vertexIndex = 0; vertexIndex < this.player.geometry.vertices.length; vertexIndex++) {       
+		var directionVector = this.player.geometry.vertices[vertexIndex].clone();		
+		var ray = new THREE.Ray( this.player.position, directionVector.clone().normalize() );
+		var collisionResults = ray.intersectObjects( this.objects );
+		if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < 1e-6) {	
+		    if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {	
+			var i=0;
+			var j=0;
+			var k=0;
+			if (this.player.position.x-this.oldplayer.x>0) {
+			    for (i=1;i<=this.player.position.x-this.oldplayer.x;i++){
+				ray = new THREE.Ray( new THREE.Vector3(this.oldplayer.x+i,this.oldplayer.y,this.oldplayer.z), directionVector.clone().normalize() );
+				collisionResults = ray.intersectObjects( this.objects );
+				if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+				    break;
+				}			
+			    }
+			    i-=1;
+			}
+			if (this.player.position.x-this.oldplayer.x<0) {
+			    for (i=-1;i>=this.player.position.x-this.oldplayer.x;i--){
+				ray = new THREE.Ray( new THREE.Vector3(this.oldplayer.x+i,this.oldplayer.y,this.oldplayer.z), directionVector.clone().normalize() );
+				collisionResults = ray.intersectObjects( this.objects );
+				if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+				    break;
+				}			
+			    }
+			    i+=1;
+			}		    
+		  
+			if (this.player.position.y-this.oldplayer.y>0) {
+			    for (j=1;j<=this.player.position.y-this.oldplayer.y;j++){
+				ray = new THREE.Ray( new THREE.Vector3(this.oldplayer.x+i,this.oldplayer.y+j,this.oldplayer.z), directionVector.clone().normalize() );
+				collisionResults = ray.intersectObjects( this.objects );
+				if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+				    break;
+				}			
+			    }
+			    j-=1;
+			}
+			if (this.player.position.y-this.oldplayer.y<0) {
+			    for (j=-1;j>=this.player.position.y-this.oldplayer.y;j--){
+				ray = new THREE.Ray( new THREE.Vector3(this.oldplayer.x+i,this.oldplayer.y+j,this.oldplayer.z), directionVector.clone().normalize() );
+				collisionResults = ray.intersectObjects( this.objects );
+				if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+				    break;
+				}			
+			    }
+			    j+=1;
+			}			
+		 
+			if (this.player.position.z-this.oldplayer.z>0) {
+			    for (k=1;k<=this.player.position.z-this.oldplayer.z;k++){
+				ray = new THREE.Ray( new THREE.Vector3(this.oldplayer.x+i,this.oldplayer.y+j,this.oldplayer.z+k), directionVector.clone().normalize() );
+				collisionResults = ray.intersectObjects( this.objects );
+				if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+				    break;
+				}			
+			    }
+			    k-=1;
+			}
+			if (this.player.position.z-this.oldplayer.z<0) {
+			    for (k=-1;k>=this.player.position.z-this.oldplayer.z;k--){
+				ray = new THREE.Ray( new THREE.Vector3(this.oldplayer.x+i,this.oldplayer.y+j,this.oldplayer.z+k), directionVector.clone().normalize() );
+				collisionResults = ray.intersectObjects( this.objects );
+				if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+				    break;
+				}			
+			    }
+			    k+=1;
+			}
+		 
+			this.player.position.add(this.oldplayer,new THREE.Vector3(i,j,k));
+			this.camera.position.add( this.player.position,new THREE.Vector3(0,eyeup,debug));
+		    }
+		    ray = new THREE.Ray( new THREE.Vector3().add(this.player.position,new THREE.Vector3(0,-1,0)), directionVector.clone().normalize() );
+		    collisionResults = ray.intersectObjects( this.objects );
+		    if ( collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
+			input.hold=1;
+			input.v=0;
+		    }
+		    else{
+			input.hold=0;
+		    }
+		}		
+	    }
+
+	    this.oldplayer.copy(this.player.position);
+	}
     }
 
 

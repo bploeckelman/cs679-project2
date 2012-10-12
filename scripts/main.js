@@ -74,6 +74,7 @@ function setupInput (data) {
     data.phi = 0;
     data.f = new THREE.Vector3(0,0,1);
     data.v = 0;
+    data.hold = 1;
     data.trigger = { W: 0, S: 0, A: 0, D: 0, Jump: 0 };
 
     // Hookup key input
