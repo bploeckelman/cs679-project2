@@ -9,8 +9,9 @@ function Game(renderer, canvas) {
     this.clock     = new THREE.Clock();
     this.scene     = null;
     this.camera    = null;
-    this.objects   = [];
+    this.objects   = []; // TODO: change to {}? name->object map
     this.lights    = [];
+    this.level     = null;
     this.player    = [];
     this.playerDist = [];
     this.oldplayer    = new THREE.Vector3;
@@ -25,25 +26,27 @@ function Game(renderer, canvas) {
         FAR    = 1000;
 
     var eyeup;//eyeup=this.camera.position.y-this.player.position.y
-    var debug=-40;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
+    var debug=0;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
 
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
     this.init = function () {
-        var meshGeometry = null;
+        var meshGeometry = null,
+	texture = THREE.ImageUtils.loadTexture("images/disturb.jpg");
+        texture.anisotropy = renderer.getMaxAnisotropy();
 
         console.log("Game initializing...");
 
         // Setup scene
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x555555, 150, 300);
+        //this.scene.fog = new THREE.Fog(0x555555, 150, 300);
 
 	//put a green box indicate the volume of our player, for the purpose of collision detection
 	var box = new THREE.CubeGeometry(10,22,5);
-	material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+	material = new THREE.MeshBasicMaterial( { map: texture } );
 	this.player=new THREE.Mesh(box,material);
-	this.player.position.set(-30, 11, 10);
+	this.player.position.set(320, 200, 320);
         this.scene.add(this.player);
 
 
@@ -52,6 +55,7 @@ function Game(renderer, canvas) {
         this.camera.position.add(this.player.position,new THREE.Vector3(0,eyeup,debug));
 	this.camera.lookAt(new THREE.Vector3(50,0,50));
         this.scene.add(this.camera);
+
 
         // Setup some test lighting
         this.lights[0] = new THREE.PointLight(0xff0000);
@@ -73,39 +77,32 @@ function Game(renderer, canvas) {
         this.scene.add(this.objects[0]);
 
         // A planar mesh
-        // meshGeometry = new THREE.Geometry();
-        // generateGeometry(
-        //     meshGeometry,
-        //     { w: 80, h: 80, quadSize: 16 }
-        // );
-        // this.objects[1] = new THREE.Mesh(
-        //     meshGeometry,
-        //     new THREE.MeshBasicMaterial({
-        //         color: 0x00aa00,
-        //         shading: THREE.FlatShading,
-        //         wireframe: true
-        //     })
-        // );
+        meshGeometry = new THREE.Geometry();
+        generateGeometry(
+            meshGeometry,
+            { w: 80, h: 80, quadSize: 16 }
+        );
+        /*
+        this.objects[1] = new THREE.Mesh(
+            meshGeometry,
+            new THREE.MeshBasicMaterial({
+                color: 0x00aa00,
+                shading: THREE.FlatShading,
+                wireframe: true
+            })
+        );
+        */
 	
-	//I tried to replace the triangle grid with an image
-	var geometry = new THREE.PlaneGeometry(1280,1280);
-	var texture = THREE.ImageUtils.loadTexture( "images/disturb.jpg" );
-	texture.anisotropy = renderer.getMaxAnisotropy();
-	var material = new THREE.MeshBasicMaterial( { map: texture } );
-	this.objects[1] = new THREE.Mesh(geometry,material);
-	this.objects[1].rotation.x = - Math.PI / 2;
-	this.objects[1].position.y = 0;
-        this.scene.add(this.objects[1]);
-	
-	//I tried to add some boxes and let our player jump on it, collision detection is crucial
-	box = new THREE.CubeGeometry(20,20,20);
-	texture = THREE.ImageUtils.loadTexture( "images/crate.gif" );
-	texture.anisotropy = renderer.getMaxAnisotropy();
-	material = new THREE.MeshBasicMaterial( { map: texture } );
-	this.objects[2] = new THREE.Mesh(box,material);
-	this.objects[2].position.set(50,10,20);
-        this.scene.add(this.objects[2]);
-	
+        this.objects[1] = new THREE.Mesh(
+            new THREE.PlaneGeometry(1280, 1280),
+            new THREE.MeshBasicMaterial({ map: texture })
+        );
+        this.objects[1].rotation.x = - Math.PI / 2;
+        //this.scene.add(this.objects[1]);
+
+        // TESTING:
+        this.level = new Level(10, this.scene, this.objects);
+
         console.log("Game initialized.");
     }
 
@@ -113,6 +110,7 @@ function Game(renderer, canvas) {
     this.update = function (input) {
         var triggerAD = input.trigger.A - input.trigger.D,
             triggerWS = input.trigger.W - input.trigger.S,
+            triggerQE = input.trigger.Q - input.trigger.E,
             look = new THREE.Vector3(),
             xzNorm;
 
@@ -126,6 +124,8 @@ function Game(renderer, canvas) {
         input.f.z=Math.sin(input.theta)*Math.sin(input.phi+input.center)
         input.f.x=Math.sin(input.theta)*Math.cos(input.phi+input.center);
         input.f.y=Math.cos(input.theta);
+
+        // TODO: move some of this into a player class
 	var velocity=8;
 	if (input.hold==1) {
 	    if (input.trigger.Jump==1){
@@ -134,34 +134,33 @@ function Game(renderer, canvas) {
 		input.hold=0;
 		this.camera.position.y+=input.v;
 		this.player.position.y+=input.v;
-		input.v-=1;
+		input.v-=0.5;
 	    }
 	}
 	else{
 	    this.camera.position.y+=input.v;
 	    this.player.position.y+=input.v;
-	    input.v-=1;
+	    input.v-=0.5;
 	}	    
 
         xzNorm = Math.sqrt(input.f.x*input.f.x + input.f.z*input.f.z);
-        this.camera.position.add(
-            this.camera.position,
-            new THREE.Vector3(
-                triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-                0,//previouly, triggerWS * input.f.y,
-                triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
-            )
-        );
-
-
 	this.player.position.add(
             this.player.position,
             new THREE.Vector3(
                 triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-                0,//previouly, triggerWS * input.f.y,
+                triggerQE * input.f.y * 10, //previouly, triggerWS * input.f.y,
                 triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
             )
-        );	
+        );
+
+        this.camera.position.add(
+            this.camera.position,
+            new THREE.Vector3(
+                triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
+                triggerQE * input.f.y * 10, //previouly, triggerWS * input.f.y,
+                triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
+            )
+        );
         
         look.add(this.camera.position, input.f);
         this.camera.lookAt(look);
@@ -176,7 +175,7 @@ function Game(renderer, canvas) {
             50,
             Math.sin(this.clock.getElapsedTime()) * 50);
 
-	//collision detection code
+		//collision detection code
 	if (input.trigger.A || input.trigger.D || input.trigger.W || input.trigger.S || input.hold==0){
 	    input.hold=0;
 	    for (var vertexIndex = 0; vertexIndex < this.player.geometry.vertices.length; vertexIndex++) {       
@@ -289,17 +288,17 @@ function Game(renderer, canvas) {
 // TODO: move to utility script
 // ----------------------------------------------------------------------------
 
-// function generateGeometry (geom, data) {
-//     var size = data.quadSize, index = 0, i, j;
+function generateGeometry (geom, data) {
+    var size = data.quadSize, index = 0, i, j;
 
-//     // Generate quads in geometry object 
-//     // for each cell in a data.w*data.h sized grid
-//     for(i = 0; i < data.w; ++i)
-//     for(j = 0; j < data.h; ++j, ++index) {
-//         generateQuad(geom, index,
-//             { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
-//     }
-// }
+    // Generate quads in geometry object 
+    // for each cell in a data.w*data.h sized grid
+    for(i = 0; i < data.w; ++i)
+    for(j = 0; j < data.h; ++j, ++index) {
+        generateQuad(geom, index,
+            { x: size*(i - data.w/2), z: size*(j - data.h/2) }, size);
+    }
+}
 
 function generateQuad (geom, index, center, width) {
     var quad = [[ -1,  1],
