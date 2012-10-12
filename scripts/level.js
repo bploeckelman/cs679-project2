@@ -11,12 +11,18 @@ var CELL_TYPES = {
 // ----------------------------------------------------------------------------
 // Level 
 // ----------------------------------------------------------------------------
-function Level (numRooms) {
+function Level (numRooms, scene) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
     this.grid  = null;
     this.rooms = null;
+    this.scene = scene;
+    this.geometry = {
+        floor: [],
+        ceil: [],
+        walls: []
+    };
 
 
     // ------------------------------------------------------------------------
@@ -24,12 +30,6 @@ function Level (numRooms) {
     // ------------------------------------------------------------------------
     var CELL_SIZE = 32,
         NUM_CELLS = new THREE.Vector2(20, 20),
-        // Note: these are for level generation to represent cell types
-        GROUP_SIZE = 2; // Number of cells in a group of cells
-        NUM_GROUPS = new THREE.Vector2(
-            NUM_CELLS.x / GROUP_SIZE,
-            NUM_CELLS.y / GROUP_SIZE
-        ),
         MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8;
 
@@ -200,6 +200,64 @@ function Level (numRooms) {
         }
     };
 
+    
+    // Creates new geometry based on grid layout
+    // -----------------------------------------
+    this.generateGeometry = function () {
+        var x, y, xx, yy, type, geom, mat,
+            floorTexture = THREE.ImageUtils.loadTexture("images/tile.png"),
+            ceilTexture = THREE.ImageUtils.loadTexture("images/stone.png"),
+            wallTexture = THREE.ImageUtils.loadTexture("images/brick.png");
+
+        for(y = 0; y < NUM_CELLS.y; ++y)
+        for(x = 0; x < NUM_CELLS.x; ++x) {
+            type = this.grid[y][x].type;
+            xx = x * CELL_SIZE;
+            yy = y * CELL_SIZE;
+
+            if (type === CELL_TYPES.void) {
+                continue;
+            } else if (type === CELL_TYPES.empty) {
+                // Generate floor geometry
+                geom = new THREE.Mesh(
+                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
+                    new THREE.MeshBasicMaterial({ map: floorTexture })
+                );
+                geom.rotation.x = -Math.PI / 2;
+                geom.position.set(xx, 0, yy);
+                this.scene.add(geom);
+                
+                // Generate ceiling geometry
+                geom = new THREE.Mesh(
+                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
+                    new THREE.MeshBasicMaterial({ map: ceilTexture })
+                );
+                geom.rotation.x = Math.PI / 2;
+                geom.position.set(xx, CELL_SIZE, yy);
+                this.scene.add(geom);
+            } else if (type === CELL_TYPES.wall) {
+                // TODO: figure out if this is a shared wall and 
+                //       generate only the required geometry 
+                // NOTE: three.js CubeGeometry c'tor takes args
+                //       that specify which sides to create! 
+                //       (and different materials can be applied to each side)
+
+                // For now, take the easy way out and just generate a full cube
+                geom = new THREE.Mesh(
+                    new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE),
+                    new THREE.MeshBasicMaterial({ map: wallTexture })
+                );
+                geom.position.set(xx, CELL_SIZE / 2, yy);
+                this.scene.add(geom);
+            } else if (type === CELL_TYPES.door) {
+                // TODO: generate door cube
+            } else if (type === CELL_TYPES.upstairs 
+                    || type === CELL_TYPES.downstairs) {
+                // TODO: generate different floor + normal ceiling
+            }
+        }
+    };
+
 
     // ------------------------------------------------------------------------
     // Populates this room object on creation
@@ -235,6 +293,8 @@ function Level (numRooms) {
 
         // TODO: this is a hack... should link rooms directly to grid on creation
         level.populateGrid();
+
+        level.generateGeometry();
 
         level.debugPrint("grid");
     }) (this, numRooms);

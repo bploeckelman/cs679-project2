@@ -33,7 +33,7 @@ function Game(renderer, canvas) {
 
         // Setup scene
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x555555, 150, 300);
+        //this.scene.fog = new THREE.Fog(0x555555, 150, 300);
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -82,10 +82,10 @@ function Game(renderer, canvas) {
             new THREE.MeshBasicMaterial({ map: texture })
         );
         this.objects[1].rotation.x = - Math.PI / 2;
-        this.scene.add(this.objects[1]);
+        //this.scene.add(this.objects[1]);
 
         // TESTING:
-        this.level = new Level(10);
+        this.level = new Level(10, this.scene);
 
         console.log("Game initialized.");
     }
@@ -94,6 +94,7 @@ function Game(renderer, canvas) {
     this.update = function (input) {
         var triggerAD = input.trigger.A - input.trigger.D,
             triggerWS = input.trigger.W - input.trigger.S,
+            triggerQE = input.trigger.Q - input.trigger.E,
             look = new THREE.Vector3(),
             xzNorm;
 
@@ -138,7 +139,7 @@ function Game(renderer, canvas) {
             this.camera.position,
             new THREE.Vector3(
                 triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-                0,//previouly, triggerWS * input.f.y,
+                triggerQE * input.f.y * 10, //previouly, triggerWS * input.f.y,
                 triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
             )
         );

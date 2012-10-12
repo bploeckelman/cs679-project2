@@ -74,44 +74,48 @@ function setupInput (data) {
     data.phi = 0;
     data.f = new THREE.Vector3(0,0,1);
     data.v = 0;
-    data.trigger = { W: 0, S: 0, A: 0, D: 0, Jump: 0 };
+    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, Jump: 0};
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
-       switch(event.keyCode) {
-       case 87: data.trigger.W=1; break;
-       case 83: data.trigger.S=1; break;
-       case 65: data.trigger.A=1; break;
-       case 68: data.trigger.D=1; break;
-       case 32: data.trigger.Jump=1; break;
-       }            
+        switch(event.keyCode) {
+            case 87: data.trigger.W=1; break;
+            case 83: data.trigger.S=1; break;
+            case 65: data.trigger.A=1; break;
+            case 68: data.trigger.D=1; break;
+            case 81: data.trigger.Q=1; break;
+            case 69: data.trigger.E=1; break;
+            case 32: data.trigger.Jump=1; break;
+        }            
     }, false);
     
     // Hookup key input
     document.addEventListener("keyup", function (event) {
-       switch(event.keyCode) {
-       case 87: data.trigger.W=0; break;
-       case 83: data.trigger.S=0; break;
-       case 65: data.trigger.A=0; break;
-       case 68: data.trigger.D=0; break;
-       }            
+        switch(event.keyCode) {
+            case 87: data.trigger.W=0; break;
+            case 83: data.trigger.S=0; break;
+            case 65: data.trigger.A=0; break;
+            case 68: data.trigger.D=0; break;
+            case 81: data.trigger.Q=0; break;
+            case 69: data.trigger.E=0; break;
+        }            
     }, false);
     
      // Hookup mouse input
     document.addEventListener("mousemove", function (event) {
-      data.mouseX=event.pageX;
-      data.mouseY=event.pageY;
-       data.theta=(data.mouseY - canvas.offsetTop)/(canvas.height /2)*Math.PI/2;
+        data.mouseX=event.pageX;
+        data.mouseY=event.pageY;
+        data.theta=(data.mouseY - canvas.offsetTop)/(canvas.height /2)*Math.PI/2;
         if (data.theta<1e-6){
             data.theta=1e-6;
         }
         if (data.theta>Math.PI-1e-6){
-         data.theta=Math.PI-1e-6;
+            data.theta=Math.PI-1e-6;
         }
-      
+
         data.phi=((data.mouseX - canvas.offsetLeft)/(canvas.width /2)-1)*Math.PI/2;
         if (data.phi<0){
-         data.phi+=2*Math.PI;
+            data.phi+=2*Math.PI;
         }
         if (data.theta>2*Math.PI){
             data.phi-=2*Math.PI;
