@@ -4,7 +4,8 @@ var CELL_TYPES = {
         wall: "#",
         door: "+",
         downstairs: "x",
-        upstairs: "^"
+        upstairs: "^",
+        light: "o"
     },
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES);
 
@@ -134,7 +135,6 @@ function Level (numRooms, scene, objects) {
 
 
     // Populates grid with rooms
-    // TODO: this is a hack
     // -------------------------------------------------------
     this.populateGrid = function () {
         var i, x, y, xx, yy, room;
@@ -221,24 +221,23 @@ function Level (numRooms, scene, objects) {
                 // Generate floor geometry
                 geom = new THREE.Mesh(
                     new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshBasicMaterial({ map: floorTexture })
+                    new THREE.MeshLambertMaterial({ map: floorTexture })
                 );
                 geom.rotation.x = -Math.PI / 2;
                 geom.position.set(xx, 0, yy);
                 this.geometry.floors.push(geom);
-		objects.push(geom);
-		console.log(objects.length);
+                objects.push(geom);
                 this.scene.add(geom);
-                
+
                 // Generate ceiling geometry
                 geom = new THREE.Mesh(
                     new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshBasicMaterial({ map: ceilTexture })
+                    new THREE.MeshLambertMaterial({ map: ceilTexture })
                 );
                 geom.rotation.x = Math.PI / 2;
                 geom.position.set(xx, CELL_SIZE, yy);
                 this.geometry.ceils.push(geom);
-		//objects.push(geom);
+                //objects.push(geom);
                 //this.scene.add(geom);
             } else if (type === CELL_TYPES.wall) {
                 // TODO: figure out if this is a shared wall and 
@@ -250,17 +249,19 @@ function Level (numRooms, scene, objects) {
                 // For now, take the easy way out and just generate a full cube
                 geom = new THREE.Mesh(
                     new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshBasicMaterial({ map: wallTexture })
+                    new THREE.MeshLambertMaterial({ map: wallTexture })
                 );
                 geom.position.set(xx, CELL_SIZE / 2, yy);
                 this.geometry.walls.push(geom);
-		objects.push(geom);
+                objects.push(geom);
                 this.scene.add(geom);
             } else if (type === CELL_TYPES.door) {
                 // TODO: generate door cube
             } else if (type === CELL_TYPES.upstairs 
                     || type === CELL_TYPES.downstairs) {
                 // TODO: generate different floor + normal ceiling
+            } else if (type === CELL_TYPES.light) {
+                // TODO: add a different texture and a light to the scene
             }
         }
     };

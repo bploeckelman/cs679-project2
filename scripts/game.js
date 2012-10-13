@@ -55,7 +55,7 @@ function Game(renderer, canvas) {
         game.scene.add(game.camera);
 
         // Setup a light that will move with the player
-        game.lights[0] = new THREE.PointLight(0xdddddd);
+        game.lights[0] = new THREE.PointLight(0xffcccc, 0.75, 300);
         game.lights[0].position.set(
             game.player.position.x,
             game.player.position.y + 32,
