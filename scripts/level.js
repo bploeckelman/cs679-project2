@@ -262,6 +262,20 @@ function Level (numRooms, scene, objects) {
                 // TODO: generate different floor + normal ceiling
             } else if (type === CELL_TYPES.light) {
                 // TODO: add a different texture and a light to the scene
+                // Note: assumes empty floor, not wall
+                geom = new THREE.Mesh(
+                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
+                    new THREE.MeshLambertMaterial({ map: floorTexture })
+                );
+                geom.rotation.x = -Math.PI / 2;
+                geom.position.set(xx, 0, yy);
+                this.geometry.floors.push(geom);
+                objects.push(geom);
+                this.scene.add(geom);
+
+                var light = new THREE.PointLight(0xffd722, 1.0, 150);
+                light.position.set(xx, CELL_SIZE / 2, yy);
+                this.scene.add(light);
             }
         }
     };
@@ -271,7 +285,7 @@ function Level (numRooms, scene, objects) {
     // Populates this room object on creation
     // ------------------------------------------------------------------------
     (function generate(level, numRooms) {
-        var x, y, room, iters = 0;
+        var i, x, y, room, iters = 0;
 
         console.info("Generating level...");
 
@@ -295,7 +309,14 @@ function Level (numRooms, scene, objects) {
         // TODO
 
         // Randomly add other features as desired
-        // TODO
+        for(i = 0; i < level.rooms.length; ++i) {
+            // 1 in 4 chance of a room getting a light tile
+            if (randInt(0, 100) < 50) {
+                x = randInt(1, level.rooms[i].size.x - 1);
+                y = randInt(1, level.rooms[i].size.y - 1);
+                level.rooms[i].tiles[y][x] = CELL_TYPES.light;
+            }
+        }
 
         console.info("Level generation completed.");
 
