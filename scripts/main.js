@@ -68,6 +68,8 @@
 // ----------------------------------------------------------------------------
 function setupInput (data) {
     // Setup input data structure
+    data.viewRay = null;
+    data.click = 0;
     data.mouseX = canvas.offsetLeft+canvas.width/2;
     data.mouseY = canvas.offsetTop+canvas.height/2;
     data.center = Math.PI/2;
@@ -106,7 +108,16 @@ function setupInput (data) {
     }, false);
 
     canvas.addEventListener("click", function (event) {
-        canvas.requestPointerLock();
+        if (!canvas.pointerLockEnabled) {
+            canvas.requestPointerLock();
+        }
+    }, false);
+
+    document.addEventListener("mousedown", function (event) {
+        data.click = 1;
+    }, false);
+    document.addEventListener("mouseup", function (event) {
+        data.click = 0;
     }, false);
 
     //when pointerLock can be enabled
@@ -147,10 +158,10 @@ function setupInput (data) {
         }
     }
     canvas.addEventListener("mousemove", function (event) {
+        event.preventDefault();
         if (document.pointerLockEnabled) {
             moveLookLocked(event.movementX, event.movementY);
         } else {
-            //console.log("HHHHH");
             moveLook(event.pageX, event.pageY);
         }
     }, false);

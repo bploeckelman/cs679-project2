@@ -3,6 +3,7 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
+    this.projector  = new THREE.Projector();
     this.renderer   = renderer;
     this.canvas     = canvas;
     this.isRunning  = true;
@@ -10,8 +11,11 @@ function Game(renderer, canvas) {
     this.clock      = new THREE.Clock();
     this.scene      = null;
     this.camera     = null;
+    this.viewRay    = null;
     this.objects    = [];
     this.lights     = [];
+    this.bullets    = [];
+    this.bulletDelay = 0;
     this.level      = null;
     this.player     = [];
     this.playerDist = [];
@@ -42,7 +46,7 @@ function Game(renderer, canvas) {
         // Setup player
         game.player = new THREE.Mesh(
             new THREE.CubeGeometry(10, 22, 5),
-            new THREE.MeshBasicMaterial({ color: "#00ff00" })
+            new THREE.MeshBasicMaterial({ color: 0x00ff00 })
         );
         game.player.position.set(320, 200, 320);
         game.scene.add(game.player);
@@ -72,6 +76,10 @@ function Game(renderer, canvas) {
 
 
     // Update everything in the scene
+    // TODO: try to move most of this stuff out of here so the update function 
+    //       becomes cleaner and specialized updates are handled elsewhere
+    // for example:
+    // updateCamera() updatePlayer() updateBullets() updateLights() handleCollisions()
     // ------------------------------------------------------------------------
     this.update = function (input) {
         var triggerAD = input.trigger.A - input.trigger.D,
@@ -79,7 +87,17 @@ function Game(renderer, canvas) {
             triggerQE = input.trigger.Q - input.trigger.E,
             look = new THREE.Vector3(),
             velocity = 8,
-            xzNorm;
+            xzNorm,
+            rayVec,
+            refireTime = 0.2,
+            bullet,
+            bulletVel = 4,
+            bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
+            bulletMat = new THREE.MeshLambertMaterial({ 
+                color: 0xffffff,
+                specular: 0xffffff,
+                shininess: 100
+            });
 
         // Reorient camera
         if (!document.pointerLockEnabled) {
@@ -94,7 +112,7 @@ function Game(renderer, canvas) {
         input.f.x = Math.sin(input.theta) * Math.cos(input.phi + input.center);
         input.f.y = Math.cos(input.theta);
 
-        // TODO: move some of this into a player class
+        // Handle jumping
         if (input.hold == 1) {
             if (input.trigger.Jump == 1) {
                 input.v = velocity;
@@ -124,9 +142,69 @@ function Game(renderer, canvas) {
         look.add(this.camera.position, input.f);
         this.camera.lookAt(look);
 
+        // Update the view ray (center of canvas into screen)
+        rayVec = new THREE.Vector3(0,0,1);
+        this.projector.unprojectVector(rayVec, this.camera);
+        input.viewRay = new THREE.Ray(
+            this.player.position,
+            rayVec.subSelf(this.player.position).normalize()
+        );
+
+        // Handle bullets
+        // TODO: move this stuff out into a function
+        // TODO: add collision code for bullets
+        // TODO: limit amount of ammunition!
+
+        // This allows the player to fire as fast as they can click
+        if (input.click === 0) { 
+            this.bulletDelay = refireTime; 
+        }
+
+        if (input.click === 1) {
+            // Slow down firing rate if player is holding the mouse button down
+            this.bulletDelay += this.clock.getDelta();
+            if (this.bulletDelay > refireTime) {
+                this.bulletDelay = 0;
+
+                // Create a new bullet object
+                bullet = {
+                    mesh: new THREE.Mesh(bulletGeom, bulletMat),
+                    vel: new THREE.Vector3(
+                        input.viewRay.direction.x * bulletVel,
+                        input.viewRay.direction.y * bulletVel,
+                        input.viewRay.direction.z * bulletVel 
+                    ),
+                    // Adding viewRay.direction moves the bullet 
+                    // out in front of the camera a bit so it isn't clipped
+                    pos: new THREE.Vector3(
+                        input.viewRay.origin.x + input.viewRay.direction.x,
+                        input.viewRay.origin.y,
+                        input.viewRay.origin.z + input.viewRay.direction.z
+                    ),
+                    lifetime: 1000
+                };
+
+                // Add the new bullet to the scene and bullets array
+                this.bullets.push(bullet);
+                this.scene.add(bullet.mesh);
+            }
+        }
+
+        // Update all the bullets, move backwards through array 
+        // to avoid problems when removing bullets
+        for(var i = this.bullets.length - 1; i >= 0; --i) {
+            // Remove bullets that are too old
+            // TODO: also remove if bullet has collided with something
+            if (--this.bullets[i].lifetime <= 0) {
+                this.scene.remove(this.bullets[i].mesh);
+                this.bullets.splice(i,1);
+            } else { // Update the bullet's position based on its velocity
+                this.bullets[i].pos.addSelf(this.bullets[i].vel);
+                this.bullets[i].mesh.position = this.bullets[i].pos;
+            }
+        }
+
         // Update the player's light
-        // TODO: should probably set this to be slightly behind the player
-        //       so that it still lights up geometry that is very close
         this.lights[0].position.set(
             this.player.position.x,
             this.player.position.y + 32,
