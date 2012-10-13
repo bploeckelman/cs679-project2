@@ -12,18 +12,20 @@ var CELL_TYPES = {
 // ----------------------------------------------------------------------------
 // Level 
 // ----------------------------------------------------------------------------
-function Level (numRooms, scene, objects, lights) {
+function Level (numRooms, game) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
     this.grid  = null;
     this.rooms = null;
-    this.scene = scene;
     this.geometry = {
         floors: [],
         ceils: [],
         walls: []
     };
+    this.mapCanvas  = null;
+    this.mapContext = null;
+    this.mapColors = {};
 
 
     // ------------------------------------------------------------------------
@@ -32,7 +34,8 @@ function Level (numRooms, scene, objects, lights) {
     var CELL_SIZE = 32,
         NUM_CELLS = new THREE.Vector2(20, 20),
         MIN_ROOM_SIZE = 4,
-        MAX_ROOM_SIZE = 8;
+        MAX_ROOM_SIZE = 8,
+        MAP_CELL_SIZE = 8;
 
 
     // ------------------------------------------------------------------------
@@ -228,8 +231,8 @@ function Level (numRooms, scene, objects, lights) {
                 mesh.rotation.x = -Math.PI / 2;
                 mesh.position.set(xx, 0, yy);
                 this.geometry.floors.push(mesh);
-                objects.push(mesh);
-                this.scene.add(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
 
                 // Generate ceiling geometry
                 /*
@@ -238,8 +241,8 @@ function Level (numRooms, scene, objects, lights) {
                 mesh.rotation.x = Math.PI / 2;
                 mesh.position.set(xx, CELL_SIZE, yy);
                 this.geometry.ceils.push(mesh);
-                objects.push(mesh);
-                this.scene.add(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
                 */
             } else if (type === CELL_TYPES.wall) {
                 // TODO: figure out if this is a shared wall and 
@@ -256,23 +259,23 @@ function Level (numRooms, scene, objects, lights) {
                 mesh = new THREE.Mesh(geom, mat);
                 mesh.position.set(xx, CELL_SIZE / 2, yy);
                 this.geometry.walls.push(mesh);
-                objects.push(mesh);
-                this.scene.add(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
             } else if (type === CELL_TYPES.door) {
                 // TODO: generate door cube
             } else if (type === CELL_TYPES.upstairs 
                     || type === CELL_TYPES.downstairs) {
                 // TODO: generate different floor + normal ceiling
             } else if (type === CELL_TYPES.light) {
-                // TODO: add a different texture and a light to the scene
+                // TODO: add a different texture and a light to the game.scene
                 // Note: assumes empty floor, not wall
                 mat.map = floorTexture;
                 mesh = new THREE.Mesh(geom, mat);
                 mesh.rotation.x = -Math.PI / 2;
                 mesh.position.set(xx, 0, yy);
                 this.geometry.floors.push(mesh);
-                objects.push(mesh);
-                this.scene.add(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
 
                 // Add the light
                 color = new THREE.Color();
@@ -283,8 +286,8 @@ function Level (numRooms, scene, objects, lights) {
                 );
                 light = new THREE.PointLight(color.getHex(), 1.0, 100.0);
                 light.position.set(xx, CELL_SIZE / 2, yy);
-                lights.push(light);
-                this.scene.add(light);
+                game.lights.push(light);
+                game.scene.add(light);
 
                 // Add a mesh to represent the light (mostly for debug purposes)
                 mesh = new THREE.Mesh(
@@ -292,10 +295,100 @@ function Level (numRooms, scene, objects, lights) {
                     new THREE.MeshBasicMaterial({ color: color })
                 );
                 mesh.position.set(xx, CELL_SIZE / 2, yy);
-                this.scene.add(mesh);
+                game.scene.add(mesh);
 
             }
         }
+    };
+
+
+    // Generate minimap using a 2d canvas
+    // ----------------------------------
+    this.generateMinimap = function () {
+        var mainCanvas = document.getElementById("canvas");
+
+        // Create and position the map canvas, then add it to the document
+        mapCanvas = document.createElement("canvas");
+        mapCanvas.id = "minimap";
+        mapCanvas.style.position = "absolute";
+        mapCanvas.width  = MAP_CELL_SIZE * NUM_CELLS.x;
+        mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
+        // TODO: have to handle window resizing
+        mapCanvas.style.top  = (mainCanvas.height - mapCanvas.height + 12) + "px";
+        mapCanvas.style.left = (mainCanvas.width  - 20) + "px";
+        document.getElementById("container").appendChild(mapCanvas);
+
+        // Save the 2d context for this canvas
+        mapContext = mapCanvas.getContext("2d");
+
+        // Setup colors for each cell type
+        this.mapColors.void       = "#202020";
+        this.mapColors.empty      = "#000000";
+        this.mapColors.wall       = "#c0c0c0";
+        this.mapColors.door       = "#00ffff";
+        this.mapColors.upstairs   = "#00ff00";
+        this.mapColors.downstairs = "#008000";
+        this.mapColors.light      = "#aaaa00";
+    };
+
+
+    // Update minimap
+    // --------------------------------
+    this.updateMinimap = function () {
+        var i, x, y, xx, yy, px, py, cell, color;
+
+        // Clear the map
+        mapContext.save();
+        mapContext.setTransform(1, 0, 0, 1, 0, 0);
+        mapContext.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+        mapContext.restore();
+
+        // Blend the map a bit
+        mapContext.globalAlpha = 0.5;
+
+        // Draw the map cells
+        for(y = 0; y < NUM_CELLS.y; ++y)
+        for(x = 0; x < NUM_CELLS.x; ++x) {
+            cell = this.grid[y][x]; 
+            xx = x * MAP_CELL_SIZE;
+            yy = y * MAP_CELL_SIZE;
+
+            // This is sorta hacky, but it works...
+            switch (cell.type) {
+                case CELL_TYPES.void:       color = this.mapColors.void;       break;
+                case CELL_TYPES.empty:      color = this.mapColors.empty;      break;
+                case CELL_TYPES.wall:       color = this.mapColors.wall;       break;
+                case CELL_TYPES.door:       color = this.mapColors.door;       break;
+                case CELL_TYPES.upstairs:   color = this.mapColors.upstairs;   break;
+                case CELL_TYPES.downstairs: color = this.mapColors.downstairs; break;
+                case CELL_TYPES.light:      color = this.mapColors.light;      break;
+            }
+
+            if (cell.type !== CELL_TYPES.void) {
+                mapContext.fillStyle = color;
+                mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
+            }
+        }
+
+        // Calculate the player's position on the minimap
+        px = Math.floor(game.player.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+        py = Math.floor(game.player.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+        //console.log("player map pos = (" + px + "," + py + ")");
+
+        // Draw the player
+        mapContext.beginPath();
+        mapContext.strokeStyle = "#ff0000";
+        mapContext.lineWidth = 4;
+        mapContext.arc(px, py, 3, 0, 2 * Math.PI, false);
+        mapContext.stroke();
+    };
+
+
+    // Update this level
+    // --------------------------------
+    this.update = function () {
+        this.updateMinimap();
+        // TODO: update any other dynamic stuff
     };
 
 
@@ -323,10 +416,10 @@ function Level (numRooms, scene, objects, lights) {
         }
         console.log("Generated " + level.rooms.length + " rooms.");
 
-        // Randomly add doors between touching rooms
-        // TODO
+        // TODO: Randomly add doors between touching rooms
 
         // Randomly add other features as desired
+        // Add Lights
         for(i = 0; i < level.rooms.length; ++i) {
             // Add a light at a random location in every room
             x = randInt(1, level.rooms[i].size.x - 1);
@@ -334,12 +427,11 @@ function Level (numRooms, scene, objects, lights) {
             level.rooms[i].tiles[y][x] = CELL_TYPES.light;
         }
 
-        console.info("Level generation completed.");
-
-        // TODO: this is a hack... should link rooms directly to grid on creation
         level.populateGrid();
-
         level.generateGeometry();
+        level.generateMinimap();
+
+        console.info("Level generation completed.");
 
         level.debugPrint("grid");
     }) (this, numRooms);

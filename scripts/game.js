@@ -68,7 +68,7 @@ function Game(renderer, canvas) {
         game.scene.add(game.lights[0]);
 
         // Load the test level
-        game.level = new Level(10, game.scene, game.objects, game.lights);
+        game.level = new Level(10, game);
 
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
@@ -98,6 +98,9 @@ function Game(renderer, canvas) {
                 specular: 0xffffff,
                 shininess: 100
             });
+
+        // Update the level
+        this.level.update();
 
         // Reorient camera
         if (!document.pointerLockEnabled) {
