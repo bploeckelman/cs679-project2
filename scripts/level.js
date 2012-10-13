@@ -416,17 +416,3 @@ function Room (size) {
 
 } // end Room object
 
-
-
-// ----------------------------------------------------------------------------
-// TODO: move these to a utility script 
-function randInt(min, max) {
-    return Math.floor(Math.random() * Math.abs(max - min) + min);
-}
-
-function clamp(x, min, max) {
-    return (x < min) ? min
-         : (x > max) ? max 
-         : x;
-}
-

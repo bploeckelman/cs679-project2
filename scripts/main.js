@@ -14,7 +14,7 @@
         stats = new Stats(),
         inputData = {},
         game = null;
-    requestFrame = window.requestAnimationFrame
+        requestFrame = window.requestAnimationFrame
                     || window.webkitRequestAnimationFrame
                     || window.mozRequestAnimationFrame
                     || window.oRequestAnimationFrame
@@ -147,7 +147,7 @@ function setupInput (data) {
             data.phi -= 2 * Math.PI;
         }
     }
-    canvas.addEventListener("mousemove", function (e) {
+    canvas.addEventListener("mousemove", function (event) {
         if (document.pointerLockEnabled) {
             moveLookLocked(event.movementX, event.movementY);
         } else {
