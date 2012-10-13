@@ -21,8 +21,6 @@
                     || window.msRequestAnimationFrame
                     || function (callback) { window.setTimeout(callback, 1000 / 60); };
 
-  
-
     // Style html a bit
     document.getElementsByTagName("body")[0].style.background = "rgb(64,64,64)";
     document.getElementById("container").style.width = canvasWidth + "px";
@@ -37,18 +35,18 @@
     document.getElementById("container").appendChild(renderer.domElement);
 
     // Setup stats (fps and ms render time graphs)
-    // TODO: update canvas top/left offsets when browser window resizes
     stats.setMode(0); // mode 0 = fps, mode 1 = ms render time
     stats.domElement.style.position = "absolute";
     stats.domElement.style.top = canvas.offsetTop + 4 + "px";
     stats.domElement.style.left = canvas.offsetLeft + "px";
     document.getElementById("container").appendChild(stats.domElement);
+    window.onresize =  function (event) {
+        stats.domElement.style.top = canvas.offsetTop + 4 + "px";
+        stats.domElement.style.left = canvas.offsetLeft + "px";
+    };
 
     // Setup input handlers and populate input data object
     setupInput(inputData);
-
-    // Load resources
-    // TODO: maybe just do in game init?
 
     // Create Game object
     game = new Game(renderer, canvas);
@@ -62,6 +60,7 @@
         stats.end();
     })();
 })();
+
 
 // ----------------------------------------------------------------------------
 // Setup input handlers and populate input data object
@@ -105,13 +104,12 @@ function setupInput (data) {
         }
     }, false);
 
-    canvas.addEventListener("click", function (e) {
+    canvas.addEventListener("click", function (event) {
         canvas.requestPointerLock();
-        },false)
+    }, false);
 
-
-     //when pointerLock can be enabled
-     function moveLookLocked(xDelta, yDelta) {
+    //when pointerLock can be enabled
+    function moveLookLocked(xDelta, yDelta) {
         data.phi += xDelta * 0.0025;
         while (data.phi < 0)
             data.phi += Math.PI * 2;
@@ -151,9 +149,9 @@ function setupInput (data) {
         if (document.pointerLockEnabled) {
             moveLookLocked(event.movementX, event.movementY);
         } else {
-            console.log("HHHHH");
+            //console.log("HHHHH");
             moveLook(event.pageX, event.pageY);
         }
-
     }, false);
 }
+
