@@ -159,73 +159,73 @@ function handleCollisions (game, input) {
                     var j = 0;
                     var k = 0;
                     if (game.player.position.x - game.oldplayer.x > 0) {
-                        for (i = 1; i <= game.player.position.x - game.oldplayer.x; i++) {
+                        for (i = 0.1; i <= game.player.position.x - game.oldplayer.x; i+=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
                         }
-                        i -= 1;
+                        i -= 0.1;
                     }
                     if (game.player.position.x - game.oldplayer.x < 0) {
-                        for (i = -1; i >= game.player.position.x - game.oldplayer.x; i--) {
+                        for (i = -0.1; i >= game.player.position.x - game.oldplayer.x; i-=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
                         }
-                        i += 1;
+                        i += 0.1;
                     }
 
                     if (game.player.position.y - game.oldplayer.y > 0) {
-                        for (j = 1; j <= game.player.position.y - game.oldplayer.y; j++) {
+                        for (j = 0.1; j <= game.player.position.y - game.oldplayer.y; j+=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
                         }
-                        j -= 1;
+                        j -= 0.1;
                     }
                     if (game.player.position.y - game.oldplayer.y < 0) {
-                        for (j = -1; j >= game.player.position.y - game.oldplayer.y; j--) {
+                        for (j = -0.1; j >= game.player.position.y - game.oldplayer.y; j-=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
                         }
-                        j += 1;
+                        j += 0.1;
                     }
 
                     if (game.player.position.z - game.oldplayer.z > 0) {
-                        for (k = 1; k <= game.player.position.z - game.oldplayer.z; k++) {
+                        for (k = 0.1; k <= game.player.position.z - game.oldplayer.z; k+=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z + k), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
                         }
-                        k -= 1;
+                        k -= 0.1;
                     }
                     if (game.player.position.z - game.oldplayer.z < 0) {
-                        for (k = -1; k >= game.player.position.z - game.oldplayer.z; k--) {
+                        for (k = -0.1; k >= game.player.position.z - game.oldplayer.z; k-=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z + k), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
                         }
-                        k += 1;
+                        k += 0.1;
                     }
 
                     game.player.position.add(game.oldplayer, new THREE.Vector3(i, j, k));
                     game.camera.position.add(game.player.position, new THREE.Vector3(0, game.eyeup, game.debug));
                 }
 
-                ray = new THREE.Ray(new THREE.Vector3().add(game.player.position, new THREE.Vector3(0, -1, 0)), directionVector.clone().normalize());
+                ray = new THREE.Ray(new THREE.Vector3().add(game.player.position, new THREE.Vector3(0, -0.1, 0)), directionVector.clone().normalize());
                 collisionResults = ray.intersectObjects(game.objects);
                 if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                     input.hold = 1;
