@@ -37,6 +37,7 @@ function Game(renderer, canvas) {
 
         // Setup scene
         game.scene = new THREE.Scene();
+        game.scene.add(new THREE.AmbientLight(0x101010));
 
         // Setup player
         game.player = new THREE.Mesh(
@@ -55,7 +56,7 @@ function Game(renderer, canvas) {
         game.scene.add(game.camera);
 
         // Setup a light that will move with the player
-        game.lights[0] = new THREE.PointLight(0xffcccc, 0.75, 300);
+        game.lights[0] = new THREE.PointLight(0xffccaa, 1.0, 100);
         game.lights[0].position.set(
             game.player.position.x,
             game.player.position.y + 32,
@@ -63,8 +64,9 @@ function Game(renderer, canvas) {
         game.scene.add(game.lights[0]);
 
         // Load the test level
-        game.level = new Level(10, game.scene, game.objects);
+        game.level = new Level(10, game.scene, game.objects, game.lights);
 
+        //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
     }) (this);
 
@@ -123,6 +125,8 @@ function Game(renderer, canvas) {
         this.camera.lookAt(look);
 
         // Update the player's light
+        // TODO: should probably set this to be slightly behind the player
+        //       so that it still lights up geometry that is very close
         this.lights[0].position.set(
             this.player.position.x,
             this.player.position.y + 32,

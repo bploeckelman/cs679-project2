@@ -12,7 +12,7 @@ var CELL_TYPES = {
 // ----------------------------------------------------------------------------
 // Level 
 // ----------------------------------------------------------------------------
-function Level (numRooms, scene, objects) {
+function Level (numRooms, scene, objects, lights) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -204,7 +204,7 @@ function Level (numRooms, scene, objects) {
     // Creates new geometry based on grid layout
     // -----------------------------------------
     this.generateGeometry = function () {
-        var x, y, xx, yy, type, geom, mat,
+        var x, y, xx, yy, type, geom, mat, light, color,
             floorTexture = THREE.ImageUtils.loadTexture("images/tile.png"),
             ceilTexture = THREE.ImageUtils.loadTexture("images/stone.png"),
             wallTexture = THREE.ImageUtils.loadTexture("images/brick.png");
@@ -214,31 +214,33 @@ function Level (numRooms, scene, objects) {
             type = this.grid[y][x].type;
             xx = x * CELL_SIZE;
             yy = y * CELL_SIZE;
+            mat = new THREE.MeshLambertMaterial();
+            geom = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
+            geom.computeTangents();
+            geom.computeFaceNormals();
 
             if (type === CELL_TYPES.void) {
                 continue;
             } else if (type === CELL_TYPES.empty) {
                 // Generate floor geometry
-                geom = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: floorTexture })
-                );
-                geom.rotation.x = -Math.PI / 2;
-                geom.position.set(xx, 0, yy);
-                this.geometry.floors.push(geom);
-                objects.push(geom);
-                this.scene.add(geom);
+                mat.map = floorTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.position.set(xx, 0, yy);
+                this.geometry.floors.push(mesh);
+                objects.push(mesh);
+                this.scene.add(mesh);
 
                 // Generate ceiling geometry
-                geom = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: ceilTexture })
-                );
-                geom.rotation.x = Math.PI / 2;
-                geom.position.set(xx, CELL_SIZE, yy);
-                this.geometry.ceils.push(geom);
-                //objects.push(geom);
-                //this.scene.add(geom);
+                /*
+                mat.map = ceilTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = Math.PI / 2;
+                mesh.position.set(xx, CELL_SIZE, yy);
+                this.geometry.ceils.push(mesh);
+                objects.push(mesh);
+                this.scene.add(mesh);
+                */
             } else if (type === CELL_TYPES.wall) {
                 // TODO: figure out if this is a shared wall and 
                 //       generate only the required geometry 
@@ -247,14 +249,15 @@ function Level (numRooms, scene, objects) {
                 //       (and different materials can be applied to each side)
 
                 // For now, take the easy way out and just generate a full cube
-                geom = new THREE.Mesh(
-                    new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: wallTexture })
-                );
-                geom.position.set(xx, CELL_SIZE / 2, yy);
-                this.geometry.walls.push(geom);
-                objects.push(geom);
-                this.scene.add(geom);
+                geom = new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                geom.computeTangents();
+                geom.computeFaceNormals();
+                mat.map = wallTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.position.set(xx, CELL_SIZE / 2, yy);
+                this.geometry.walls.push(mesh);
+                objects.push(mesh);
+                this.scene.add(mesh);
             } else if (type === CELL_TYPES.door) {
                 // TODO: generate door cube
             } else if (type === CELL_TYPES.upstairs 
@@ -263,19 +266,34 @@ function Level (numRooms, scene, objects) {
             } else if (type === CELL_TYPES.light) {
                 // TODO: add a different texture and a light to the scene
                 // Note: assumes empty floor, not wall
-                geom = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: floorTexture })
-                );
-                geom.rotation.x = -Math.PI / 2;
-                geom.position.set(xx, 0, yy);
-                this.geometry.floors.push(geom);
-                objects.push(geom);
-                this.scene.add(geom);
+                mat.map = floorTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.position.set(xx, 0, yy);
+                this.geometry.floors.push(mesh);
+                objects.push(mesh);
+                this.scene.add(mesh);
 
-                var light = new THREE.PointLight(0xffd722, 1.0, 150);
+                // Add the light
+                color = new THREE.Color();
+                color.setRGB(
+                    clamp(Math.random(), 0.3, 1.0),
+                    clamp(Math.random(), 0.3, 1.0),
+                    clamp(Math.random(), 0.3, 1.0)
+                );
+                light = new THREE.PointLight(color.getHex(), 1.0, 100.0);
                 light.position.set(xx, CELL_SIZE / 2, yy);
+                lights.push(light);
                 this.scene.add(light);
+
+                // Add a mesh to represent the light (mostly for debug purposes)
+                mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(1),
+                    new THREE.MeshBasicMaterial({ color: color })
+                );
+                mesh.position.set(xx, CELL_SIZE / 2, yy);
+                this.scene.add(mesh);
+
             }
         }
     };
@@ -310,12 +328,10 @@ function Level (numRooms, scene, objects) {
 
         // Randomly add other features as desired
         for(i = 0; i < level.rooms.length; ++i) {
-            // 1 in 4 chance of a room getting a light tile
-            if (randInt(0, 100) < 50) {
-                x = randInt(1, level.rooms[i].size.x - 1);
-                y = randInt(1, level.rooms[i].size.y - 1);
-                level.rooms[i].tiles[y][x] = CELL_TYPES.light;
-            }
+            // Add a light at a random location in every room
+            x = randInt(1, level.rooms[i].size.x - 1);
+            y = randInt(1, level.rooms[i].size.y - 1);
+            level.rooms[i].tiles[y][x] = CELL_TYPES.light;
         }
 
         console.info("Level generation completed.");
