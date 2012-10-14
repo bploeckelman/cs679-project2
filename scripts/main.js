@@ -10,7 +10,7 @@
             canvas: canvas,
             clearColor: 0x000000,
             clearAlpha: 1,
-            maxLights: 20 // default is 4, adding more results in errors
+            maxLights: MAX_LIGHTS // default is 4, adding more results in errors
         }),
         stats = new Stats(),
         inputData = {},

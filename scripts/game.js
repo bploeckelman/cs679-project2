@@ -1,3 +1,4 @@
+var MAX_LIGHTS = 20;
 
 function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
@@ -215,6 +216,11 @@ function Game(renderer, canvas) {
 
         //collision detection code
         handleCollisions(this, input);
+
+        // HACK: make the player a little bit taller
+        if (this.player.position.y < 20) {
+            this.player.position.y = 20;
+        }
     };
 
 

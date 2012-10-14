@@ -21,7 +21,8 @@ function Level (numRooms, game) {
     this.geometry = {
         floors: [],
         ceils: [],
-        walls: []
+        walls: [],
+        doors: []
     };
     this.mapCanvas  = null;
     this.mapContext = null;
@@ -207,14 +208,16 @@ function Level (numRooms, game) {
     // Creates new geometry based on grid layout
     // -----------------------------------------
     this.generateGeometry = function () {
-        var x, y, xx, yy, type, geom, mat, light, color,
+        var x, y, xx, yy, cell, geom, mat, light, color,
             floorTexture = THREE.ImageUtils.loadTexture("images/tile.png"),
             ceilTexture = THREE.ImageUtils.loadTexture("images/stone.png"),
-            wallTexture = THREE.ImageUtils.loadTexture("images/brick.png");
+            wallTexture = THREE.ImageUtils.loadTexture("images/brick.png"),
+            doorTexture = THREE.ImageUtils.loadTexture("images/door.png"),
+            fillTexture = THREE.ImageUtils.loadTexture("images/brown.png");
 
         for(y = 0; y < NUM_CELLS.y; ++y)
         for(x = 0; x < NUM_CELLS.x; ++x) {
-            type = this.grid[y][x].type;
+            cell = this.grid[y][x];
             xx = x * CELL_SIZE;
             yy = y * CELL_SIZE;
             mat = new THREE.MeshLambertMaterial();
@@ -222,9 +225,9 @@ function Level (numRooms, game) {
             geom.computeTangents();
             geom.computeFaceNormals();
 
-            if (type === CELL_TYPES.void) {
+            if (cell.type === CELL_TYPES.void) {
                 continue;
-            } else if (type === CELL_TYPES.empty) {
+            } else if (cell.type === CELL_TYPES.empty) {
                 // Generate floor geometry
                 mat.map = floorTexture;
                 mesh = new THREE.Mesh(geom, mat);
@@ -244,7 +247,7 @@ function Level (numRooms, game) {
                 game.objects.push(mesh);
                 game.scene.add(mesh);
                 */
-            } else if (type === CELL_TYPES.wall) {
+            } else if (cell.type === CELL_TYPES.wall) {
                 // TODO: figure out if this is a shared wall and 
                 //       generate only the required geometry 
                 // NOTE: three.js CubeGeometry c'tor takes args
@@ -261,13 +264,113 @@ function Level (numRooms, game) {
                 this.geometry.walls.push(mesh);
                 game.objects.push(mesh);
                 game.scene.add(mesh);
-            } else if (type === CELL_TYPES.door) {
-                // TODO: generate door cube
-            } else if (type === CELL_TYPES.upstairs 
-                    || type === CELL_TYPES.downstairs) {
+            } else if (cell.type === CELL_TYPES.door) {
+                // Generate floor geometry
+                mat.map = floorTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.position.set(xx, 0, yy);
+                this.geometry.floors.push(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
+
+                // Generate ceiling geometry
+                /*
+                mat.map = ceilTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = Math.PI / 2;
+                mesh.position.set(xx, CELL_SIZE, yy);
+                this.geometry.ceils.push(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
+                */
+
+                // Generate door cube, oriented appropriately
+                geom = new THREE.CubeGeometry(
+                    (cell.doorType === "vertical")   ? CELL_SIZE / 2 : CELL_SIZE / 4,
+                    CELL_SIZE,
+                    (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 4
+                );
+                geom.computeTangents();
+                geom.computeFaceNormals();
+                mesh = new THREE.Mesh(geom,
+                    new THREE.MeshLambertMaterial({ map: doorTexture })
+                );
+                mesh.position.set(xx, CELL_SIZE / 2, yy);
+                this.geometry.doors.push(mesh);
+                game.objects.push(mesh);
+                game.scene.add(mesh);
+
+                // Generate extra wall solids to fill in gaps
+                if (cell.doorType === "vertical") {
+                    // FILLER #1
+                    geom = new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2);
+                    geom.computeTangents();
+                    geom.computeFaceNormals();
+                    mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: fillTexture })
+                    );
+                    mesh.position.set(
+                        xx + (CELL_SIZE / 2) - (CELL_SIZE / 8),
+                        CELL_SIZE / 2,
+                        yy
+                    );
+                    this.geometry.walls.push(mesh);
+                    game.objects.push(mesh);
+                    game.scene.add(mesh);
+                    // FILLER #2
+                    geom = new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2);
+                    geom.computeTangents();
+                    geom.computeFaceNormals();
+                    mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: fillTexture })
+                    );
+                    mesh.position.set(
+                        xx - (CELL_SIZE / 2) + (CELL_SIZE / 8),
+                        CELL_SIZE / 2,
+                        yy
+                    );
+                    this.geometry.walls.push(mesh);
+                    game.objects.push(mesh);
+                    game.scene.add(mesh);
+                } else if (cell.doorType === "horizontal") {
+                    // FILLER #1
+                    geom = new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4);
+                    geom.computeTangents();
+                    geom.computeFaceNormals();
+                    mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: fillTexture })
+                    );
+                    mesh.position.set(
+                        xx,
+                        CELL_SIZE / 2,
+                        yy + (CELL_SIZE / 2) - (CELL_SIZE / 8)
+                    );
+                    this.geometry.walls.push(mesh);
+                    game.objects.push(mesh);
+                    game.scene.add(mesh);
+                    // FILLER #2
+                    geom = new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4);
+                    geom.computeTangents();
+                    geom.computeFaceNormals();
+                    mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: fillTexture })
+                    );
+                    mesh.position.set(
+                        xx,
+                        CELL_SIZE / 2,
+                        yy - (CELL_SIZE / 2) + (CELL_SIZE / 8)
+                    );
+                    this.geometry.walls.push(mesh);
+                    game.objects.push(mesh);
+                    game.scene.add(mesh);
+                }
+            } else if (cell.type === CELL_TYPES.upstairs 
+                    || cell.type === CELL_TYPES.downstairs) {
+
                 // TODO: generate different floor + normal ceiling
-            } else if (type === CELL_TYPES.light) {
-                // TODO: add a different texture and a light to the game.scene
+
+            } else if (cell.type === CELL_TYPES.light) {
                 // Note: assumes empty floor, not wall
                 mat.map = floorTexture;
                 mesh = new THREE.Mesh(geom, mat);
@@ -277,28 +380,84 @@ function Level (numRooms, game) {
                 game.objects.push(mesh);
                 game.scene.add(mesh);
 
-                // Add the light
-                color = new THREE.Color();
-                color.setRGB(
-                    clamp(Math.random(), 0.3, 1.0),
-                    clamp(Math.random(), 0.3, 1.0),
-                    clamp(Math.random(), 0.3, 1.0)
-                );
-                light = new THREE.PointLight(color.getHex(), 1.0, 100.0);
-                light.position.set(xx, CELL_SIZE / 2, yy);
-                game.lights.push(light);
-                game.scene.add(light);
-
-                // Add a mesh to represent the light (mostly for debug purposes)
-                mesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(1),
-                    new THREE.MeshBasicMaterial({ color: color })
-                );
-                mesh.position.set(xx, CELL_SIZE / 2, yy);
+                // Generate ceiling geometry
+                /*
+                mat.map = ceilTexture;
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = Math.PI / 2;
+                mesh.position.set(xx, CELL_SIZE, yy);
+                this.geometry.ceils.push(mesh);
+                game.objects.push(mesh);
                 game.scene.add(mesh);
+                */
 
+                // Add a light if we don't already have too many
+                if (game.lights.length < MAX_LIGHTS) {
+                    color = new THREE.Color();
+                    color.setRGB(
+                        clamp(Math.random(), 0.3, 1.0),
+                        clamp(Math.random(), 0.3, 1.0),
+                        clamp(Math.random(), 0.3, 1.0)
+                    );
+                    light = new THREE.PointLight(color.getHex(), 1.0, 100.0);
+                    light.position.set(xx, CELL_SIZE / 2, yy);
+                    game.lights.push(light);
+                    game.scene.add(light);
+
+                    // Add a mesh to represent the light (mostly for debug purposes)
+                    mesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(1),
+                        new THREE.MeshBasicMaterial({ color: color })
+                    );
+                    mesh.position.set(xx, CELL_SIZE / 2, yy);
+                    game.scene.add(mesh);
+                } else {
+                    console.warn("Unable to add light, already at max # of lights");
+                }
             }
         }
+    };
+
+
+    // Add doors to the map
+    // --------------------------------
+    this.addDoors = function () {
+        var x, y, cell, cellA, cellB;
+
+        for(y = 1; y < NUM_CELLS.y - 1; ++y)
+        for(x = 1; x < NUM_CELLS.x - 1; ++x) { 
+            cell = this.grid[y][x];
+
+            if (cell.type === CELL_TYPES.wall) {
+                cellA = this.grid[y - 1][x];
+                cellB = this.grid[y + 1][x];
+                if (cellA.isInterior() && cellB.isInterior()) {
+                    // Found a potential door!, add location to the list
+                    console.log("Potential door @ (" + x + "," + y + ")");
+                    cell.type = CELL_TYPES.door;
+                    cell.doorType = "vertical";
+                    // TODO
+                    continue;
+                }
+                cellA = this.grid[y][x - 1];
+                cellB = this.grid[y][x + 1];
+                if (cellA.isInterior() && cellB.isInterior()) {
+                    // Found a potential door!, add location to the list
+                    console.log("Potential door @ (" + x + "," + y + ")");
+                    cell.type = CELL_TYPES.door;
+                    cell.doorType = "horizontal";
+                    // TODO
+                    continue;
+                }
+            }
+        }
+    };
+
+
+    // TODO: Add starting location for player
+    // --------------------------------------
+    this.addStartPosition = function () {
+
     };
 
 
@@ -428,6 +587,7 @@ function Level (numRooms, game) {
         }
 
         level.populateGrid();
+        level.addDoors();
         level.generateGeometry();
         level.generateMinimap();
 
@@ -445,6 +605,14 @@ function Level (numRooms, game) {
 function Cell(x, y, type) {
     this.index = new THREE.Vector2(x,y);
     this.type = type;
+    this.doorType = null;
+
+
+    this.isInterior = function () {
+        // Don't include stairs, as they don't belong next to a door 
+        return (this.type === CELL_TYPES.empty
+             || this.type === CELL_TYPES.light);
+    };
 }
 
 
