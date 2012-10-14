@@ -22,7 +22,8 @@ function Level (numRooms, game) {
         floors: [],
         ceils: [],
         walls: [],
-        doors: []
+        doors: [],
+        dummies: [] // for rotating doors about their edge instead of center
     };
     this.mapCanvas  = null;
     this.mapContext = null;
@@ -36,7 +37,8 @@ function Level (numRooms, game) {
         NUM_CELLS = new THREE.Vector2(20, 20),
         MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8,
-        MAP_CELL_SIZE = 8;
+        MAP_CELL_SIZE = 8,
+        DOOR_TIMEOUT  = 250; // milliseconds between door toggles
 
 
     // ------------------------------------------------------------------------
@@ -286,20 +288,45 @@ function Level (numRooms, game) {
                 */
 
                 // Generate door cube, oriented appropriately
+                // ------------------------------------------
                 geom = new THREE.CubeGeometry(
-                    (cell.doorType === "vertical")   ? CELL_SIZE / 2 : CELL_SIZE / 4,
+                    (cell.doorType === "vertical")   ? CELL_SIZE / 2 : CELL_SIZE / 16,
                     CELL_SIZE,
-                    (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 4
+                    (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 16
                 );
                 geom.computeTangents();
                 geom.computeFaceNormals();
                 mesh = new THREE.Mesh(geom,
                     new THREE.MeshLambertMaterial({ map: doorTexture })
                 );
+                mesh.name = "door";
+                mesh.doorState = "closed";
+                mesh.doorIndex = this.geometry.doors.push(mesh) - 1;
+                mesh.canToggle = true;
                 mesh.position.set(xx, CELL_SIZE / 2, yy);
-                this.geometry.doors.push(mesh);
                 game.objects.push(mesh);
                 game.scene.add(mesh);
+
+                // Create a dummy rotator
+                // Note: this is all a bit hacky, but it works
+                var dummy = new THREE.Object3D();
+                mesh.dummy = dummy;
+                dummy.rotation.y = Math.PI;
+                if (cell.doorType === "horizontal") {
+                    dummy.position.set(
+                        mesh.position.x + CELL_SIZE / 4,
+                        mesh.position.y,
+                        mesh.position.z);
+                    mesh.position.set(CELL_SIZE / 4, 0, 0);
+                } else if (cell.doorType === "vertical") {
+                    dummy.position.set(
+                        mesh.position.x,
+                        mesh.position.y,
+                        mesh.position.z + CELL_SIZE / 4);
+                    mesh.position.set(0, 0, CELL_SIZE / 4);
+                }
+                dummy.add(mesh);
+                game.scene.add(dummy);
 
                 // Generate extra wall solids to fill in gaps
                 if (cell.doorType === "vertical") {
@@ -450,6 +477,33 @@ function Level (numRooms, game) {
                     continue;
                 }
             }
+        }
+    };
+
+
+    // Toggle the specified door open or closed
+    // ----------------------------------------
+    this.toggleDoor = function (index) { 
+        if (index < 0 || index >= this.geometry.doors.length) {
+            console.warn("Warning: attempted to toggle non-existent door");
+            return;
+        }
+
+        var door = this.geometry.doors[index];
+        if (door.doorState === "closed" && door.canToggle) {
+            door.dummy.rotation.y = Math.PI / 2;
+            door.doorState = "open";
+            door.canToggle = false;
+            setTimeout(function () {
+                door.canToggle = true;
+            }, DOOR_TIMEOUT);
+        } else if (door.doorState === "open" && door.canToggle) {
+            door.dummy.rotation.y = Math.PI;
+            door.doorState = "closed";
+            door.canToggle = false;
+            setTimeout(function () {
+                door.canToggle = true;
+            }, DOOR_TIMEOUT);
         }
     };
 

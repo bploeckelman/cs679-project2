@@ -147,11 +147,16 @@ function Game(renderer, canvas) {
         this.camera.lookAt(look);
 
         // Update the view ray (center of canvas into screen)
+        // NOTE: the near/far range is set short for doors
+        //   another way to handle this would be to check the .distance
+        //   property of the intersects[0].object when using ray for 
+        //   object intersection testing.
         rayVec = new THREE.Vector3(0,0,1);
         this.projector.unprojectVector(rayVec, this.camera);
         input.viewRay = new THREE.Ray(
-            this.player.position,
-            rayVec.subSelf(this.player.position).normalize()
+            this.player.position,                             // origin
+            rayVec.subSelf(this.player.position).normalize(), // direction
+            0, 40                                             // near, far
         );
 
         // Handle bullets
@@ -165,6 +170,16 @@ function Game(renderer, canvas) {
         }
 
         if (input.click === 1) {
+            // Toggle doors if there are any directly in line of sight 
+            var intersects = input.viewRay.intersectObjects(this.objects),
+                selected = null;
+            if (intersects.length > 0) {
+                selected = intersects[0].object; 
+                if (selected.name === "door") {
+                    this.level.toggleDoor(selected.doorIndex);
+                }
+            }
+
             // Slow down firing rate if player is holding the mouse button down
             this.bulletDelay += this.clock.getDelta();
             if (this.bulletDelay > refireTime) {
