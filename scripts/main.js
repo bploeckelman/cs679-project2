@@ -3,8 +3,8 @@
 // ----------------------------------------------------------------------------
 (function initialize() {
     var canvas = document.getElementById("canvas"),
-        canvasWidth = 800,
-        canvasHeight = 600,
+        canvasWidth = window.innerWidth,
+        canvasHeight = window.innerHeight,
         renderer = new THREE.WebGLRenderer({
             antialias: true,
             canvas: canvas,
@@ -24,10 +24,7 @@
 
     // Style html a bit
     document.getElementsByTagName("body")[0].style.background = "rgb(64,64,64)";
-    document.getElementById("container").style.width = canvasWidth + "px";
-    document.getElementById("container").style.height = canvasHeight + "px";
-    document.getElementById("container").style.margin = "auto auto";
-    document.getElementById("container").style.border = "4px solid rgb(0,0,128)";
+
 
     // Setup sizes and add the renderer to the document 
     canvas.width = canvasWidth;
@@ -41,16 +38,15 @@
     stats.domElement.style.top = canvas.offsetTop + 4 + "px";
     stats.domElement.style.left = canvas.offsetLeft + "px";
     document.getElementById("container").appendChild(stats.domElement);
-    window.onresize =  function (event) {
-        stats.domElement.style.top = canvas.offsetTop + 4 + "px";
-        stats.domElement.style.left = canvas.offsetLeft + "px";
-    };
+
+   
 
     // Setup input handlers and populate input data object
     setupInput(inputData);
 
     // Create Game object
     game = new Game(renderer, canvas);
+	
 
     // Enter main loop
     (function mainLoop() {
@@ -60,7 +56,17 @@
         game.render();
         stats.end();
     })();
+	
+	window.onresize = function(event){
+       	game.camera.aspect = window.innerWidth / window.innerHeight;
+		game.camera.updateProjectionMatrix();
+		var canv = document.getElementById("canvas");
+		canv.height = window.innerHeight;
+		canv.width = window.innerWidth;
+		renderer.setSize( window.innerWidth, window.innerHeight );
+	}
 })();
+
 
 
 // ----------------------------------------------------------------------------

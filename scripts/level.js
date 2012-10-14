@@ -560,8 +560,8 @@ function Level (numRooms, game) {
         mapCanvas.width  = MAP_CELL_SIZE * NUM_CELLS.x;
         mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
         // TODO: have to handle window resizing
-        mapCanvas.style.top  = (mainCanvas.height - mapCanvas.height + 12) + "px";
-        mapCanvas.style.left = (mainCanvas.width  - 20) + "px";
+        mapCanvas.style.bottom  = 0;
+        mapCanvas.style.right = 0;
         document.getElementById("container").appendChild(mapCanvas);
 
         // Save the 2d context for this canvas
