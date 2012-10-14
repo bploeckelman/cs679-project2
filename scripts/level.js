@@ -5,7 +5,8 @@ var CELL_TYPES = {
         door: "+",
         downstairs: "x",
         upstairs: "^",
-        light: "o"
+        light: "o",
+        start: "*"
     },
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES);
 
@@ -28,6 +29,7 @@ function Level (numRooms, game) {
     this.mapCanvas  = null;
     this.mapContext = null;
     this.mapColors = {};
+    this.startPos  = new THREE.Vector2();
 
 
     // ------------------------------------------------------------------------
@@ -38,7 +40,7 @@ function Level (numRooms, game) {
         MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8,
         MAP_CELL_SIZE = 8,
-        DOOR_TIMEOUT  = 250; // milliseconds between door toggles
+        DOOR_TIMEOUT  = 200; // milliseconds between door toggles
 
 
     // ------------------------------------------------------------------------
@@ -102,6 +104,44 @@ function Level (numRooms, game) {
             if (this.addRoom(room)) {
                 break;
             }
+        }
+    };
+
+
+    // Generate all the rooms for a level
+    // ----------------------------------
+    this.generateRooms = function () {
+        var iters = 0;
+
+        this.rooms = [];
+
+        // Seed the this with a randomly sized starting room
+        room = this.createRandomlySizedRoom();
+        room.pos.x = Math.floor(NUM_CELLS.x / 2) - Math.floor(room.size.x / 2);
+        room.pos.y = Math.floor(NUM_CELLS.y / 2) - Math.floor(room.size.y / 2);
+        this.addRoom(room);
+
+        // Keep generating rooms until...
+        while (this.rooms.length < numRooms // they've all been added
+            || iters++ < numRooms * 10) {   // and we haven't tried too often 
+            this.generateRoom();
+        }
+
+        // Put a light in each room
+        this.generateLights();
+
+        console.log("Generated " + this.rooms.length + " rooms.");
+    };
+
+
+    // Generate lights in each room of a level
+    // ---------------------------------------
+    this.generateLights = function () {
+        for(i = 0; i < this.rooms.length; ++i) {
+            // Add a light at a random location in every room
+            x = randInt(1, this.rooms[i].size.x - 1);
+            y = randInt(1, this.rooms[i].size.y - 1);
+            this.rooms[i].tiles[y][x] = CELL_TYPES.light;
         }
     };
 
@@ -206,6 +246,14 @@ function Level (numRooms, game) {
         }
     };
 
+
+    // Create features in the map
+    // --------------------------------
+    this.generateFeatures = function () {
+        this.addDoors();
+        this.addStartPosition();
+    };
+
     
     // Creates new geometry based on grid layout
     // -----------------------------------------
@@ -229,7 +277,7 @@ function Level (numRooms, game) {
 
             if (cell.type === CELL_TYPES.void) {
                 continue;
-            } else if (cell.type === CELL_TYPES.empty) {
+            } else if (cell.type === CELL_TYPES.empty || cell.type === CELL_TYPES.start) {
                 // Generate floor geometry
                 mat.map = floorTexture;
                 mesh = new THREE.Mesh(geom, mat);
@@ -240,15 +288,13 @@ function Level (numRooms, game) {
                 game.scene.add(mesh);
 
                 // Generate ceiling geometry
-                /*
-                mat.map = ceilTexture;
-                mesh = new THREE.Mesh(geom, mat);
+                mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: ceilTexture }));
                 mesh.rotation.x = Math.PI / 2;
                 mesh.position.set(xx, CELL_SIZE, yy);
                 this.geometry.ceils.push(mesh);
                 game.objects.push(mesh);
                 game.scene.add(mesh);
-                */
             } else if (cell.type === CELL_TYPES.wall) {
                 // TODO: figure out if this is a shared wall and 
                 //       generate only the required geometry 
@@ -277,15 +323,13 @@ function Level (numRooms, game) {
                 game.scene.add(mesh);
 
                 // Generate ceiling geometry
-                /*
-                mat.map = ceilTexture;
-                mesh = new THREE.Mesh(geom, mat);
+                mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: ceilTexture }));
                 mesh.rotation.x = Math.PI / 2;
                 mesh.position.set(xx, CELL_SIZE, yy);
                 this.geometry.ceils.push(mesh);
                 game.objects.push(mesh);
                 game.scene.add(mesh);
-                */
 
                 // Generate door cube, oriented appropriately
                 // ------------------------------------------
@@ -408,15 +452,13 @@ function Level (numRooms, game) {
                 game.scene.add(mesh);
 
                 // Generate ceiling geometry
-                /*
-                mat.map = ceilTexture;
-                mesh = new THREE.Mesh(geom, mat);
+                mesh = new THREE.Mesh(geom,
+                        new THREE.MeshLambertMaterial({ map: ceilTexture }));
                 mesh.rotation.x = Math.PI / 2;
                 mesh.position.set(xx, CELL_SIZE, yy);
                 this.geometry.ceils.push(mesh);
                 game.objects.push(mesh);
                 game.scene.add(mesh);
-                */
 
                 // Add a light if we don't already have too many
                 if (game.lights.length < MAX_LIGHTS) {
@@ -508,10 +550,20 @@ function Level (numRooms, game) {
     };
 
 
-    // TODO: Add starting location for player
-    // --------------------------------------
+    // Add randomized starting location for player
+    // -------------------------------------------
     this.addStartPosition = function () {
+        var x, y;
 
+        while (true) { 
+            x = randInt(1, NUM_CELLS.x - 1);
+            y = randInt(1, NUM_CELLS.y - 1);
+            if (this.grid[y][x].type === CELL_TYPES.empty) {
+                this.grid[y][x].type === CELL_TYPES.start;
+                this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
+                break;
+            }
+        }
     };
 
 
@@ -539,9 +591,10 @@ function Level (numRooms, game) {
         this.mapColors.empty      = "#000000";
         this.mapColors.wall       = "#c0c0c0";
         this.mapColors.door       = "#00ffff";
-        this.mapColors.upstairs   = "#00ff00";
-        this.mapColors.downstairs = "#008000";
+        this.mapColors.upstairs   = "#a000a0";
+        this.mapColors.downstairs = "#200020";
         this.mapColors.light      = "#aaaa00";
+        this.mapColors.start      = "#00ff00";
     };
 
 
@@ -575,6 +628,7 @@ function Level (numRooms, game) {
                 case CELL_TYPES.upstairs:   color = this.mapColors.upstairs;   break;
                 case CELL_TYPES.downstairs: color = this.mapColors.downstairs; break;
                 case CELL_TYPES.light:      color = this.mapColors.light;      break;
+                case CELL_TYPES.start:      color = this.mapColors.start;      break;
             }
 
             if (cell.type !== CELL_TYPES.void) {
@@ -609,42 +663,13 @@ function Level (numRooms, game) {
     // Populates this room object on creation
     // ------------------------------------------------------------------------
     (function generate(level, numRooms) {
-        var i, x, y, room, iters = 0;
-
         console.info("Generating level...");
-
-        level.rooms = [];
         level.generateGridCells();
-
-        // Seed the level with a randomly sized starting room
-        room = level.createRandomlySizedRoom();
-        room.pos.x = Math.floor(NUM_CELLS.x / 2) - Math.floor(room.size.x / 2);
-        room.pos.y = Math.floor(NUM_CELLS.y / 2) - Math.floor(room.size.y / 2);
-        level.addRoom(room);
-
-        // Keep generating rooms until we reach the limit
-        // or we've tried too many times
-        while (level.rooms.length < numRooms && iters++ < numRooms * 10) {
-            level.generateRoom();
-        }
-        console.log("Generated " + level.rooms.length + " rooms.");
-
-        // TODO: Randomly add doors between touching rooms
-
-        // Randomly add other features as desired
-        // Add Lights
-        for(i = 0; i < level.rooms.length; ++i) {
-            // Add a light at a random location in every room
-            x = randInt(1, level.rooms[i].size.x - 1);
-            y = randInt(1, level.rooms[i].size.y - 1);
-            level.rooms[i].tiles[y][x] = CELL_TYPES.light;
-        }
-
+        level.generateRooms();
         level.populateGrid();
-        level.addDoors();
-        level.generateGeometry();
+        level.generateFeatures();
         level.generateMinimap();
-
+        level.generateGeometry();
         console.info("Level generation completed.");
 
         level.debugPrint("grid");

@@ -44,12 +44,16 @@ function Game(renderer, canvas) {
         game.scene = new THREE.Scene();
         game.scene.add(new THREE.AmbientLight(0x101010));
 
+        // Load the test level
+        game.level = new Level(10, game);
+
         // Setup player
         game.player = new THREE.Mesh(
             new THREE.CubeGeometry(10, 22, 5),
             new THREE.MeshBasicMaterial({ color: 0x00ff00 })
         );
-        game.player.position.set(320, 200, 320);
+        game.player.position.set(
+            game.level.startPos.x, 16, game.level.startPos.y);
         game.scene.add(game.player);
 
         // Setup camera
@@ -67,9 +71,6 @@ function Game(renderer, canvas) {
             game.player.position.y + 32,
             game.player.position.z);
         game.scene.add(game.lights[0]);
-
-        // Load the test level
-        game.level = new Level(10, game);
 
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
@@ -156,7 +157,7 @@ function Game(renderer, canvas) {
         input.viewRay = new THREE.Ray(
             this.player.position,                             // origin
             rayVec.subSelf(this.player.position).normalize(), // direction
-            0, 40                                             // near, far
+            0, 64                                             // near, far
         );
 
         // Handle bullets
@@ -233,8 +234,8 @@ function Game(renderer, canvas) {
         handleCollisions(this, input);
 
         // HACK: make the player a little bit taller
-        if (this.player.position.y < 20) {
-            this.player.position.y = 20;
+        if (this.player.position.y < 16) {
+            this.player.position.y = 16;
         }
     };
 
