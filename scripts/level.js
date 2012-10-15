@@ -42,7 +42,7 @@ function Level (numRooms, game) {
         MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8,
         MAP_CELL_SIZE = 8,
-        DOOR_TIMEOUT  = 200, // milliseconds between door toggles
+        DOOR_TIMEOUT  = 750, // milliseconds between door toggles
         FLOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/tile.png"),
         CEIL_TEXTURE  = THREE.ImageUtils.loadTexture("images/stone.png"),
         WALL_TEXTURE  = THREE.ImageUtils.loadTexture("images/brick.png"),
@@ -375,16 +375,16 @@ function Level (numRooms, game) {
         dummy.rotation.y = Math.PI;
         if (cell.doorType === "horizontal") {
             dummy.position.set(
-                mesh.position.x + CELL_SIZE / 4,
-                mesh.position.y,
-                mesh.position.z);
-            mesh.position.set(CELL_SIZE / 4, 0, 0);
-        } else if (cell.doorType === "vertical") {
-            dummy.position.set(
                 mesh.position.x,
                 mesh.position.y,
                 mesh.position.z + CELL_SIZE / 4);
             mesh.position.set(0, 0, CELL_SIZE / 4);
+        } else if (cell.doorType === "vertical") {
+            dummy.position.set(
+                mesh.position.x + CELL_SIZE / 4,
+                mesh.position.y,
+                mesh.position.z);
+            mesh.position.set(CELL_SIZE / 4, 0, 0);
         }
         dummy.add(mesh);
         game.scene.add(dummy);
@@ -493,18 +493,34 @@ function Level (numRooms, game) {
             return;
         }
 
-        var door = this.geometry.doors[index];
+        var door = this.geometry.doors[index], tween;
         if (door.doorState === "closed" && door.canToggle) {
-            door.dummy.rotation.y = Math.PI / 2;
+            tween = new TWEEN.Tween({ rot: Math.PI })
+                .to({ rot: Math.PI / 2 }, DOOR_TIMEOUT)
+                .easing(TWEEN.Easing.Elastic.Out)
+                .onUpdate(function() {
+                    door.dummy.rotation.y = this.rot;
+                })
+                .start();
+
             door.doorState = "open";
             door.canToggle = false;
+
             setTimeout(function () {
                 door.canToggle = true;
             }, DOOR_TIMEOUT);
         } else if (door.doorState === "open" && door.canToggle) {
-            door.dummy.rotation.y = Math.PI;
+            tween = new TWEEN.Tween({ rot: Math.PI / 2 })
+                .to({ rot: Math.PI }, DOOR_TIMEOUT)
+                .easing(TWEEN.Easing.Elastic.Out)
+                .onUpdate(function() {
+                    door.dummy.rotation.y = this.rot;
+                })
+                .start();
+
             door.doorState = "closed";
             door.canToggle = false;
+
             setTimeout(function () {
                 door.canToggle = true;
             }, DOOR_TIMEOUT);

@@ -237,6 +237,8 @@ function Game(renderer, canvas) {
         if (this.player.position.y < 16) {
             this.player.position.y = 16;
         }
+
+        TWEEN.update();
     };
 
 
