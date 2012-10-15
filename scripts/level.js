@@ -130,7 +130,7 @@ function Level (numRooms, game) {
 
         // Keep generating rooms until...
         while (this.rooms.length < numRooms // they've all been added
-            || iters++ < numRooms * 10) {   // and we haven't tried too often 
+            && iters++ < numRooms * 10) {   // and we haven't tried too often 
             this.generateRoom();
         }
 
