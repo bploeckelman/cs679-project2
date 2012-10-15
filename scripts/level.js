@@ -8,7 +8,9 @@ var CELL_TYPES = {
         light: "o",
         start: "*"
     },
-    CELL_TYPE_KEYS = Object.keys(CELL_TYPES);
+    CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
+    // Pass as last param into THREE.CubeGeometry() = only generate cube sides
+    TOPLESS_CUBE = {px:true,nx:true, py:false,ny:false, pz:true,nz:true};
 
 // ----------------------------------------------------------------------------
 // Level 
@@ -299,10 +301,10 @@ function Level (numRooms, game) {
 
     // Generate floor geometry
     // -------------------------------- 
+    var FLOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE });
     this.generateFloorGeometry = function (x, y, game) {
         var mesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE }) );
+                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), FLOOR_MATERIAL);
         mesh.rotation.x = -Math.PI / 2;
         mesh.position.set(x, 0, y);
 
@@ -313,10 +315,10 @@ function Level (numRooms, game) {
 
     // Generate ceiling geometry
     // -------------------------------- 
+    var CEIL_MATERIAL = new THREE.MeshLambertMaterial({ map: CEIL_TEXTURE });
     this.generateCeilingGeometry = function (x, y, game) {
         var mesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: CEIL_TEXTURE }) );
+                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), CEIL_MATERIAL);
         mesh.rotation.x = Math.PI / 2;
         mesh.position.set(x, CELL_SIZE, y);
 
@@ -327,17 +329,13 @@ function Level (numRooms, game) {
 
     // Generate wall geometry
     // --------------------------------
+    var WALL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE });
     this.generateWallGeometry = function (x, y, game) {
         // TODO: figure out if this is a shared wall and 
         //       generate only the required geometry 
-        // NOTE: three.js CubeGeometry c'tor takes args
-        //       that specify which sides to create! 
-        //       (and different materials can be applied to each side)
-        // For now, take the easy way out and just generate a full cube
         var mesh = new THREE.Mesh(
-                    new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshLambertMaterial({ map: WALL_TEXTURE }) );
-        //geom.computeTangents();
+                    new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
+                        1,1,1, [], TOPLESS_CUBE), WALL_MATERIAL);
         mesh.geometry.computeFaceNormals();
         mesh.position.set(x, CELL_SIZE / 2, y);
 
@@ -348,13 +346,14 @@ function Level (numRooms, game) {
 
     // Generate door cube, correctly oriented, with dummy rotation node
     // ----------------------------------------------------------------
+    var DOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE });
     this.generateDoorGeometry = function (x, y, game, cell) {
         var cubeSizeX = (cell.doorType === "vertical") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             cubeSizeZ = (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             dummy = new THREE.Object3D(),
             mesh = new THREE.Mesh(
-                    new THREE.CubeGeometry(cubeSizeX, CELL_SIZE, cubeSizeZ),
-                    new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE }) );
+                    new THREE.CubeGeometry(cubeSizeX, CELL_SIZE, cubeSizeZ,
+                        1,1,1, [], TOPLESS_CUBE), DOOR_MATERIAL);
             CELL_SIZE,
         mesh.geometry.computeFaceNormals();
         mesh.name      = "door";
@@ -391,22 +390,23 @@ function Level (numRooms, game) {
 
     // Generates filler cubes for either side of a door
     // ------------------------------------------------
+    var FILL_MATERIAL = new THREE.MeshLambertMaterial({ map: FILL_TEXTURE });
     this.generateDoorFiller = function (x, y, game, cell) {
         var geom, mesh1, mesh2;
 
         if (cell.doorType === "vertical") {
             // FILLER #1
             mesh1 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2),
-                new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }) );
+                new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2,
+                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
             mesh1.position.set(
                 x + (CELL_SIZE / 2) - (CELL_SIZE / 8),
                 CELL_SIZE / 2,
                 y );
             // FILLER #2
             mesh2 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2),
-                new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }) );
+                new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2,
+                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
             mesh2.position.set(
                 x - (CELL_SIZE / 2) + (CELL_SIZE / 8),
                 CELL_SIZE / 2,
@@ -414,16 +414,16 @@ function Level (numRooms, game) {
         } else if (cell.doorType === "horizontal") {
             // FILLER #1
             mesh1 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4),
-                new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }) );
+                new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4,
+                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
             mesh1.position.set(
                 x,
                 CELL_SIZE / 2,
                 y + (CELL_SIZE / 2) - (CELL_SIZE / 8) );
             // FILLER #2
             mesh2 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4),
-                new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }) );
+                new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4,
+                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
             mesh2.position.set(
                 x,
                 CELL_SIZE / 2,

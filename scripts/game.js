@@ -29,7 +29,7 @@ function Game(renderer, canvas) {
     var FOV    = 67,
         ASPECT = canvas.width / canvas.height,
         NEAR   = 1,
-        FAR    = 1000;
+        FAR    = 500;
 
     var eyeup;//eyeup=this.camera.position.y-this.player.position.y
     var debug=0;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
