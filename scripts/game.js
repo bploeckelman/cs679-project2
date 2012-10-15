@@ -13,12 +13,14 @@ function Game(renderer, canvas) {
     this.scene      = null;
     this.camera     = null;
     this.viewRay    = null;
-    this.objects    = [];
+    this.objects    = null;
     this.lights     = [];
     this.bullets    = [];
     this.bulletDelay = 0;
-    this.level      = null;
-    this.player     = [];
+    this.level = null;
+    this.grid = null;
+    this.occupied = 0;
+    this.player = null;
     this.playerDist = [];
     this.oldplayer  = new THREE.Vector3();
     this.oldplayerDist = [];
@@ -37,19 +39,20 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
-    (function init (game) {
+    (function init(game) {
         console.log("Game initializing...");
 
         // Setup scene
         game.scene = new THREE.Scene();
-        game.scene.add(new THREE.AmbientLight(0x101010));
+        //game.scene.add(new THREE.AmbientLight(0x101010));
+        game.scene.add(new THREE.AmbientLight(0x4f4f4f));
 
         // Load the test level
         game.level = new Level(10, game);
 
         // Setup player
         game.player = new THREE.Mesh(
-            new THREE.CubeGeometry(10, 22, 5),
+            new THREE.CubeGeometry(8, 20, 4),
             new THREE.MeshBasicMaterial({ color: 0x00ff00 })
         );
         game.player.position.set(
@@ -58,10 +61,8 @@ function Game(renderer, canvas) {
 
         // Setup camera
         game.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
-        game.camera.position.add(
-            game.player.position,
-            new THREE.Vector3(0, eyeup, debug));
-        game.camera.lookAt(new THREE.Vector3(50,0,50));
+        game.camera.position.set(game.player.position);
+        game.camera.lookAt(new THREE.Vector3(50, 0, 50));
         game.scene.add(game.camera);
 
         // Setup a light that will move with the player
@@ -74,7 +75,7 @@ function Game(renderer, canvas) {
 
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
-    }) (this);
+    })(this);
 
 
     // Update everything in the scene
@@ -95,7 +96,7 @@ function Game(renderer, canvas) {
             bullet,
             bulletVel = 4,
             bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
-            bulletMat = new THREE.MeshLambertMaterial({ 
+            bulletMat = new THREE.MeshLambertMaterial({
                 color: 0xffffff,
                 specular: 0xffffff,
                 shininess: 100
@@ -152,7 +153,7 @@ function Game(renderer, canvas) {
         //   another way to handle this would be to check the .distance
         //   property of the intersects[0].object when using ray for 
         //   object intersection testing.
-        rayVec = new THREE.Vector3(0,0,1);
+        rayVec = new THREE.Vector3(0, 0, 1);
         this.projector.unprojectVector(rayVec, this.camera);
         input.viewRay = new THREE.Ray(
             this.player.position,                             // origin
@@ -166,16 +167,23 @@ function Game(renderer, canvas) {
         // TODO: limit amount of ammunition!
 
         // This allows the player to fire as fast as they can click
-        if (input.click === 0) { 
-            this.bulletDelay = refireTime; 
+        var CELL_SIZE = 32;
+        var px = Math.floor(this.player.position.x) + CELL_SIZE / 2;
+        var pz = Math.floor(this.player.position.z) + CELL_SIZE / 2;
+
+        // Get the room index of the currently occupied cell
+        this.occupied = this.grid[Math.floor(pz / CELL_SIZE)][Math.floor(px / CELL_SIZE)].roomIndex[0];
+
+        if (input.click === 0) {
+            this.bulletDelay = refireTime;
         }
 
         if (input.click === 1) {
-            // Toggle doors if there are any directly in line of sight 
-            var intersects = input.viewRay.intersectObjects(this.objects),
+            // Toggle doors if there are any directly in line of sight             
+            var intersects = input.viewRay.intersectObjects(this.objects[this.occupied]),
                 selected = null;
             if (intersects.length > 0) {
-                selected = intersects[0].object; 
+                selected = intersects[0].object;
                 if (selected.name === "door") {
                     this.level.toggleDoor(selected.doorIndex);
                 }
@@ -192,7 +200,7 @@ function Game(renderer, canvas) {
                     vel: new THREE.Vector3(
                         input.viewRay.direction.x * bulletVel,
                         input.viewRay.direction.y * bulletVel,
-                        input.viewRay.direction.z * bulletVel 
+                        input.viewRay.direction.z * bulletVel
                     ),
                     // Adding viewRay.direction moves the bullet 
                     // out in front of the camera a bit so it isn't clipped
@@ -212,12 +220,12 @@ function Game(renderer, canvas) {
 
         // Update all the bullets, move backwards through array 
         // to avoid problems when removing bullets
-        for(var i = this.bullets.length - 1; i >= 0; --i) {
+        for (var i = this.bullets.length - 1; i >= 0; --i) {
             // Remove bullets that are too old
             // TODO: also remove if bullet has collided with something
             if (--this.bullets[i].lifetime <= 0) {
                 this.scene.remove(this.bullets[i].mesh);
-                this.bullets.splice(i,1);
+                this.bullets.splice(i, 1);
             } else { // Update the bullet's position based on its velocity
                 this.bullets[i].pos.addSelf(this.bullets[i].vel);
                 this.bullets[i].mesh.position = this.bullets[i].pos;
@@ -261,7 +269,7 @@ function handleCollisions (game, input) {
         for (var vertexIndex = 0; vertexIndex < game.player.geometry.vertices.length; vertexIndex++) {
             var directionVector = game.player.geometry.vertices[vertexIndex].clone();
             var ray = new THREE.Ray(game.player.position, directionVector.clone().normalize());
-            var collisionResults = ray.intersectObjects(game.objects);
+            var collisionResults = ray.intersectObjects(game.objects[game.occupied]);
             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < 1e-6) {
                 if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                     var i = 0;
@@ -270,7 +278,7 @@ function handleCollisions (game, input) {
                     if (game.player.position.x - game.oldplayer.x > 0) {
                         for (i = 0.1; i <= game.player.position.x - game.oldplayer.x; i+=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y, game.oldplayer.z), directionVector.clone().normalize());
-                            collisionResults = ray.intersectObjects(game.objects);
+                            collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
@@ -280,7 +288,7 @@ function handleCollisions (game, input) {
                     if (game.player.position.x - game.oldplayer.x < 0) {
                         for (i = -0.1; i >= game.player.position.x - game.oldplayer.x; i-=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y, game.oldplayer.z), directionVector.clone().normalize());
-                            collisionResults = ray.intersectObjects(game.objects);
+                            collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
@@ -291,7 +299,7 @@ function handleCollisions (game, input) {
                     if (game.player.position.y - game.oldplayer.y > 0) {
                         for (j = 0.1; j <= game.player.position.y - game.oldplayer.y; j+=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z), directionVector.clone().normalize());
-                            collisionResults = ray.intersectObjects(game.objects);
+                            collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
@@ -301,7 +309,7 @@ function handleCollisions (game, input) {
                     if (game.player.position.y - game.oldplayer.y < 0) {
                         for (j = -0.1; j >= game.player.position.y - game.oldplayer.y; j-=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z), directionVector.clone().normalize());
-                            collisionResults = ray.intersectObjects(game.objects);
+                            collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
@@ -312,7 +320,7 @@ function handleCollisions (game, input) {
                     if (game.player.position.z - game.oldplayer.z > 0) {
                         for (k = 0.1; k <= game.player.position.z - game.oldplayer.z; k+=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z + k), directionVector.clone().normalize());
-                            collisionResults = ray.intersectObjects(game.objects);
+                            collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
@@ -322,7 +330,7 @@ function handleCollisions (game, input) {
                     if (game.player.position.z - game.oldplayer.z < 0) {
                         for (k = -0.1; k >= game.player.position.z - game.oldplayer.z; k-=0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z + k), directionVector.clone().normalize());
-                            collisionResults = ray.intersectObjects(game.objects);
+                            collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                                 break;
                             }
@@ -335,7 +343,7 @@ function handleCollisions (game, input) {
                 }
 
                 ray = new THREE.Ray(new THREE.Vector3().add(game.player.position, new THREE.Vector3(0, -0.1, 0)), directionVector.clone().normalize());
-                collisionResults = ray.intersectObjects(game.objects);
+                collisionResults = ray.intersectObjects(game.objects[game.occupied]);
                 if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                     input.hold = 1;
                     input.v = 0;
