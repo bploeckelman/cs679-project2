@@ -294,7 +294,6 @@ function Level (numRooms, game) {
                 this.generateFloorGeometry(xx, yy, game);
                 this.generateCeilingGeometry(xx, yy, game);
                 this.generateLight(xx, yy, game);
-
             }
         }
     };
@@ -320,7 +319,7 @@ function Level (numRooms, game) {
         var mesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), CEIL_MATERIAL);
         mesh.rotation.x = Math.PI / 2;
-        mesh.position.set(x, CELL_SIZE, y);
+        mesh.position.set(x, 2 * CELL_SIZE, y);
 
         game.objects.push(mesh);
         game.scene.add(mesh);
@@ -330,14 +329,19 @@ function Level (numRooms, game) {
     // Generate wall geometry
     // --------------------------------
     var WALL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE });
+    var WALL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE,
+                                               1, 2, 1, [], TOPLESS_CUBE);
+    var WALL_FULL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
+            1, 1, 1, [], {px:true,nx:true, py:false,ny:true, pz:true,nz:true});
+
     this.generateWallGeometry = function (x, y, game) {
         // TODO: figure out if this is a shared wall and 
         //       generate only the required geometry 
-        var mesh = new THREE.Mesh(
-                    new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
-                        1,1,1, [], TOPLESS_CUBE), WALL_MATERIAL);
+        WALL_MATERIAL.map.repeat = new THREE.Vector2(1, 2);
+        WALL_MATERIAL.map.wrapT = THREE.RepeatWrapping;
+        var mesh = new THREE.Mesh(WALL_GEOMETRY, WALL_MATERIAL);
         mesh.geometry.computeFaceNormals();
-        mesh.position.set(x, CELL_SIZE / 2, y);
+        mesh.position.set(x, CELL_SIZE, y);
 
         game.objects.push(mesh);
         game.scene.add(mesh);
@@ -386,6 +390,17 @@ function Level (numRooms, game) {
 
         // Generate the filler blocks around door
         this.generateDoorFiller(x, y, game, cell);
+
+        // Generate a wall block above the door
+        WALL_MATERIAL.map.repeat = new THREE.Vector2(0, 0);
+        WALL_MATERIAL.map.wrapT = THREE.ClampToEdgeWrapping;
+        mesh = new THREE.Mesh(WALL_FULL_GEOMETRY, WALL_MATERIAL);
+        mesh.geometry.computeFaceNormals();
+        mesh.position.set(x, 1.5 * CELL_SIZE, y);
+
+        game.objects.push(mesh);
+        game.scene.add(mesh);
+        this.geometry.walls.push(mesh);
     };
 
     // Generates filler cubes for either side of a door
