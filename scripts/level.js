@@ -207,7 +207,7 @@ function Level (numRooms, game) {
                 if (xx >= 0 && xx < NUM_CELLS.x
                  && yy >= 0 && yy < NUM_CELLS.y) {
                     game.grid[yy][xx].type = room.tiles[y][x];                    
-                    game.grid[yy][xx].roomIndex.push(i);
+                    game.grid[yy][xx].roomIndex=i;
                 }
             }
         }
@@ -265,10 +265,14 @@ function Level (numRooms, game) {
     // Creates new geometry based on grid layout
     // -----------------------------------------
     this.generateGeometry = function () {
-        game.objects=new Array(this.rooms.length);
-        for (var i=0;i<this.rooms.length;i++) {
-            game.objects[i]=[];
+        game.objects=new Array(NUM_CELLS.y);
+        for (var i=0;i<NUM_CELLS.y;i++) {
+		game.objects[i]=new Array(NUM_CELLS.x);
+		for (var j=0;j<NUM_CELLS.x;j++) {
+		    game.objects[i][j]=[];
+		}
         }
+	console.log(game.objects.length);
 
         var x, y, xx, yy, cell;
 
@@ -311,9 +315,7 @@ function Level (numRooms, game) {
                     new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), FLOOR_MATERIAL);
         mesh.rotation.x = -Math.PI / 2;
         mesh.position.set(x, 0, y);
-        for (var i=0;i<game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex.length;i++) {
-            game.objects[game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex[i]].push(mesh);
-        }
+	game.objects[y/CELL_SIZE][x/CELL_SIZE].push(mesh);
         game.scene.add(mesh);
         this.geometry.floors.push(mesh);
     };
@@ -326,9 +328,7 @@ function Level (numRooms, game) {
                     new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), CEIL_MATERIAL);
         mesh.rotation.x = Math.PI / 2;
         mesh.position.set(x, 2 * CELL_SIZE, y);
-        for (var i=0;i<game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex.length;i++) {
-            game.objects[game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex[i]].push(mesh);
-        }
+	game.objects[y/CELL_SIZE][x/CELL_SIZE].push(mesh);
         game.scene.add(mesh);
         this.geometry.ceils.push(mesh);
     };
@@ -349,10 +349,7 @@ function Level (numRooms, game) {
         var mesh = new THREE.Mesh(WALL_GEOMETRY, WALL_MATERIAL);
         mesh.geometry.computeFaceNormals();
         mesh.position.set(x, CELL_SIZE, y);
-
-        for (var i=0;i<game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex.length;i++) {
-            game.objects[game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex[i]].push(mesh);
-        }
+	game.objects[y/CELL_SIZE][x/CELL_SIZE].push(mesh);
         game.scene.add(mesh);
         this.geometry.walls.push(mesh);
     };
@@ -375,10 +372,8 @@ function Level (numRooms, game) {
         mesh.doorIndex = this.geometry.doors.push(mesh) - 1;
         mesh.position.set(x, CELL_SIZE / 2, y);
 
-        for (var i=0;i<game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex.length;i++) {
-            game.objects[game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex[i]].push(mesh);
-        }
-        //game.scene.add(mesh);
+	game.objects[y/CELL_SIZE][x/CELL_SIZE].push(mesh);
+	game.scene.add(mesh);
 
         // Setup a dummy rotator, Note: this is a bit hacky, but it works
         mesh.dummy = dummy;
@@ -409,9 +404,7 @@ function Level (numRooms, game) {
         mesh.geometry.computeFaceNormals();
         mesh.position.set(x, 1.5 * CELL_SIZE, y);
 
-        for (var i=0;i<game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex.length;i++) {
-            game.objects[game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex[i]].push(mesh);
-        }
+	game.objects[y/CELL_SIZE][x/CELL_SIZE].push(mesh);
         game.scene.add(mesh);
         this.geometry.walls.push(mesh);
     };
@@ -460,9 +453,7 @@ function Level (numRooms, game) {
 
         mesh1.geometry.computeFaceNormals();
         mesh2.geometry.computeFaceNormals();
-        for (var i=0;i<game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex.length;i++) {
-            game.objects[game.grid[y/CELL_SIZE][x/CELL_SIZE].roomIndex[i]].push(mesh1, mesh2);
-        }
+	game.objects[y/CELL_SIZE][x/CELL_SIZE].push(mesh1, mesh2);
         game.scene.add(mesh1);
         game.scene.add(mesh2);
         this.geometry.walls.push(mesh1, mesh2);
@@ -636,7 +627,7 @@ function Level (numRooms, game) {
 
         // Get the room index of the currently occupied cell
         occupied = game.grid[Math.floor(py / MAP_CELL_SIZE)]
-                            [Math.floor(px / MAP_CELL_SIZE)].roomIndex[0];
+                            [Math.floor(px / MAP_CELL_SIZE)].roomIndex;
 
         // Clear the map
         mapContext.save();
@@ -667,7 +658,7 @@ function Level (numRooms, game) {
             }
 
             // Light up all the interior cells of the room the player is currently in
-            if (cell.roomIndex[0] === occupied && cell.isInterior()) {
+            if (cell.roomIndex === occupied && cell.isInterior()) {
                 mapContext.globalAlpha = 1.0;
                 mapContext.fillStyle = "#ffff22";
                 mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
@@ -732,8 +723,6 @@ function Cell(x, y, type) {
     //this.index = new THREE.Vector2(x,y);
     this.type = type;
     this.doorType = null;
-    this.roomIndex=[];
-
 
     this.isInterior = function () {
         // Don't include stairs, as they don't belong next to a door 
