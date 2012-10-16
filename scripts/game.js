@@ -71,6 +71,18 @@ function Game(renderer, canvas) {
             game.player.position.y + 32,
             game.player.position.z);
         game.scene.add(game.lights[0]);
+		
+		//test loading code
+		var loader = new THREE.JSONLoader(true);
+		loader.load( "models/zombie.js",
+			function(geometry) {
+				mesh = new THREE.Mesh(geometry,new THREE.MeshFaceMaterial);
+				mesh.position.set(game.level.startPos.x, 0, game.level.startPos.y-10);
+				mesh.scale.set(15, 12, 15);
+				game.scene.add(mesh);
+				//renderer.render(scene, camera);
+			}
+		);
 
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
