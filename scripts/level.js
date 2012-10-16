@@ -31,6 +31,7 @@ function Level (numRooms, game) {
     this.mapContext = null;
     this.mapColors = {};
     this.startPos  = new THREE.Vector2();
+    this.zombiePos = new THREE.Vector2();
 
 
     // ------------------------------------------------------------------------
@@ -272,7 +273,6 @@ function Level (numRooms, game) {
 		    game.objects[i][j]=[];
 		}
         }
-	console.log(game.objects.length);
 
         var x, y, xx, yy, cell;
 
@@ -541,9 +541,19 @@ function Level (numRooms, game) {
         while (true) { 
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (game.grid[y][x].type === CELL_TYPES.empty) {
-                game.grid[y][x].type === CELL_TYPES.start;
+            if (game.grid[y][x].type == CELL_TYPES.empty) {
+                game.grid[y][x].type = CELL_TYPES.start;
                 this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
+		console.log(game.grid[y][x].type);
+                break;
+            }
+        }
+
+	 while (true) { 
+	     x =randInt(1, NUM_CELLS.x - 1);
+	     y =randInt(1, NUM_CELLS.y - 1);
+            if (game.grid[y][x].type === CELL_TYPES.empty) {	
+                this.zombiePos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
                 break;
             }
         }
@@ -619,11 +629,14 @@ function Level (numRooms, game) {
     // Update minimap
     // --------------------------------
     this.updateMinimap = function () {
-        var i, x, y, xx, yy, px, py, cell, color, occupied;
+        var i, x, y, xx, yy, px, py, zx,zy, cell, color, occupied;
 
         // Calculate the player's position on the minimap
         px = Math.floor(game.player.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
         py = Math.floor(game.player.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+
+	zx = Math.floor(game.zombie.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+        zy = Math.floor(game.zombie.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
 
         // Get the room index of the currently occupied cell
         occupied = game.grid[Math.floor(py / MAP_CELL_SIZE)]
@@ -654,7 +667,7 @@ function Level (numRooms, game) {
                 case CELL_TYPES.upstairs:   color = this.mapColors.upstairs;   break;
                 case CELL_TYPES.downstairs: color = this.mapColors.downstairs; break;
                 case CELL_TYPES.light:      color = this.mapColors.light;      break;
-                case CELL_TYPES.start:      color = this.mapColors.start;      break;
+	    case CELL_TYPES.start:      color = this.mapColors.start;      console.log("BBBBBBBBBBB");break;
             }
 
             // Light up all the interior cells of the room the player is currently in
@@ -677,6 +690,13 @@ function Level (numRooms, game) {
         mapContext.strokeStyle = "#ff0000";
         mapContext.lineWidth = 3;
         mapContext.arc(px, py, 3, 0, 2 * Math.PI, false);
+        mapContext.stroke();
+
+	// Draw the player
+        mapContext.beginPath();
+        mapContext.strokeStyle = "#0000ff";
+        mapContext.lineWidth = 3;
+        mapContext.arc(zx, zy, 3, 0, 2 * Math.PI, false);
         mapContext.stroke();
     };
 

@@ -59,6 +59,17 @@ function Game(renderer, canvas) {
             game.level.startPos.x, 16, game.level.startPos.y);
         game.scene.add(game.player);
 
+	 game.zombie = new THREE.Mesh(
+            new THREE.CubeGeometry(8, 20, 4),
+            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+
+	
+	game.zombie.position.set(
+	    game.level.zombiePos.x, 10, game.level.zombiePos.y);
+        game.scene.add(game.zombie);	    
+	    
+
         // Setup camera
         game.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
         game.camera.position.set(game.player.position);
@@ -180,7 +191,6 @@ function Game(renderer, canvas) {
 		}
 	    }
 	}
-	console.log(this.detectionSet.length);
 
         if (input.click === 0) {
             this.bulletDelay = refireTime;
