@@ -24,21 +24,31 @@ function Level (numRooms, game) {
     this.geometry = {
         floors: [],
         ceils: [],
-        walls: [],
         doors: [],
         dummies: [] // for rotating doors about their edge instead of center
     };
     this.mapCanvas  = null;
     this.mapContext = null;
-    this.mapColors = {};
-    this.startPos  = new THREE.Vector2();
+    this.mapColors  = {};
+    this.startPos   = new THREE.Vector2();
+
+    // Static geometry groups ------------------------
+    // Normal walls
+    this.wallGroup      = new THREE.Object3D();
+    this.wallGeometry   = new THREE.Geometry();
+    // Cubes above doorways
+    this.lintelGroup    = new THREE.Object3D();
+    this.lintelGeometry = new THREE.Geometry();
+    // Door post fillers
+    this.fillGroup      = new THREE.Object3D();
+    this.fillGeometry   = new THREE.Geometry();
 
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
     // ------------------------------------------------------------------------
     var CELL_SIZE = 32,
-        NUM_CELLS = new THREE.Vector2(20, 20),
+        NUM_CELLS = new THREE.Vector2(25, 25),
         MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8,
         MAP_CELL_SIZE = 8,
@@ -46,12 +56,12 @@ function Level (numRooms, game) {
         FLOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/tile.png"),
         CEIL_TEXTURE  = THREE.ImageUtils.loadTexture("images/stone.png"),
         WALL_TEXTURE  = THREE.ImageUtils.loadTexture("images/brick.png"),
-        WALL_REPEAT_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
+        LINTEL_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
         DOOR_TEXTURE  = THREE.ImageUtils.loadTexture("images/door.png"),
         FILL_TEXTURE  = THREE.ImageUtils.loadTexture("images/brown.png");
 
-    WALL_REPEAT_TEXTURE.repeat = new THREE.Vector2(1, 2);
-    WALL_REPEAT_TEXTURE.wrapT = THREE.RepeatWrapping;
+    LINTEL_TEXTURE.repeat = new THREE.Vector2(1, 2);
+    LINTEL_TEXTURE.wrapT  = THREE.RepeatWrapping;
 
     // ------------------------------------------------------------------------
     // Level Methods ----------------------------------------------------------
@@ -300,14 +310,31 @@ function Level (numRooms, game) {
                 this.generateLight(xx, yy);
             }
         }
+
+        // Create merged geometry groups
+        this.wallGroup    = new THREE.Mesh(this.wallGeometry, WALL_MATERIAL);
+        this.lintelGroup  = new THREE.Mesh(this.lintelGeometry, WALL_FULL_MATERIAL);
+        this.fillGroup    = new THREE.Mesh(this.fillGeometry, FILL_MATERIAL);
+
+        // Add merged geometry groups to game object array
+        game.objects.push(this.wallGroup);
+        game.objects.push(this.lintelGroup);
+        game.objects.push(this.fillGroup);
+
+        // Add merged geometry groups to scene
+        game.scene.add(this.wallGroup);
+        game.scene.add(this.lintelGroup);
+        game.scene.add(this.fillGroup);
     };
 
     // Generate floor geometry
+    // TODO: had problems merging plane geometry...
     // -------------------------------- 
-    var FLOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE });
+    var PLANE_GEOMETRY  = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
+        FLOOR_MATERIAL  = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE });
+
     this.generateFloorGeometry = function (x, y) {
-        var mesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), FLOOR_MATERIAL);
+        var mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL);
         mesh.rotation.x = -Math.PI / 2;
         mesh.position.set(x, 0, y);
 
@@ -317,11 +344,12 @@ function Level (numRooms, game) {
     };
 
     // Generate ceiling geometry
+    // TODO: had problems merging plane geometry...
     // -------------------------------- 
     var CEIL_MATERIAL = new THREE.MeshLambertMaterial({ map: CEIL_TEXTURE });
+
     this.generateCeilingGeometry = function (x, y) {
-        var mesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), CEIL_MATERIAL);
+        var mesh = new THREE.Mesh(PLANE_GEOMETRY, CEIL_MATERIAL);
         mesh.rotation.x = Math.PI / 2;
         mesh.position.set(x, 2 * CELL_SIZE, y);
 
@@ -332,35 +360,48 @@ function Level (numRooms, game) {
 
     // Generate wall geometry
     // --------------------------------
-    var WALL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_REPEAT_TEXTURE });
-    var WALL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE,
-                                               1, 2, 1, [], TOPLESS_CUBE);
-    var WALL_FULL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
-            1, 1, 1, [], {px:true,nx:true, py:false,ny:true, pz:true,nz:true});
-    var WALL_FULL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE });
+    // TODO: Clean this up...
+    var NORMAL_MATERIAL    = new THREE.MeshNormalMaterial(),
+        WALL_MATERIAL      = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE }),
+        WALL_FULL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE }),
+        // Geometry -----
+        WALL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE,
+            1, 2, 1, NORMAL_MATERIAL, TOPLESS_CUBE),
+        WALL_FULL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
+            1, 1, 1, NORMAL_MATERIAL,
+            {px:true,nx:true, py:false,ny:true, pz:true,nz:true}),
+        // Mesh -----
+        WALL_MESH = new THREE.Mesh(WALL_GEOMETRY, NORMAL_MATERIAL);
+
+    // Set the material for each face of the wall geometry
+    for(var face in WALL_GEOMETRY.faces) {
+        WALL_GEOMETRY.faces[face].materialIndex = 0;
+    }
+    for(var face in WALL_FULL_GEOMETRY.faces) {
+        WALL_FULL_GEOMETRY.faces[face].materialIndex = 0;
+    }
 
     this.generateWallGeometry = function (x, y) {
-        // TODO: figure out if this is a shared wall and 
-        //       generate only the required geometry 
-        var mesh = new THREE.Mesh(WALL_GEOMETRY, WALL_MATERIAL);
-        mesh.geometry.computeFaceNormals();
-        mesh.position.set(x, CELL_SIZE, y);
-
-        game.objects.push(mesh);
-        game.scene.add(mesh);
-        this.geometry.walls.push(mesh);
+        // Position geometry for the current cell and merge it with the rest 
+        WALL_MESH.position.set(x, CELL_SIZE, y);
+        THREE.GeometryUtils.merge(this.wallGeometry, WALL_MESH);
     };
 
     // Generate door cube, correctly oriented, with dummy rotation node
+    // TODO: fix texture orientation for doors
+    //   it is currently backwards on one side, 
+    //   also the edges of a door should use FILL_TEXTURE     
     // ----------------------------------------------------------------
-    var DOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE });
+    var DOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE }),
+        LINTEL_MESH   = new THREE.Mesh(WALL_FULL_GEOMETRY, NORMAL_MATERIAL);
+
     this.generateDoorGeometry = function (x, y, cell) {
         var cubeSizeX = (cell.doorType === "vertical") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             cubeSizeZ = (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             dummy = new THREE.Object3D(),
             mesh = new THREE.Mesh(
                     new THREE.CubeGeometry(cubeSizeX, CELL_SIZE, cubeSizeZ,
-                        1,1,1, [], TOPLESS_CUBE), DOOR_MATERIAL);
+                        1,1,1, NORMAL_MATERIAL, TOPLESS_CUBE), DOOR_MATERIAL);
             CELL_SIZE,
         mesh.geometry.computeFaceNormals();
         mesh.name      = "door";
@@ -394,64 +435,43 @@ function Level (numRooms, game) {
         // Generate the filler blocks around door
         this.generateDoorFiller(x, y, cell);
 
-        // Generate a wall block above the door
-        mesh = new THREE.Mesh(WALL_FULL_GEOMETRY, WALL_FULL_MATERIAL);
-        mesh.geometry.computeFaceNormals();
-        mesh.position.set(x, 1.5 * CELL_SIZE, y);
-
-        game.objects.push(mesh);
-        game.scene.add(mesh);
-        this.geometry.walls.push(mesh);
+        // Generate a wall block above the door and merge it with the rest
+        LINTEL_MESH.position.set(x, 1.5 * CELL_SIZE, y);
+        THREE.GeometryUtils.merge(this.lintelGeometry, LINTEL_MESH);
     };
 
     // Generates filler cubes for either side of a door
     // ------------------------------------------------
-    var FILL_MATERIAL = new THREE.MeshLambertMaterial({ map: FILL_TEXTURE });
+    var FILL_MATERIAL = new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }),
+        FILLV_GEOMETRY = new THREE.CubeGeometry(
+                CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2,
+                1, 1, 1, NORMAL_MATERIAL, TOPLESS_CUBE),
+        FILLH_GEOMETRY = new THREE.CubeGeometry(
+                CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4,
+                1, 1, 1, NORMAL_MATERIAL, TOPLESS_CUBE);
+
     this.generateDoorFiller = function (x, y, cell) {
         var geom, mesh1, mesh2;
 
         if (cell.doorType === "vertical") {
             // FILLER #1
-            mesh1 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2,
-                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
-            mesh1.position.set(
-                x + (CELL_SIZE / 2) - (CELL_SIZE / 8),
-                CELL_SIZE / 2,
-                y );
+            mesh1 = new THREE.Mesh(FILLV_GEOMETRY, NORMAL_MATERIAL);
+            mesh1.position.set(x + (CELL_SIZE / 2) - (CELL_SIZE / 8), CELL_SIZE / 2, y);
             // FILLER #2
-            mesh2 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2,
-                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
-            mesh2.position.set(
-                x - (CELL_SIZE / 2) + (CELL_SIZE / 8),
-                CELL_SIZE / 2,
-                y );
+            mesh2 = new THREE.Mesh(FILLV_GEOMETRY, NORMAL_MATERIAL);
+            mesh2.position.set(x - (CELL_SIZE / 2) + (CELL_SIZE / 8), CELL_SIZE / 2, y);
         } else if (cell.doorType === "horizontal") {
             // FILLER #1
-            mesh1 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4,
-                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
-            mesh1.position.set(
-                x,
-                CELL_SIZE / 2,
-                y + (CELL_SIZE / 2) - (CELL_SIZE / 8) );
+            mesh1 = new THREE.Mesh(FILLH_GEOMETRY, NORMAL_MATERIAL);
+            mesh1.position.set(x, CELL_SIZE / 2, y + (CELL_SIZE / 2) - (CELL_SIZE / 8) );
             // FILLER #2
-            mesh2 = new THREE.Mesh(
-                new THREE.CubeGeometry(CELL_SIZE / 2, CELL_SIZE, CELL_SIZE / 4,
-                    1,1,1, [], TOPLESS_CUBE), FILL_MATERIAL);
-            mesh2.position.set(
-                x,
-                CELL_SIZE / 2,
-                y - (CELL_SIZE / 2) + (CELL_SIZE / 8) );
+            mesh2 = new THREE.Mesh(FILLH_GEOMETRY, NORMAL_MATERIAL);
+            mesh2.position.set(x, CELL_SIZE / 2, y - (CELL_SIZE / 2) + (CELL_SIZE / 8) );
         }
 
-        mesh1.geometry.computeFaceNormals();
-        mesh2.geometry.computeFaceNormals();
-        game.objects.push(mesh1, mesh2);
-        game.scene.add(mesh1);
-        game.scene.add(mesh2);
-        this.geometry.walls.push(mesh1, mesh2);
+        // Merge the positioned filler geometry in with the rest
+        THREE.GeometryUtils.merge(this.fillGeometry, mesh1);
+        THREE.GeometryUtils.merge(this.fillGeometry, mesh2);
     };
 
     // Generate a light in the specified cell
