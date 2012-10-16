@@ -19,7 +19,7 @@ function Level (numRooms, game) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
-    this.grid  = null;
+    game.grid  = null;
     this.rooms = null;
     this.geometry = {
         floors: [],
@@ -31,6 +31,7 @@ function Level (numRooms, game) {
     this.mapContext = null;
     this.mapColors  = {};
     this.startPos   = new THREE.Vector2();
+    this.zombiePos = new THREE.Vector2();
 
     // Static geometry groups ------------------------
     // Normal walls
@@ -220,8 +221,8 @@ function Level (numRooms, game) {
                 // set the grid type to the room cell type
                 if (xx >= 0 && xx < NUM_CELLS.x
                  && yy >= 0 && yy < NUM_CELLS.y) {
-                    this.grid[yy][xx].type = room.tiles[y][x];                    
-                    this.grid[yy][xx].roomIndex = i;
+                    game.grid[yy][xx].type = room.tiles[y][x];                    
+                    game.grid[yy][xx].roomIndex = i;
                 }
             }
         }
@@ -233,11 +234,11 @@ function Level (numRooms, game) {
     this.generateGridCells = function () {
         var x, y;
 
-        this.grid = new Array(NUM_CELLS.y);
+        game.grid = new Array(NUM_CELLS.y);
         for(y = 0; y < NUM_CELLS.y; ++y) {
-            this.grid[y] = new Array(NUM_CELLS.x);
+            game.grid[y] = new Array(NUM_CELLS.x);
             for(x = 0; x < NUM_CELLS.x; ++x) {
-                this.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
+                game.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
             }
         }
     };
@@ -259,7 +260,7 @@ function Level (numRooms, game) {
             // Print entire grid layout
             for(y = 0; y < NUM_CELLS.y; ++y) {
                 for(x = 0; x < NUM_CELLS.x; ++x) {
-                    str += this.grid[y][x].type;
+                    str += game.grid[y][x].type;
                 }
                 str += "\n";
             }
@@ -283,7 +284,7 @@ function Level (numRooms, game) {
 
         for(y = 0; y < NUM_CELLS.y; ++y)
         for(x = 0; x < NUM_CELLS.x; ++x) {
-            cell = this.grid[y][x];
+            cell = game.grid[y][x];
             xx = x * CELL_SIZE;
             yy = y * CELL_SIZE;
 
@@ -585,9 +586,18 @@ function Level (numRooms, game) {
         while (true) { 
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (this.grid[y][x].type === CELL_TYPES.empty) {
-                this.grid[y][x].type === CELL_TYPES.start;
+            if (game.grid[y][x].type == CELL_TYPES.empty) {
+                game.grid[y][x].type = CELL_TYPES.start;
                 this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
+                break;
+            }
+        }
+
+	while (true) { 
+	    x =randInt(1, NUM_CELLS.x - 1);
+	    y =randInt(1, NUM_CELLS.y - 1);
+            if (game.grid[y][x].type == CELL_TYPES.empty) {	
+                this.zombiePos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
                 break;
             }
         }
@@ -601,11 +611,11 @@ function Level (numRooms, game) {
 
         for(y = 1; y < NUM_CELLS.y - 1; ++y)
         for(x = 1; x < NUM_CELLS.x - 1; ++x) { 
-            cell = this.grid[y][x];
+            cell = game.grid[y][x];
 
             if (cell.type === CELL_TYPES.wall) {
-                cellA = this.grid[y - 1][x];
-                cellB = this.grid[y + 1][x];
+                cellA = game.grid[y - 1][x];
+                cellB = game.grid[y + 1][x];
                 if (cellA.isInterior() && cellB.isInterior()) {
                     // Found a potential door!, add location to the list
                     console.log("Potential door @ (" + x + "," + y + ")");
@@ -614,8 +624,8 @@ function Level (numRooms, game) {
                     // TODO
                     continue;
                 }
-                cellA = this.grid[y][x - 1];
-                cellB = this.grid[y][x + 1];
+                cellA = game.grid[y][x - 1];
+                cellB = game.grid[y][x + 1];
                 if (cellA.isInterior() && cellB.isInterior()) {
                     // Found a potential door!, add location to the list
                     console.log("Potential door @ (" + x + "," + y + ")");
@@ -663,14 +673,17 @@ function Level (numRooms, game) {
     // Update minimap
     // --------------------------------
     this.updateMinimap = function () {
-        var i, x, y, xx, yy, px, py, cell, color, occupied;
+        var i, x, y, xx, yy, px, py, zx, zy, cell, color, occupied;
 
         // Calculate the player's position on the minimap
         px = Math.floor(game.player.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
         py = Math.floor(game.player.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
 
+	zx = Math.floor(game.zombie.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+        zy = Math.floor(game.zombie.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+
         // Get the room index of the currently occupied cell
-        occupied = this.grid[Math.floor(py / MAP_CELL_SIZE)]
+        occupied = game.grid[Math.floor(py / MAP_CELL_SIZE)]
                             [Math.floor(px / MAP_CELL_SIZE)].roomIndex;
 
         // Clear the map
@@ -685,7 +698,7 @@ function Level (numRooms, game) {
         // Draw the map cells
         for(y = 0; y < NUM_CELLS.y; ++y)
         for(x = 0; x < NUM_CELLS.x; ++x) {
-            cell = this.grid[y][x]; 
+            cell = game.grid[y][x]; 
             xx = x * MAP_CELL_SIZE;
             yy = y * MAP_CELL_SIZE;
 
@@ -722,6 +735,14 @@ function Level (numRooms, game) {
         mapContext.lineWidth = 3;
         mapContext.arc(px, py, 3, 0, 2 * Math.PI, false);
         mapContext.stroke();
+	
+	// Draw the zombie
+        mapContext.beginPath();
+        mapContext.strokeStyle = "#0000ff";
+        mapContext.lineWidth = 3;
+        mapContext.arc(zx, zy, 3, 0, 2 * Math.PI, false);
+        mapContext.stroke();
+
     };
 
 

@@ -18,10 +18,29 @@ function Game(renderer, canvas) {
     this.bullets    = [];
     this.bulletDelay = 0;
     this.level      = null;
-    this.player     = [];
-    this.playerDist = [];
+    this.player     = null;
+    this.zombie     = null;
     this.oldplayer  = new THREE.Vector3();
-    this.oldplayerDist = [];
+    this.grid       = null;
+    this.searchDelay = 0;
+    this.queue     = [];
+    this.element  =  {
+	sz:0,
+	sx:0,
+	pz:0,
+	px:0,
+	nz:0,
+	nx:0
+    };
+
+    function element(sz,sx,pz,px,nz,nx) {
+	this.sz=sz;
+	this.sx=sx;
+	this.pz=pz;
+	this.px=px;
+	this.nz=nz;
+	this.nx=nx;
+    }
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -55,6 +74,16 @@ function Game(renderer, canvas) {
         game.player.position.set(
             game.level.startPos.x, 16, game.level.startPos.y);
         game.scene.add(game.player);
+
+	game.zombie = new THREE.Mesh(
+            new THREE.CubeGeometry(8, 20, 4),
+            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+	
+	game.zombie.position.set(
+	    game.level.zombiePos.x, 10, game.level.zombiePos.y);
+        game.scene.add(game.zombie);
+
 
         // Setup camera
         game.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -209,6 +238,17 @@ function Game(renderer, canvas) {
                 this.scene.add(bullet.mesh);
             }
         }
+
+	// if (this.searchDelay>=1) {
+	//     this.searchDelay=0;
+	//     this.queue=[];
+	//     var sz=Math.floor(Math.floor(this.zombie.position.z)/CELL_SIZE+0.5);
+	//     var sx=Math.floor(Math.floor(this.zombie.position.x)/CELL_SIZE+0.5);
+	//     this.queue.push(new element(sz,sx,0,0,0,0));		  
+	// }
+	// else{
+	//     this.searchDelay+=this.clock.getDelta();
+	// }
 
         // Update all the bullets, move backwards through array 
         // to avoid problems when removing bullets
