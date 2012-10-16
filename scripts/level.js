@@ -388,21 +388,51 @@ function Level (numRooms, game) {
     };
 
     // Generate door cube, correctly oriented, with dummy rotation node
-    // TODO: fix texture orientation for doors
-    //   it is currently backwards on one side, 
-    //   also the edges of a door should use FILL_TEXTURE     
     // ----------------------------------------------------------------
-    var DOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE }),
-        LINTEL_MESH   = new THREE.Mesh(WALL_FULL_GEOMETRY, NORMAL_MATERIAL);
+    var LINTEL_MESH   = new THREE.Mesh(WALL_FULL_GEOMETRY, NORMAL_MATERIAL),
+        FACE_MATERIAL = new THREE.MeshFaceMaterial(),
+        FILL_MATERIAL = new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }),
+        DOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE }),
+        DOOR_VERT_FACE_MATERIALS = [
+            FILL_MATERIAL, FILL_MATERIAL,
+            FILL_MATERIAL, FILL_MATERIAL,
+            DOOR_MATERIAL, DOOR_MATERIAL
+        ],
+        DOOR_HORIZ_FACE_MATERIALS = [
+            DOOR_MATERIAL, DOOR_MATERIAL,
+            FILL_MATERIAL, FILL_MATERIAL,
+            FILL_MATERIAL, FILL_MATERIAL
+        ];
 
     this.generateDoorGeometry = function (x, y, cell) {
         var cubeSizeX = (cell.doorType === "vertical") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             cubeSizeZ = (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             dummy = new THREE.Object3D(),
-            mesh = new THREE.Mesh(
-                    new THREE.CubeGeometry(cubeSizeX, CELL_SIZE, cubeSizeZ,
-                        1,1,1, NORMAL_MATERIAL, TOPLESS_CUBE), DOOR_MATERIAL);
-            CELL_SIZE,
+            geom = new THREE.CubeGeometry(cubeSizeX, CELL_SIZE, cubeSizeZ,
+                    1,1,1, (cell.doorType === "vertical")
+                    ? DOOR_VERT_FACE_MATERIALS : DOOR_HORIZ_FACE_MATERIALS, TOPLESS_CUBE),
+            mesh = new THREE.Mesh(geom, FACE_MATERIAL);
+
+        // Flip u's on the backwards face of the door geometry
+        if (cell.doorType === "vertical") {
+            for(var i = 0; i < 4; ++i) {
+                if (mesh.geometry.faceVertexUvs[0][2][i].u === 1) {
+                    mesh.geometry.faceVertexUvs[0][2][i].u = 0;
+                } else 
+                if (mesh.geometry.faceVertexUvs[0][2][i].u === 0) {
+                    mesh.geometry.faceVertexUvs[0][2][i].u = 1;
+                }
+            }
+        } else if (cell.doorType === "horizontal") {
+            for(var i = 0; i < 4; ++i) {
+                if (mesh.geometry.faceVertexUvs[0][1][i].u === 1) {
+                    mesh.geometry.faceVertexUvs[0][1][i].u = 0;
+                } else 
+                if (mesh.geometry.faceVertexUvs[0][1][i].u === 0) {
+                    mesh.geometry.faceVertexUvs[0][1][i].u = 1;
+                }
+            }
+        }
         mesh.geometry.computeFaceNormals();
         mesh.name      = "door";
         mesh.canToggle = true;
@@ -442,8 +472,7 @@ function Level (numRooms, game) {
 
     // Generates filler cubes for either side of a door
     // ------------------------------------------------
-    var FILL_MATERIAL = new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }),
-        FILLV_GEOMETRY = new THREE.CubeGeometry(
+    var FILLV_GEOMETRY = new THREE.CubeGeometry(
                 CELL_SIZE / 4, CELL_SIZE, CELL_SIZE / 2,
                 1, 1, 1, NORMAL_MATERIAL, TOPLESS_CUBE),
         FILLH_GEOMETRY = new THREE.CubeGeometry(
