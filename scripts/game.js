@@ -22,25 +22,19 @@ function Game(renderer, canvas) {
     this.zombie     = null;
     this.oldplayer  = new THREE.Vector3();
     this.grid       = null;
-    this.searchDelay = 0;
+    this.searchDelay = 1;
     this.queue     = [];
     this.element  =  {
 	sz:0,
 	sx:0,
-	pz:0,
-	px:0,
-	nz:0,
-	nx:0
+	p:0
     };
-
-    function element(sz,sx,pz,px,nz,nx) {
+    function element(sz,sx,p) {
 	this.sz=sz;
 	this.sx=sx;
-	this.pz=pz;
-	this.px=px;
-	this.nz=nz;
-	this.nx=nx;
+	this.p=p;
     }
+    this.zombqueue;
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -123,6 +117,7 @@ function Game(renderer, canvas) {
             refireTime = 0.2,
             bullet,
             bulletVel = 4,
+	    zombieVel = 1,
             bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
             bulletMat = new THREE.MeshLambertMaterial({ 
                 color: 0xffffff,
@@ -238,17 +233,76 @@ function Game(renderer, canvas) {
                 this.scene.add(bullet.mesh);
             }
         }
+	var CELL_SIZE=32;
+	if (this.searchDelay>=1) {
+	    this.searchDelay=0;
+	    this.queue=[];
+	    var NUM_CELLS=25;
+	    var visit=new Array(NUM_CELLS);
+	    for (var i=0;i<NUM_CELLS;i++) {
+		visit[i]=new Array(NUM_CELLS);
+		for (var j=0;j<NUM_CELLS;j++){
+		    visit[i][j]=0;
+		}
+	    }
+	    var oz=Math.floor(Math.floor(this.zombie.position.z)/CELL_SIZE+0.5);
+	    var ox=Math.floor(Math.floor(this.zombie.position.x)/CELL_SIZE+0.5);
+	    var sz=Math.floor(Math.floor(this.player.position.z)/CELL_SIZE+0.5);
+	    var sx=Math.floor(Math.floor(this.player.position.x)/CELL_SIZE+0.5);
+	    this.queue.push(new element(sz,sx,0));
+	    
+	    var pointing=0;
+	    var found=0;
+	    while (1){
+	    	for (var i=-1;i<=1;i++){
+	    	    for (var j=-1+Math.abs(i);j<=1-Math.abs(i);j++){
+	    		if (this.grid[sz+i][sx+j].type!='#' && visit[sz+i][sx+j]==0){
+	    		    this.queue.push(new element(sz+i,sx+j,pointing));
+			    visit[sz+i][sx+j]=1;
+			    if (sz+i==oz && sx+j==ox) {
+				this.zombqueue=this.queue.length-1;
+				found=1;
+			    }
+			}
+	    	    }
+		}
+		if (found==1) {
+		    break;
+		}		
+		pointing++;
+		sz=this.queue[pointing].sz;
+		sx=this.queue[pointing].sx;     
+	    }
+	    
+	}
+	else{
+	    this.searchDelay+=this.clock.getDelta();
+	}
 
-	// if (this.searchDelay>=1) {
-	//     this.searchDelay=0;
-	//     this.queue=[];
-	//     var sz=Math.floor(Math.floor(this.zombie.position.z)/CELL_SIZE+0.5);
-	//     var sx=Math.floor(Math.floor(this.zombie.position.x)/CELL_SIZE+0.5);
-	//     this.queue.push(new element(sz,sx,0,0,0,0));		  
-	// }
-	// else{
-	//     this.searchDelay+=this.clock.getDelta();
-	// }
+	var moveToz=this.queue[this.queue[this.zombqueue].p].sz*CELL_SIZE;
+	var moveTox=this.queue[this.queue[this.zombqueue].p].sx*CELL_SIZE;
+	var dz=moveToz-this.zombie.position.z;
+	var dx=moveTox-this.zombie.position.x;
+	if (dx!=0 || dz!=0) {
+	    var dis=Math.sqrt(dx*dx+dz*dz);
+	    if (dis<zombieVel) {
+		this.zombie.position.addSelf(new THREE.Vector3(dx,0,dz));
+	    }
+	    else{
+		this.zombie.position.addSelf(new THREE.Vector3(zombieVel*dx/Math.sqrt(dx*dx+dz*dz),0,zombieVel*dz/Math.sqrt(dz*dz+dz*dz)));
+	    }
+	}
+	else{
+	    if (this.zombqueue==0){
+	    }
+	    else{
+		this.zombqueue=this.queue[this.zombqueue].p;
+		moveToz=this.queue[this.queue[this.zombqueue].p].sz*CELL_SIZE;
+		movetox=this.queue[this.queue[this.zombqueue].p].sx*CELL_SIZE;
+		dz=moveToz-this.zombie.position.z;
+		dx=moveTox-this.zombie.position.x;
+	    }
+	}
 
         // Update all the bullets, move backwards through array 
         // to avoid problems when removing bullets
