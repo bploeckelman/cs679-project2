@@ -35,6 +35,7 @@ function Game(renderer, canvas) {
 	this.p=p;
     }
     this.zombqueue;
+    this.searchEnable=1;
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -234,7 +235,7 @@ function Game(renderer, canvas) {
             }
         }
 	var CELL_SIZE=32;
-	if (this.searchDelay>=1) {
+	if (this.searchDelay>=1 && this.searchEnable==1) {
 	    this.searchDelay=0;
 	    this.queue=[];
 	    var NUM_CELLS=25;
@@ -279,29 +280,23 @@ function Game(renderer, canvas) {
 	    this.searchDelay+=this.clock.getDelta();
 	}
 
-	var moveToz=this.queue[this.queue[this.zombqueue].p].sz*CELL_SIZE;
-	var moveTox=this.queue[this.queue[this.zombqueue].p].sx*CELL_SIZE;
+	var moveToz=this.queue[this.zombqueue].sz*CELL_SIZE;
+	var moveTox=this.queue[this.zombqueue].sx*CELL_SIZE;
 	var dz=moveToz-this.zombie.position.z;
 	var dx=moveTox-this.zombie.position.x;
 	if (dx!=0 || dz!=0) {
+	    this.searchEnable=0;
 	    var dis=Math.sqrt(dx*dx+dz*dz);
 	    if (dis<zombieVel) {
 		this.zombie.position.addSelf(new THREE.Vector3(dx,0,dz));
 	    }
 	    else{
-		this.zombie.position.addSelf(new THREE.Vector3(zombieVel*dx/Math.sqrt(dx*dx+dz*dz),0,zombieVel*dz/Math.sqrt(dz*dz+dz*dz)));
+		this.zombie.position.addSelf(new THREE.Vector3(zombieVel*dx/Math.sqrt(dx*dx+dz*dz),0,zombieVel*dz/Math.sqrt(dx*dx+dz*dz)));
 	    }
 	}
 	else{
-	    if (this.zombqueue==0){
-	    }
-	    else{
-		this.zombqueue=this.queue[this.zombqueue].p;
-		moveToz=this.queue[this.queue[this.zombqueue].p].sz*CELL_SIZE;
-		movetox=this.queue[this.queue[this.zombqueue].p].sx*CELL_SIZE;
-		dz=moveToz-this.zombie.position.z;
-		dx=moveTox-this.zombie.position.x;
-	    }
+	    this.zombqueue=this.queue[this.zombqueue].p;
+	    this.searchEnable=1;
 	}
 
         // Update all the bullets, move backwards through array 
