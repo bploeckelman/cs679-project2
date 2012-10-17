@@ -316,8 +316,14 @@ function Game(renderer, canvas) {
         }
 
         for (var z = 0; z < this.zombie.length; z++) {
-            var moveToz = this.zombie[z].queue[this.zombie[z].queue[this.zombie[z].at].p].sz * CELL_SIZE;
-            var moveTox = this.zombie[z].queue[this.zombie[z].queue[this.zombie[z].at].p].sx * CELL_SIZE;
+            if (this.zombie[z].queue[this.zombie[z].at].p == 0) {
+                moveToz = this.player.position.z;
+                moveTox = this.player.position.x;
+            }
+            else {
+                var moveToz = this.zombie[z].queue[this.zombie[z].queue[this.zombie[z].at].p].sz * CELL_SIZE;
+                var moveTox = this.zombie[z].queue[this.zombie[z].queue[this.zombie[z].at].p].sx * CELL_SIZE;
+            }
             var dz = moveToz - this.zombie[z].mesh.position.z;
             var dx = moveTox - this.zombie[z].mesh.position.x;
             if (dx * dx + dz * dz > 1e-6) {
@@ -368,15 +374,58 @@ function Game(renderer, canvas) {
                 }
                 else {
                     var dis = Math.sqrt(dx * dx + dz * dz);
+                    var hopeTo = new THREE.Vector3();
+                    var stop = 0;
                     if (dis < this.zombie[z].vel) {
-                        this.zombie[z].mesh.position.addSelf(new THREE.Vector3(dx, 0, dz));
-                        this.zombie[z].at = this.zombie[z].queue[this.zombie[z].at].p;
+                        hopeTo.add(this.zombie[z].mesh.position, new THREE.Vector3(dx, 0, dz));
+                        var hx = hopeTo.x - this.player.position.x;
+                        var hz = hopeTo.z - this.player.position.z;
+                        if (hx * hx + hz * hz < 100) {
+                            stop = 1;
+                        }
+                        for (var p = 0; p < this.zombie.length; p++) {
+                            if (p == z) {
+                                continue;
+                            }
+                            var hx = hopeTo.x - this.zombie[p].mesh.position.x;
+                            var hz = hopeTo.z - this.zombie[p].mesh.position.z;
+                            if (hx * hx + hz * hz < 100) {
+                                stop = 1;
+                                break;
+                            }
+                        }
+
+                        if (stop == 0) {
+                            this.zombie[z].mesh.position.x = hopeTo.x;
+                            this.zombie[z].mesh.position.z = hopeTo.z;
+                            this.zombie[z].at = this.zombie[z].queue[this.zombie[z].at].p;
+                        }
                     }
                     else {
-                        this.zombie[z].mesh.position.addSelf(
-                            new THREE.Vector3(this.zombie[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
+                        hopeTo.add(this.zombie[z].mesh.position, new THREE.Vector3(
+                            this.zombie[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
                             0,
                             this.zombie[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
+                        var hx = hopeTo.x - this.player.position.x;
+                        var hz = hopeTo.z - this.player.position.z;
+                        if (hx * hx + hz * hz < 100) {
+                            stop = 1;
+                        }
+                        for (var p = 0; p < this.zombie.length; p++) {
+                            if (p == z) {
+                                continue;
+                            }
+                            var hx = hopeTo.x - this.zombie[p].mesh.position.x;
+                            var hz = hopeTo.z - this.zombie[p].mesh.position.z;
+                            if (hx * hx + hz * hz < 100) {
+                                stop = 1;
+                                break;
+                            }
+                        }
+                        if (stop == 0) {
+                            this.zombie[z].mesh.position.x = hopeTo.x;
+                            this.zombie[z].mesh.position.z = hopeTo.z;
+                        }                        
                     }
                     if ((moveToz - this.zombie[z].mesh.position.z) * (moveToz - this.zombie[z].mesh.position.z) + (moveTox - this.zombie[z].mesh.position.x) * (moveTox - this.zombie[z].mesh.position.x) < 1e-6) {
                         this.zombie[z].at = this.zombie[z].queue[this.zombie[z].at].p;
