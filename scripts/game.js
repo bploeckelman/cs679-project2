@@ -4,53 +4,53 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
-    this.projector  = new THREE.Projector();
-    this.renderer   = renderer;
-    this.canvas     = canvas;
-    this.isRunning  = true;
-    this.numFrames  = 0;
-    this.clock      = new THREE.Clock();
-    this.scene      = null;
-    this.camera     = null;
-    this.viewRay    = null;
-    this.objects    = [];
-    this.lights     = [];
-    this.bullets    = [];
+    this.projector = new THREE.Projector();
+    this.renderer = renderer;
+    this.canvas = canvas;
+    this.isRunning = true;
+    this.numFrames = 0;
+    this.clock = new THREE.Clock();
+    this.scene = null;
+    this.camera = null;
+    this.viewRay = null;
+    this.objects = [];
+    this.lights = [];
+    this.bullets = [];
     this.bulletDelay = 0;
-    this.level      = null;
-    this.player     = null;
-    this.zombie     = null;
-    this.oldplayer  = new THREE.Vector3();
-    this.grid       = null;
+    this.level = null;
+    this.player = null;
+    this.zombie = null;
+    this.oldplayer = new THREE.Vector3();
+    this.grid = null;
     this.searchDelay = 1;
-    this.queue     = [];
-    this.element  =  {
-	sz:0,
-	sx:0,
-	p:0
+    this.queue = [];
+    this.element = {
+        sz: 0,
+        sx: 0,
+        p: 0
     };
-    function element(sz,sx,p) {
-	this.sz=sz;
-	this.sx=sx;
-	this.p=p;
+    function element(sz, sx, p) {
+        this.sz = sz;
+        this.sx = sx;
+        this.p = p;
     }
     this.zombqueue;
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
     // ------------------------------------------------------------------------
-    var FOV    = 67,
+    var FOV = 67,
         ASPECT = canvas.width / canvas.height,
-        NEAR   = 1,
-        FAR    = 500;
+        NEAR = 1,
+        FAR = 500;
 
     var eyeup;//eyeup=this.camera.position.y-this.player.position.y
-    var debug=0;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
+    var debug = 0;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
 
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
-    (function init (game) {
+    (function init(game) {
         console.log("Game initializing...");
 
         // Setup scene
@@ -69,15 +69,15 @@ function Game(renderer, canvas) {
             game.level.startPos.x, 16, game.level.startPos.y);
         game.scene.add(game.player);
 
-        var texture= THREE.ImageUtils.loadTexture("images/crate.gif");
+        var texture = THREE.ImageUtils.loadTexture("images/crate.gif");
 
-	game.zombie = new THREE.Mesh(
-            new THREE.CubeGeometry(8, 20, 4),
-            new THREE.MeshBasicMaterial({ map: texture })
-        );
-	
-	game.zombie.position.set(
-	    game.level.zombiePos.x, 10, game.level.zombiePos.y);
+        game.zombie = new THREE.Mesh(
+                new THREE.CubeGeometry(8, 20, 4),
+                new THREE.MeshBasicMaterial({ map: texture })
+            );
+
+        game.zombie.position.set(
+            game.level.zombiePos.x, 10, game.level.zombiePos.y);
         game.scene.add(game.zombie);
 
 
@@ -86,7 +86,7 @@ function Game(renderer, canvas) {
         game.camera.position.add(
             game.player.position,
             new THREE.Vector3(0, eyeup, debug));
-        game.camera.lookAt(new THREE.Vector3(50,0,50));
+        game.camera.lookAt(new THREE.Vector3(50, 0, 50));
         game.scene.add(game.camera);
 
         // Setup a light that will move with the player
@@ -99,7 +99,7 @@ function Game(renderer, canvas) {
 
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
-    }) (this);
+    })(this);
 
 
     // Update everything in the scene
@@ -259,7 +259,7 @@ function Game(renderer, canvas) {
             var found = 0;
             while (1) {
                 for (var i = -1; i <= 1; i++) {
-                    for (var j = -1 + Math.abs(i); j <= 1 - Math.abs(i); j++) {
+                    for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
                         if (this.grid[sz + i][sx + j].type != '#' && visit[sz + i][sx + j] == 0) {
                             this.queue.push(new element(sz + i, sx + j, pointing));
                             visit[sz + i][sx + j] = 1;
@@ -417,7 +417,7 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     this.render = function () {
         this.renderer.render(this.scene, this.camera);
-        ++this.numFrames;        
+        ++this.numFrames;
     };
 
 } // end Game object
@@ -426,7 +426,7 @@ function Game(renderer, canvas) {
 // ----------------------------------------------------------------------------
 // Handle collision detection
 // ----------------------------------------------------------------------------
-function handleCollisions (game, input) {
+function handleCollisions(game, input) {
     if (input.trigger.A || input.trigger.D || input.trigger.W || input.trigger.S || input.hold == 0) {
         input.hold = 0;
         for (var vertexIndex = 0; vertexIndex < game.player.geometry.vertices.length; vertexIndex++) {
@@ -439,7 +439,7 @@ function handleCollisions (game, input) {
                     var j = 0;
                     var k = 0;
                     if (game.player.position.x - game.oldplayer.x > 0) {
-                        for (i = 0.1; i <= game.player.position.x - game.oldplayer.x; i+=0.1) {
+                        for (i = 0.1; i <= game.player.position.x - game.oldplayer.x; i += 0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
@@ -449,7 +449,7 @@ function handleCollisions (game, input) {
                         i -= 0.1;
                     }
                     if (game.player.position.x - game.oldplayer.x < 0) {
-                        for (i = -0.1; i >= game.player.position.x - game.oldplayer.x; i-=0.1) {
+                        for (i = -0.1; i >= game.player.position.x - game.oldplayer.x; i -= 0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
@@ -460,7 +460,7 @@ function handleCollisions (game, input) {
                     }
 
                     if (game.player.position.y - game.oldplayer.y > 0) {
-                        for (j = 0.1; j <= game.player.position.y - game.oldplayer.y; j+=0.1) {
+                        for (j = 0.1; j <= game.player.position.y - game.oldplayer.y; j += 0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
@@ -470,7 +470,7 @@ function handleCollisions (game, input) {
                         j -= 0.1;
                     }
                     if (game.player.position.y - game.oldplayer.y < 0) {
-                        for (j = -0.1; j >= game.player.position.y - game.oldplayer.y; j-=0.1) {
+                        for (j = -0.1; j >= game.player.position.y - game.oldplayer.y; j -= 0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
@@ -481,7 +481,7 @@ function handleCollisions (game, input) {
                     }
 
                     if (game.player.position.z - game.oldplayer.z > 0) {
-                        for (k = 0.1; k <= game.player.position.z - game.oldplayer.z; k+=0.1) {
+                        for (k = 0.1; k <= game.player.position.z - game.oldplayer.z; k += 0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z + k), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
@@ -491,7 +491,7 @@ function handleCollisions (game, input) {
                         k -= 0.1;
                     }
                     if (game.player.position.z - game.oldplayer.z < 0) {
-                        for (k = -0.1; k >= game.player.position.z - game.oldplayer.z; k-=0.1) {
+                        for (k = -0.1; k >= game.player.position.z - game.oldplayer.z; k -= 0.1) {
                             ray = new THREE.Ray(new THREE.Vector3(game.oldplayer.x + i, game.oldplayer.y + j, game.oldplayer.z + k), directionVector.clone().normalize());
                             collisionResults = ray.intersectObjects(game.objects);
                             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
