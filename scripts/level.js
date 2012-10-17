@@ -9,6 +9,9 @@ var CELL_TYPES = {
     start: "*",
     zomstart: "z"
 },
+    CELL_SIZE = 32,
+    NUM_CELLS = new THREE.Vector2(25, 25),
+
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
     // Pass as last param into THREE.CubeGeometry() = only generate cube sides
     TOPLESS_CUBE = { px: true, nx: true, py: false, ny: false, pz: true, nz: true };
@@ -20,7 +23,7 @@ function Level(numRooms, game) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
-    game.grid = null;
+    this.grid = null;
     this.rooms = null;
     this.geometry = {
         floors: [],
@@ -50,9 +53,7 @@ function Level(numRooms, game) {
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
     // ------------------------------------------------------------------------
-    var CELL_SIZE = 32,
-        NUM_CELLS = new THREE.Vector2(25, 25),
-        MIN_ROOM_SIZE = 4,
+    var MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8,
         MAP_CELL_SIZE = 8,
         DOOR_TIMEOUT = 750, // milliseconds between door toggles
@@ -223,8 +224,8 @@ function Level(numRooms, game) {
                     // set the grid type to the room cell type
                     if (xx >= 0 && xx < NUM_CELLS.x
                      && yy >= 0 && yy < NUM_CELLS.y) {
-                        game.grid[yy][xx].type = room.tiles[y][x];
-                        game.grid[yy][xx].roomIndex = i;
+                        this.grid[yy][xx].type = room.tiles[y][x];
+                        this.grid[yy][xx].roomIndex = i;
                     }
                 }
         }
@@ -236,11 +237,11 @@ function Level(numRooms, game) {
     this.generateGridCells = function () {
         var x, y;
 
-        game.grid = new Array(NUM_CELLS.y);
+        this.grid = new Array(NUM_CELLS.y);
         for (y = 0; y < NUM_CELLS.y; ++y) {
-            game.grid[y] = new Array(NUM_CELLS.x);
+            this.grid[y] = new Array(NUM_CELLS.x);
             for (x = 0; x < NUM_CELLS.x; ++x) {
-                game.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
+                this.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
             }
         }
     };
@@ -262,7 +263,7 @@ function Level(numRooms, game) {
             // Print entire grid layout
             for (y = 0; y < NUM_CELLS.y; ++y) {
                 for (x = 0; x < NUM_CELLS.x; ++x) {
-                    str += game.grid[y][x].type;
+                    str += this.grid[y][x].type;
                 }
                 str += "\n";
             }
@@ -286,7 +287,7 @@ function Level(numRooms, game) {
 
         for (y = 0; y < NUM_CELLS.y; ++y)
             for (x = 0; x < NUM_CELLS.x; ++x) {
-                cell = game.grid[y][x];
+                cell = this.grid[y][x];
                 xx = x * CELL_SIZE;
                 yy = y * CELL_SIZE;
 
@@ -589,8 +590,8 @@ function Level(numRooms, game) {
         while (true) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (game.grid[y][x].type === CELL_TYPES.empty) {
-                game.grid[y][x].type = CELL_TYPES.start;
+            if (this.grid[y][x].type === CELL_TYPES.empty) {
+                this.grid[y][x].type = CELL_TYPES.start;
                 this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
                 break;
             }
@@ -599,8 +600,8 @@ function Level(numRooms, game) {
         while (this.zombiePos.length < zombieNumber) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (game.grid[y][x].type === CELL_TYPES.empty) {
-                game.grid[y][x].type = CELL_TYPES.zomstart;
+            if (this.grid[y][x].type === CELL_TYPES.empty) {
+                this.grid[y][x].type = CELL_TYPES.zomstart;
                 this.zombiePos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
             }
         }
@@ -614,11 +615,11 @@ function Level(numRooms, game) {
 
         for (y = 1; y < NUM_CELLS.y - 1; ++y)
             for (x = 1; x < NUM_CELLS.x - 1; ++x) {
-                cell = game.grid[y][x];
+                cell = this.grid[y][x];
 
                 if (cell.type === CELL_TYPES.wall) {
-                    cellA = game.grid[y - 1][x];
-                    cellB = game.grid[y + 1][x];
+                    cellA = this.grid[y - 1][x];
+                    cellB = this.grid[y + 1][x];
                     if (cellA.isInterior() && cellB.isInterior()) {
                         // Found a potential door!, add location to the list
                         console.log("Potential door @ (" + x + "," + y + ")");
@@ -627,8 +628,8 @@ function Level(numRooms, game) {
                         // TODO
                         continue;
                     }
-                    cellA = game.grid[y][x - 1];
-                    cellB = game.grid[y][x + 1];
+                    cellA = this.grid[y][x - 1];
+                    cellB = this.grid[y][x + 1];
                     if (cellA.isInterior() && cellB.isInterior()) {
                         // Found a potential door!, add location to the list
                         console.log("Potential door @ (" + x + "," + y + ")");
@@ -682,7 +683,7 @@ function Level(numRooms, game) {
         px = Math.floor(game.player.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
         py = Math.floor(game.player.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
         // Get the room index of the currently occupied cell
-        occupied = game.grid[Math.floor(py / MAP_CELL_SIZE)]
+        occupied = this.grid[Math.floor(py / MAP_CELL_SIZE)]
                             [Math.floor(px / MAP_CELL_SIZE)].roomIndex;
 
         // Clear the map
@@ -697,7 +698,7 @@ function Level(numRooms, game) {
         // Draw the map cells
         for (y = 0; y < NUM_CELLS.y; ++y)
             for (x = 0; x < NUM_CELLS.x; ++x) {
-                cell = game.grid[y][x];
+                cell = this.grid[y][x];
                 xx = x * MAP_CELL_SIZE;
                 yy = y * MAP_CELL_SIZE;
 

@@ -21,7 +21,6 @@ function Game(renderer, canvas) {
     this.player = null;
     this.zombie = [];
     this.oldplayer = new THREE.Vector3();
-    this.grid = null;
     this.searchDelay = 1;
     this.element = {
         sz: 0,
@@ -237,18 +236,16 @@ function Game(renderer, canvas) {
             }
         }
 
-        var CELL_SIZE = 32;
         if (this.searchDelay >= 1) {
-            this.searchDelay = 0;
-            var NUM_CELLS = 25;
-            var visit = new Array(NUM_CELLS);
-            for (var i = 0; i < NUM_CELLS; i++) {
-                visit[i] = new Array(NUM_CELLS);
+            this.searchDelay = 0;            
+            var visit = new Array(NUM_CELLS.y);
+            for (var i = 0; i < NUM_CELLS.y; i++) {
+                visit[i] = new Array(NUM_CELLS.x);
             }
             for (var z = 0; z < this.zombie.length; z++) {
                 this.zombie[z].queue = [];
-                for (var i = 0; i < NUM_CELLS; i++) {
-                    for (var j = 0; j < NUM_CELLS; j++) {
+                for (var i = 0; i < NUM_CELLS.y; i++) {
+                    for (var j = 0; j < NUM_CELLS.x; j++) {
                         visit[i][j] = 0;
                     }
                 }
@@ -263,7 +260,7 @@ function Game(renderer, canvas) {
                 while (1) {
                     for (var i = -1; i <= 1; i++) {
                         for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
-                            if (this.grid[sz + i][sx + j].type != '#' && visit[sz + i][sx + j] == 0) {
+                            if (this.level.grid[sz + i][sx + j].type != CELL_TYPES.wall && visit[sz + i][sx + j] == 0) {
                                 this.zombie[z].queue.push(new element(sz + i, sx + j, pointing));
                                 visit[sz + i][sx + j] = 1;
                                 if (sz + i == oz && sx + j == ox) {
@@ -282,7 +279,7 @@ function Game(renderer, canvas) {
                 }
 
                 var start = this.zombie[z].at;
-                while (this.grid[this.zombie[z].queue[start].sz][this.zombie[z].queue[start].sx].type == '+') {
+                while (this.level.grid[this.zombie[z].queue[start].sz][this.zombie[z].queue[start].sx].type == CELL_TYPES.door) {
                     if (start == 0) {
                         break;
                     }
@@ -291,7 +288,7 @@ function Game(renderer, canvas) {
                 if (start != 0) {
                     var link = this.zombie[z].queue[start].p;
                     while (1) {
-                        while (this.grid[this.zombie[z].queue[link].sz][this.zombie[z].queue[link].sx].type != '+') {
+                        while (this.level.grid[this.zombie[z].queue[link].sz][this.zombie[z].queue[link].sx].type != CELL_TYPES.door) {
                             this.zombie[z].queue[start].p = link;
                             if (link == 0) {
                                 break;
@@ -303,7 +300,7 @@ function Game(renderer, canvas) {
                         if (start == 0) {
                             break;
                         }
-                        while (this.grid[this.zombie[z].queue[start].sz][this.zombie[z].queue[start].sx].type == '+') {
+                        while (this.level.grid[this.zombie[z].queue[start].sz][this.zombie[z].queue[start].sx].type == CELL_TYPES.door) {
                             if (start == 0) {
                                 break;
                             }
