@@ -1,25 +1,26 @@
-var CELL_TYPES = { 
-        void: ".",
-        empty: " ",
-        wall: "#",
-        door: "+",
-        downstairs: "x",
-        upstairs: "^",
-        light: "o",
-        start: "*"
-    },
+var CELL_TYPES = {
+    void: ".",
+    empty: " ",
+    wall: "#",
+    door: "+",
+    downstairs: "x",
+    upstairs: "^",
+    light: "o",
+    start: "*",
+    zomstart: "z"
+},
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
     // Pass as last param into THREE.CubeGeometry() = only generate cube sides
-    TOPLESS_CUBE = {px:true,nx:true, py:false,ny:false, pz:true,nz:true};
+    TOPLESS_CUBE = { px: true, nx: true, py: false, ny: false, pz: true, nz: true };
 
 // ----------------------------------------------------------------------------
 // Level 
 // ----------------------------------------------------------------------------
-function Level (numRooms, game) {
+function Level(numRooms, game) {
     // ------------------------------------------------------------------------
     // Public properties ------------------------------------------------------
     // ------------------------------------------------------------------------
-    game.grid  = null;
+    game.grid = null;
     this.rooms = null;
     this.geometry = {
         floors: [],
@@ -27,22 +28,23 @@ function Level (numRooms, game) {
         doors: [],
         dummies: [] // for rotating doors about their edge instead of center
     };
-    this.mapCanvas  = null;
+    this.mapCanvas = null;
     this.mapContext = null;
-    this.mapColors  = {};
-    this.startPos   = new THREE.Vector2();
-    this.zombiePos = new THREE.Vector2();
+    this.mapColors = {};
+    this.startPos = new THREE.Vector2();
+    var zombieNumber = 3;
+    this.zombiePos = [];
 
     // Static geometry groups ------------------------
     // Normal walls
-    this.wallGroup      = new THREE.Object3D();
-    this.wallGeometry   = new THREE.Geometry();
+    this.wallGroup = new THREE.Object3D();
+    this.wallGeometry = new THREE.Geometry();
     // Cubes above doorways
-    this.lintelGroup    = new THREE.Object3D();
+    this.lintelGroup = new THREE.Object3D();
     this.lintelGeometry = new THREE.Geometry();
     // Door post fillers
-    this.fillGroup      = new THREE.Object3D();
-    this.fillGeometry   = new THREE.Geometry();
+    this.fillGroup = new THREE.Object3D();
+    this.fillGeometry = new THREE.Geometry();
 
 
     // ------------------------------------------------------------------------
@@ -53,16 +55,16 @@ function Level (numRooms, game) {
         MIN_ROOM_SIZE = 4,
         MAX_ROOM_SIZE = 8,
         MAP_CELL_SIZE = 8,
-        DOOR_TIMEOUT  = 750, // milliseconds between door toggles
+        DOOR_TIMEOUT = 750, // milliseconds between door toggles
         FLOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/tile.png"),
-        CEIL_TEXTURE  = THREE.ImageUtils.loadTexture("images/stone.png"),
-        WALL_TEXTURE  = THREE.ImageUtils.loadTexture("images/brick.png"),
+        CEIL_TEXTURE = THREE.ImageUtils.loadTexture("images/stone.png"),
+        WALL_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
         LINTEL_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
-        DOOR_TEXTURE  = THREE.ImageUtils.loadTexture("images/door.png"),
-        FILL_TEXTURE  = THREE.ImageUtils.loadTexture("images/brown.png");
+        DOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/door.png"),
+        FILL_TEXTURE = THREE.ImageUtils.loadTexture("images/brown.png");
 
     LINTEL_TEXTURE.repeat = new THREE.Vector2(1, 2);
-    LINTEL_TEXTURE.wrapT  = THREE.RepeatWrapping;
+    LINTEL_TEXTURE.wrapT = THREE.RepeatWrapping;
 
     // ------------------------------------------------------------------------
     // Level Methods ----------------------------------------------------------
@@ -85,7 +87,7 @@ function Level (numRooms, game) {
         var i, intersects = false;
 
         // Does room intersect any existing rooms?
-        for(i = 0; i < this.rooms.length; ++i) {
+        for (i = 0; i < this.rooms.length; ++i) {
             if (room.intersectsRoom(this.rooms[i])) {
                 intersects = true;
                 break;
@@ -158,7 +160,7 @@ function Level (numRooms, game) {
     // Generate lights in each room of a level
     // ---------------------------------------
     this.generateLights = function () {
-        for(i = 0; i < this.rooms.length; ++i) {
+        for (i = 0; i < this.rooms.length; ++i) {
             // Add a light at a random location in every room
             x = randInt(1, this.rooms[i].size.x - 1);
             y = randInt(1, this.rooms[i].size.y - 1);
@@ -170,30 +172,30 @@ function Level (numRooms, game) {
     // Find a position for the specified room next to an existing room
     // ---------------------------------------------------------------
     this.findRoomAttachment = function (room) {
-        var pos = new THREE.Vector2(0,0),
+        var pos = new THREE.Vector2(0, 0),
             rm;
 
         // Pick a random room
         rm = this.rooms[randInt(0, this.rooms.length)];
 
         // Randomly place this room on a side of the random room
-        switch (randInt(0,4)) {
+        switch (randInt(0, 4)) {
             case 0: // north
                 pos.x = randInt(rm.pos.x - room.size.x + 3, rm.pos.x + rm.size.x - 2);
                 pos.y = rm.pos.y - room.size.y + 1;
-            break;
+                break;
             case 1: // south
                 pos.x = randInt(rm.pos.x - room.size.x + 3, rm.pos.x + rm.size.x - 2);
                 pos.y = rm.pos.y + rm.size.y - 1;
-            break;
+                break;
             case 2: // east
                 pos.x = rm.pos.x + rm.size.x - 1;
                 pos.y = randInt(rm.pos.y - room.size.y + 3, rm.pos.y + rm.size.y - 2);
-            break;
+                break;
             case 3: // west
                 pos.x = rm.pos.x - room.size.x + 1;
                 pos.y = randInt(rm.pos.y - room.size.y + 3, rm.pos.y + rm.size.y - 2);
-            break;
+                break;
         }
 
         // Return the position of the new room and its target room
@@ -207,24 +209,24 @@ function Level (numRooms, game) {
         var i, x, y, xx, yy, room;
 
         // For each room
-        for(i = 0; i < this.rooms.length; ++i) {
+        for (i = 0; i < this.rooms.length; ++i) {
             room = this.rooms[i];
 
             // For each cell of the room
-            for(y = 0; y < room.size.y; ++y)
-            for(x = 0; x < room.size.x; ++x) {
-                // Get associated grid position
-                xx = x + room.pos.x;
-                yy = y + room.pos.y;
+            for (y = 0; y < room.size.y; ++y)
+                for (x = 0; x < room.size.x; ++x) {
+                    // Get associated grid position
+                    xx = x + room.pos.x;
+                    yy = y + room.pos.y;
 
-                // If the grid position is valid, 
-                // set the grid type to the room cell type
-                if (xx >= 0 && xx < NUM_CELLS.x
-                 && yy >= 0 && yy < NUM_CELLS.y) {
-                    game.grid[yy][xx].type = room.tiles[y][x];                    
-                    game.grid[yy][xx].roomIndex = i;
+                    // If the grid position is valid, 
+                    // set the grid type to the room cell type
+                    if (xx >= 0 && xx < NUM_CELLS.x
+                     && yy >= 0 && yy < NUM_CELLS.y) {
+                        game.grid[yy][xx].type = room.tiles[y][x];
+                        game.grid[yy][xx].roomIndex = i;
+                    }
                 }
-            }
         }
     };
 
@@ -235,9 +237,9 @@ function Level (numRooms, game) {
         var x, y;
 
         game.grid = new Array(NUM_CELLS.y);
-        for(y = 0; y < NUM_CELLS.y; ++y) {
+        for (y = 0; y < NUM_CELLS.y; ++y) {
             game.grid[y] = new Array(NUM_CELLS.x);
-            for(x = 0; x < NUM_CELLS.x; ++x) {
+            for (x = 0; x < NUM_CELLS.x; ++x) {
                 game.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
             }
         }
@@ -252,14 +254,14 @@ function Level (numRooms, game) {
 
         if (what === "rooms" || what === "all") {
             // Print individual rooms
-            for(x = 0; x < this.rooms.length; ++x) {
+            for (x = 0; x < this.rooms.length; ++x) {
                 this.rooms[x].debugPrint();
             }
         }
         if (what === "grid" || what === "all") {
             // Print entire grid layout
-            for(y = 0; y < NUM_CELLS.y; ++y) {
-                for(x = 0; x < NUM_CELLS.x; ++x) {
+            for (y = 0; y < NUM_CELLS.y; ++y) {
+                for (x = 0; x < NUM_CELLS.x; ++x) {
                     str += game.grid[y][x].type;
                 }
                 str += "\n";
@@ -276,46 +278,47 @@ function Level (numRooms, game) {
         this.addStartPosition();
     };
 
-    
+
     // Creates new geometry based on grid layout
     // -----------------------------------------
     this.generateGeometry = function () {
         var x, y, xx, yy, cell;
 
-        for(y = 0; y < NUM_CELLS.y; ++y)
-        for(x = 0; x < NUM_CELLS.x; ++x) {
-            cell = game.grid[y][x];
-            xx = x * CELL_SIZE;
-            yy = y * CELL_SIZE;
+        for (y = 0; y < NUM_CELLS.y; ++y)
+            for (x = 0; x < NUM_CELLS.x; ++x) {
+                cell = game.grid[y][x];
+                xx = x * CELL_SIZE;
+                yy = y * CELL_SIZE;
 
-            // Generate geometry according to cell type
-            if (cell.type === CELL_TYPES.void) {
-                continue;
-            } else if (cell.type === CELL_TYPES.empty
-                    || cell.type === CELL_TYPES.start) {
-                this.generateFloorGeometry(xx, yy);
-                this.generateCeilingGeometry(xx, yy);
-            } else if (cell.type === CELL_TYPES.wall) {
-                this.generateWallGeometry(xx, yy);
-            } else if (cell.type === CELL_TYPES.door) {
-                this.generateFloorGeometry(xx, yy);
-                this.generateCeilingGeometry(xx, yy);
-                this.generateDoorGeometry(xx, yy, cell);
-            } else if (cell.type === CELL_TYPES.upstairs 
-                    || cell.type === CELL_TYPES.downstairs) {
-                // TODO: generate different floor + normal ceiling
-            } else if (cell.type === CELL_TYPES.light) {
-                // Note: assumes empty floor, not wall
-                this.generateFloorGeometry(xx, yy);
-                this.generateCeilingGeometry(xx, yy);
-                this.generateLight(xx, yy);
+                // Generate geometry according to cell type
+                if (cell.type === CELL_TYPES.void) {
+                    continue;
+                } else if (cell.type === CELL_TYPES.empty
+                        || cell.type === CELL_TYPES.start
+                        || cell.type === CELL_TYPES.zomstart) {
+                    this.generateFloorGeometry(xx, yy);
+                    this.generateCeilingGeometry(xx, yy);
+                } else if (cell.type === CELL_TYPES.wall) {
+                    this.generateWallGeometry(xx, yy);
+                } else if (cell.type === CELL_TYPES.door) {
+                    this.generateFloorGeometry(xx, yy);
+                    this.generateCeilingGeometry(xx, yy);
+                    this.generateDoorGeometry(xx, yy, cell);
+                } else if (cell.type === CELL_TYPES.upstairs
+                        || cell.type === CELL_TYPES.downstairs) {
+                    // TODO: generate different floor + normal ceiling
+                } else if (cell.type === CELL_TYPES.light) {
+                    // Note: assumes empty floor, not wall
+                    this.generateFloorGeometry(xx, yy);
+                    this.generateCeilingGeometry(xx, yy);
+                    this.generateLight(xx, yy);
+                }
             }
-        }
 
         // Create merged geometry groups
-        this.wallGroup    = new THREE.Mesh(this.wallGeometry, WALL_MATERIAL);
-        this.lintelGroup  = new THREE.Mesh(this.lintelGeometry, WALL_FULL_MATERIAL);
-        this.fillGroup    = new THREE.Mesh(this.fillGeometry, FILL_MATERIAL);
+        this.wallGroup = new THREE.Mesh(this.wallGeometry, WALL_MATERIAL);
+        this.lintelGroup = new THREE.Mesh(this.lintelGeometry, WALL_FULL_MATERIAL);
+        this.fillGroup = new THREE.Mesh(this.fillGeometry, FILL_MATERIAL);
 
         // Add merged geometry groups to game object array
         game.objects.push(this.wallGroup);
@@ -331,8 +334,8 @@ function Level (numRooms, game) {
     // Generate floor geometry
     // TODO: had problems merging plane geometry...
     // -------------------------------- 
-    var PLANE_GEOMETRY  = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-        FLOOR_MATERIAL  = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE });
+    var PLANE_GEOMETRY = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
+        FLOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE });
 
     this.generateFloorGeometry = function (x, y) {
         var mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL);
@@ -362,23 +365,23 @@ function Level (numRooms, game) {
     // Generate wall geometry
     // --------------------------------
     // TODO: Clean this up...
-    var NORMAL_MATERIAL    = new THREE.MeshNormalMaterial(),
-        WALL_MATERIAL      = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE }),
+    var NORMAL_MATERIAL = new THREE.MeshNormalMaterial(),
+        WALL_MATERIAL = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE }),
         WALL_FULL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE }),
         // Geometry -----
         WALL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE,
             1, 2, 1, NORMAL_MATERIAL, TOPLESS_CUBE),
         WALL_FULL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
             1, 1, 1, NORMAL_MATERIAL,
-            {px:true,nx:true, py:false,ny:true, pz:true,nz:true}),
+            { px: true, nx: true, py: false, ny: true, pz: true, nz: true }),
         // Mesh -----
         WALL_MESH = new THREE.Mesh(WALL_GEOMETRY, NORMAL_MATERIAL);
 
     // Set the material for each face of the wall geometry
-    for(var face in WALL_GEOMETRY.faces) {
+    for (var face in WALL_GEOMETRY.faces) {
         WALL_GEOMETRY.faces[face].materialIndex = 0;
     }
-    for(var face in WALL_FULL_GEOMETRY.faces) {
+    for (var face in WALL_FULL_GEOMETRY.faces) {
         WALL_FULL_GEOMETRY.faces[face].materialIndex = 0;
     }
 
@@ -390,7 +393,7 @@ function Level (numRooms, game) {
 
     // Generate door cube, correctly oriented, with dummy rotation node
     // ----------------------------------------------------------------
-    var LINTEL_MESH   = new THREE.Mesh(WALL_FULL_GEOMETRY, NORMAL_MATERIAL),
+    var LINTEL_MESH = new THREE.Mesh(WALL_FULL_GEOMETRY, NORMAL_MATERIAL),
         FACE_MATERIAL = new THREE.MeshFaceMaterial(),
         FILL_MATERIAL = new THREE.MeshLambertMaterial({ map: FILL_TEXTURE }),
         DOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: DOOR_TEXTURE }),
@@ -410,32 +413,32 @@ function Level (numRooms, game) {
             cubeSizeZ = (cell.doorType === "horizontal") ? CELL_SIZE / 2 : CELL_SIZE / 16,
             dummy = new THREE.Object3D(),
             geom = new THREE.CubeGeometry(cubeSizeX, CELL_SIZE, cubeSizeZ,
-                    1,1,1, (cell.doorType === "vertical")
+                    1, 1, 1, (cell.doorType === "vertical")
                     ? DOOR_VERT_FACE_MATERIALS : DOOR_HORIZ_FACE_MATERIALS, TOPLESS_CUBE),
             mesh = new THREE.Mesh(geom, FACE_MATERIAL);
 
         // Flip u's on the backwards face of the door geometry
         if (cell.doorType === "vertical") {
-            for(var i = 0; i < 4; ++i) {
+            for (var i = 0; i < 4; ++i) {
                 if (mesh.geometry.faceVertexUvs[0][2][i].u === 1) {
                     mesh.geometry.faceVertexUvs[0][2][i].u = 0;
-                } else 
-                if (mesh.geometry.faceVertexUvs[0][2][i].u === 0) {
-                    mesh.geometry.faceVertexUvs[0][2][i].u = 1;
-                }
+                } else
+                    if (mesh.geometry.faceVertexUvs[0][2][i].u === 0) {
+                        mesh.geometry.faceVertexUvs[0][2][i].u = 1;
+                    }
             }
         } else if (cell.doorType === "horizontal") {
-            for(var i = 0; i < 4; ++i) {
+            for (var i = 0; i < 4; ++i) {
                 if (mesh.geometry.faceVertexUvs[0][1][i].u === 1) {
                     mesh.geometry.faceVertexUvs[0][1][i].u = 0;
-                } else 
-                if (mesh.geometry.faceVertexUvs[0][1][i].u === 0) {
-                    mesh.geometry.faceVertexUvs[0][1][i].u = 1;
-                }
+                } else
+                    if (mesh.geometry.faceVertexUvs[0][1][i].u === 0) {
+                        mesh.geometry.faceVertexUvs[0][1][i].u = 1;
+                    }
             }
         }
         mesh.geometry.computeFaceNormals();
-        mesh.name      = "door";
+        mesh.name = "door";
         mesh.canToggle = true;
         mesh.doorState = "closed";
         mesh.doorIndex = this.geometry.doors.push(mesh) - 1;
@@ -493,10 +496,10 @@ function Level (numRooms, game) {
         } else if (cell.doorType === "horizontal") {
             // FILLER #1
             mesh1 = new THREE.Mesh(FILLH_GEOMETRY, NORMAL_MATERIAL);
-            mesh1.position.set(x, CELL_SIZE / 2, y + (CELL_SIZE / 2) - (CELL_SIZE / 8) );
+            mesh1.position.set(x, CELL_SIZE / 2, y + (CELL_SIZE / 2) - (CELL_SIZE / 8));
             // FILLER #2
             mesh2 = new THREE.Mesh(FILLH_GEOMETRY, NORMAL_MATERIAL);
-            mesh2.position.set(x, CELL_SIZE / 2, y - (CELL_SIZE / 2) + (CELL_SIZE / 8) );
+            mesh2.position.set(x, CELL_SIZE / 2, y - (CELL_SIZE / 2) + (CELL_SIZE / 8));
         }
 
         // Merge the positioned filler geometry in with the rest
@@ -537,7 +540,7 @@ function Level (numRooms, game) {
 
     // Toggle the specified door open or closed
     // ----------------------------------------
-    this.toggleDoor = function (index) { 
+    this.toggleDoor = function (index) {
         if (index < 0 || index >= this.geometry.doors.length) {
             console.warn("Warning: attempted to toggle non-existent door");
             return;
@@ -548,7 +551,7 @@ function Level (numRooms, game) {
             tween = new TWEEN.Tween({ rot: Math.PI })
                 .to({ rot: Math.PI / 2 }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
-                .onUpdate(function() {
+                .onUpdate(function () {
                     door.dummy.rotation.y = this.rot;
                 })
                 .start();
@@ -563,7 +566,7 @@ function Level (numRooms, game) {
             tween = new TWEEN.Tween({ rot: Math.PI / 2 })
                 .to({ rot: Math.PI }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
-                .onUpdate(function() {
+                .onUpdate(function () {
                     door.dummy.rotation.y = this.rot;
                 })
                 .start();
@@ -583,22 +586,22 @@ function Level (numRooms, game) {
     this.addStartPosition = function () {
         var x, y;
 
-        while (true) { 
+        while (true) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (game.grid[y][x].type == CELL_TYPES.empty) {
+            if (game.grid[y][x].type === CELL_TYPES.empty) {
                 game.grid[y][x].type = CELL_TYPES.start;
                 this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
                 break;
             }
         }
 
-	while (true) { 
-	    x =randInt(1, NUM_CELLS.x - 1);
-	    y =randInt(1, NUM_CELLS.y - 1);
-            if (game.grid[y][x].type == CELL_TYPES.empty) {	
-                this.zombiePos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
-                break;
+        while (this.zombiePos.length < zombieNumber) {
+            x = randInt(1, NUM_CELLS.x - 1);
+            y = randInt(1, NUM_CELLS.y - 1);
+            if (game.grid[y][x].type === CELL_TYPES.empty) {
+                game.grid[y][x].type = CELL_TYPES.zomstart;
+                this.zombiePos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
             }
         }
     };
@@ -609,33 +612,33 @@ function Level (numRooms, game) {
     this.addDoors = function () {
         var x, y, cell, cellA, cellB;
 
-        for(y = 1; y < NUM_CELLS.y - 1; ++y)
-        for(x = 1; x < NUM_CELLS.x - 1; ++x) { 
-            cell = game.grid[y][x];
+        for (y = 1; y < NUM_CELLS.y - 1; ++y)
+            for (x = 1; x < NUM_CELLS.x - 1; ++x) {
+                cell = game.grid[y][x];
 
-            if (cell.type === CELL_TYPES.wall) {
-                cellA = game.grid[y - 1][x];
-                cellB = game.grid[y + 1][x];
-                if (cellA.isInterior() && cellB.isInterior()) {
-                    // Found a potential door!, add location to the list
-                    console.log("Potential door @ (" + x + "," + y + ")");
-                    cell.type = CELL_TYPES.door;
-                    cell.doorType = "vertical";
-                    // TODO
-                    continue;
-                }
-                cellA = game.grid[y][x - 1];
-                cellB = game.grid[y][x + 1];
-                if (cellA.isInterior() && cellB.isInterior()) {
-                    // Found a potential door!, add location to the list
-                    console.log("Potential door @ (" + x + "," + y + ")");
-                    cell.type = CELL_TYPES.door;
-                    cell.doorType = "horizontal";
-                    // TODO
-                    continue;
+                if (cell.type === CELL_TYPES.wall) {
+                    cellA = game.grid[y - 1][x];
+                    cellB = game.grid[y + 1][x];
+                    if (cellA.isInterior() && cellB.isInterior()) {
+                        // Found a potential door!, add location to the list
+                        console.log("Potential door @ (" + x + "," + y + ")");
+                        cell.type = CELL_TYPES.door;
+                        cell.doorType = "vertical";
+                        // TODO
+                        continue;
+                    }
+                    cellA = game.grid[y][x - 1];
+                    cellB = game.grid[y][x + 1];
+                    if (cellA.isInterior() && cellB.isInterior()) {
+                        // Found a potential door!, add location to the list
+                        console.log("Potential door @ (" + x + "," + y + ")");
+                        cell.type = CELL_TYPES.door;
+                        cell.doorType = "horizontal";
+                        // TODO
+                        continue;
+                    }
                 }
             }
-        }
     };
 
 
@@ -648,10 +651,10 @@ function Level (numRooms, game) {
         mapCanvas = document.createElement("canvas");
         mapCanvas.id = "minimap";
         mapCanvas.style.position = "absolute";
-        mapCanvas.width  = MAP_CELL_SIZE * NUM_CELLS.x;
+        mapCanvas.width = MAP_CELL_SIZE * NUM_CELLS.x;
         mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
         // TODO: have to handle window resizing
-        mapCanvas.style.bottom  = 0;
+        mapCanvas.style.bottom = 0;
         mapCanvas.style.right = 0;
         document.getElementById("container").appendChild(mapCanvas);
 
@@ -659,14 +662,14 @@ function Level (numRooms, game) {
         mapContext = mapCanvas.getContext("2d");
 
         // Setup colors for each cell type
-        this.mapColors.void       = "#202020";
-        this.mapColors.empty      = "#000000";
-        this.mapColors.wall       = "#c0c0c0";
-        this.mapColors.door       = "#00ffff";
-        this.mapColors.upstairs   = "#a000a0";
+        this.mapColors.void = "#202020";
+        this.mapColors.empty = "#000000";
+        this.mapColors.wall = "#c0c0c0";
+        this.mapColors.door = "#00ffff";
+        this.mapColors.upstairs = "#a000a0";
         this.mapColors.downstairs = "#200020";
-        this.mapColors.light      = "#aaaa00";
-        this.mapColors.start      = "#00ff00";
+        this.mapColors.light = "#aaaa00";
+        this.mapColors.start = "#00ff00";
     };
 
 
@@ -678,10 +681,6 @@ function Level (numRooms, game) {
         // Calculate the player's position on the minimap
         px = Math.floor(game.player.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
         py = Math.floor(game.player.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
-
-	zx = Math.floor(game.zombie.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
-        zy = Math.floor(game.zombie.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
-
         // Get the room index of the currently occupied cell
         occupied = game.grid[Math.floor(py / MAP_CELL_SIZE)]
                             [Math.floor(px / MAP_CELL_SIZE)].roomIndex;
@@ -696,38 +695,38 @@ function Level (numRooms, game) {
         mapContext.globalAlpha = 0.5;
 
         // Draw the map cells
-        for(y = 0; y < NUM_CELLS.y; ++y)
-        for(x = 0; x < NUM_CELLS.x; ++x) {
-            cell = game.grid[y][x]; 
-            xx = x * MAP_CELL_SIZE;
-            yy = y * MAP_CELL_SIZE;
+        for (y = 0; y < NUM_CELLS.y; ++y)
+            for (x = 0; x < NUM_CELLS.x; ++x) {
+                cell = game.grid[y][x];
+                xx = x * MAP_CELL_SIZE;
+                yy = y * MAP_CELL_SIZE;
 
-            // This is sorta hacky, but it works...
-            switch (cell.type) {
-                case CELL_TYPES.void:       color = this.mapColors.void;       break;
-                case CELL_TYPES.empty:      color = this.mapColors.empty;      break;
-                case CELL_TYPES.wall:       color = this.mapColors.wall;       break;
-                case CELL_TYPES.door:       color = this.mapColors.door;       break;
-                case CELL_TYPES.upstairs:   color = this.mapColors.upstairs;   break;
-                case CELL_TYPES.downstairs: color = this.mapColors.downstairs; break;
-                case CELL_TYPES.light:      color = this.mapColors.light;      break;
-                case CELL_TYPES.start:      color = this.mapColors.start;      break;
-            }
+                // This is sorta hacky, but it works...
+                switch (cell.type) {
+                    case CELL_TYPES.void: color = this.mapColors.void; break;
+                    case CELL_TYPES.empty: color = this.mapColors.empty; break;
+                    case CELL_TYPES.wall: color = this.mapColors.wall; break;
+                    case CELL_TYPES.door: color = this.mapColors.door; break;
+                    case CELL_TYPES.upstairs: color = this.mapColors.upstairs; break;
+                    case CELL_TYPES.downstairs: color = this.mapColors.downstairs; break;
+                    case CELL_TYPES.light: color = this.mapColors.light; break;
+                    case CELL_TYPES.start: color = this.mapColors.start; break;
+                }
 
-            // Light up all the interior cells of the room the player is currently in
-            if (cell.roomIndex === occupied && cell.isInterior()) {
-                mapContext.globalAlpha = 1.0;
-                mapContext.fillStyle = "#ffff22";
-                mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
-                mapContext.globalAlpha = 0.5;
-                continue;
-            }
+                // Light up all the interior cells of the room the player is currently in
+                if (cell.roomIndex === occupied && cell.isInterior()) {
+                    mapContext.globalAlpha = 1.0;
+                    mapContext.fillStyle = "#ffff22";
+                    mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
+                    mapContext.globalAlpha = 0.5;
+                    continue;
+                }
 
-            if (cell.type !== CELL_TYPES.void) {
-                mapContext.fillStyle = color;
-                mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
+                if (cell.type !== CELL_TYPES.void) {
+                    mapContext.fillStyle = color;
+                    mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
+                }
             }
-        }
 
         // Draw the player
         mapContext.beginPath();
@@ -735,14 +734,17 @@ function Level (numRooms, game) {
         mapContext.lineWidth = 3;
         mapContext.arc(px, py, 3, 0, 2 * Math.PI, false);
         mapContext.stroke();
-	
-	// Draw the zombie
-        mapContext.beginPath();
+
+        // Draw the zombie
         mapContext.strokeStyle = "#0000ff";
         mapContext.lineWidth = 3;
-        mapContext.arc(zx, zy, 3, 0, 2 * Math.PI, false);
-        mapContext.stroke();
-
+        for (var z = 0; z < zombieNumber; z++) {
+            mapContext.beginPath();
+            zx = Math.floor(game.zombie[z].mesh.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+            zy = Math.floor(game.zombie[z].mesh.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+            mapContext.arc(zx, zy, 3, 0, 2 * Math.PI, false);
+            mapContext.stroke();
+        }
     };
 
 
@@ -776,7 +778,7 @@ function Level (numRooms, game) {
         console.info("Level generation completed.");
 
         level.debugPrint("grid");
-    }) (this, numRooms);
+    })(this, numRooms);
 
 } // end Level object 
 
@@ -785,7 +787,7 @@ function Level (numRooms, game) {
 // Cell  
 // ----------------------------------------------------------------------------
 function Cell(x, y, type) {
-    this.index = new THREE.Vector2(x,y);
+    this.index = new THREE.Vector2(x, y);
     this.type = type;
     this.doorType = null;
 
@@ -801,21 +803,21 @@ function Cell(x, y, type) {
 // ----------------------------------------------------------------------------
 // Room
 // ----------------------------------------------------------------------------
-function Room (size) {
-    this.size  = size;
-    this.pos   = new THREE.Vector2(0,0);
+function Room(size) {
+    this.size = size;
+    this.pos = new THREE.Vector2(0, 0);
     this.tiles = null;
 
 
     // Initialize this room with walls surrounding empty space
     // -------------------------------------------------------
-    (function init (room) {
+    (function init(room) {
         var x, y, row;
 
         room.tiles = new Array(room.size.y);
-        for(y = 0; y < room.size.y; ++y) {
+        for (y = 0; y < room.size.y; ++y) {
             row = new Array(room.size.x);
-            for(x = 0; x < room.size.x; ++x) {
+            for (x = 0; x < room.size.x; ++x) {
                 if (y === 0 || y === room.size.y - 1
                  || x === 0 || x === room.size.x - 1) {
                     row[x] = CELL_TYPES.wall;
@@ -825,31 +827,31 @@ function Room (size) {
             }
             room.tiles[y] = row;
         }
-    }) (this);
+    })(this);
 
 
     // Does this room intersect the specified room?
     // --------------------------------------------
     this.intersectsRoom = function (room) {
         // The +/- 1's are to allow overlapping walls
-        return !(this.left()   > room.right() - 1
-              || this.right()  < room.left() + 1
-              || this.top()    > room.bottom() - 1
+        return !(this.left() > room.right() - 1
+              || this.right() < room.left() + 1
+              || this.top() > room.bottom() - 1
               || this.bottom() < room.top() + 1);
     };
 
-    
+
     // Are there stairs anywhere in this room?
     // ---------------------------------------
     this.hasStairs = function () {
         var x, y;
         for (y = 0; y < this.size.y; ++y)
-        for (x = 0; x < this.size.x; ++x) {
-            if (this.tiles[y][x] === CELL_TYPES.upstairs
-             || this.tiles[y][x] === CELL_TYPES.downstairs) {
-                return true;
+            for (x = 0; x < this.size.x; ++x) {
+                if (this.tiles[y][x] === CELL_TYPES.upstairs
+                 || this.tiles[y][x] === CELL_TYPES.downstairs) {
+                    return true;
+                }
             }
-        }
         return false;
     };
 
@@ -859,11 +861,11 @@ function Room (size) {
     this.getDoorLocations = function () {
         var doors = [];
         for (y = 0; y < this.size.y; ++y)
-        for (x = 0; x < this.size.x; ++x) {
-            if (this.tiles[y][x] === CELL_TYPES.door) {
-               doors.push(new THREE.Vector2(x,y));
+            for (x = 0; x < this.size.x; ++x) {
+                if (this.tiles[y][x] === CELL_TYPES.door) {
+                    doors.push(new THREE.Vector2(x, y));
+                }
             }
-        }
         return doors;
     };
 
@@ -872,14 +874,14 @@ function Room (size) {
     // --------------------------------------------
     this.debugPrint = function () {
         var str = "Room: "
-                + "pos("+this.pos.x+","+this.pos.y+") "
-                + "size("+this.size.x+","+this.size.y+") "
-                + "lrtb("+this.left()+","+this.right()
-                +     ","+this.top()+","+this.bottom()+")\n",
+                + "pos(" + this.pos.x + "," + this.pos.y + ") "
+                + "size(" + this.size.x + "," + this.size.y + ") "
+                + "lrtb(" + this.left() + "," + this.right()
+                + "," + this.top() + "," + this.bottom() + ")\n",
             x, y;
-        for(y = 0; y < this.tiles.length; ++y) {
+        for (y = 0; y < this.tiles.length; ++y) {
             if (y != 0) { str += "\n"; }
-            for(x = 0; x < this.tiles[0].length; ++x) {
+            for (x = 0; x < this.tiles[0].length; ++x) {
                 str += this.tiles[y][x];
             }
         }
@@ -889,9 +891,9 @@ function Room (size) {
 
     // Some helpers to get bounds of room
     // ----------------------------------
-    this.left   = function () { return this.pos.x; };
-    this.right  = function () { return this.pos.x + this.size.x - 1; };
-    this.top    = function () { return this.pos.y; };
+    this.left = function () { return this.pos.x; };
+    this.right = function () { return this.pos.x + this.size.x - 1; };
+    this.top = function () { return this.pos.y; };
     this.bottom = function () { return this.pos.y + this.size.y - 1; };
 
 } // end Room object

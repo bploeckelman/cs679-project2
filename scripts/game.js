@@ -19,11 +19,10 @@ function Game(renderer, canvas) {
     this.bulletDelay = 0;
     this.level = null;
     this.player = null;
-    this.zombie = null;
+    this.zombie = [];
     this.oldplayer = new THREE.Vector3();
     this.grid = null;
     this.searchDelay = 1;
-    this.queue = [];
     this.element = {
         sz: 0,
         sx: 0,
@@ -34,7 +33,6 @@ function Game(renderer, canvas) {
         this.sx = sx;
         this.p = p;
     }
-    this.zombqueue;
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -69,17 +67,21 @@ function Game(renderer, canvas) {
             game.level.startPos.x, 16, game.level.startPos.y);
         game.scene.add(game.player);
 
-        var texture = THREE.ImageUtils.loadTexture("images/crate.gif");
+        var zombieGeom = new THREE.CubeGeometry(8, 20, 4);
+        var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
+        var zombieMat = new THREE.MeshLambertMaterial({ map: texture });
 
-        game.zombie = new THREE.Mesh(
-                new THREE.CubeGeometry(8, 20, 4),
-                new THREE.MeshBasicMaterial({ map: texture })
-            );
-
-        game.zombie.position.set(
-            game.level.zombiePos.x, 10, game.level.zombiePos.y);
-        game.scene.add(game.zombie);
-
+        for (var z = 0; z < game.level.zombiePos.length; z++) {
+            Azombie = {
+                mesh: new THREE.Mesh(zombieGeom, zombieMat),
+                vel: 1,
+                queue: [],
+                at: 0
+            };
+            Azombie.mesh.position = new THREE.Vector3(game.level.zombiePos[z].x, 10, game.level.zombiePos[z].y),
+            game.zombie.push(Azombie);
+            game.scene.add(Azombie.mesh);
+        };
 
         // Setup camera
         game.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -119,7 +121,6 @@ function Game(renderer, canvas) {
             refireTime = 0.2,
             bullet,
             bulletVel = 4,
-	    zombieVel = 1,
             bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
             bulletMat = new THREE.MeshLambertMaterial({
                 color: 0xffffff,
@@ -236,78 +237,80 @@ function Game(renderer, canvas) {
             }
         }
 
-
         var CELL_SIZE = 32;
         if (this.searchDelay >= 1) {
             this.searchDelay = 0;
-            this.queue = [];
             var NUM_CELLS = 25;
             var visit = new Array(NUM_CELLS);
             for (var i = 0; i < NUM_CELLS; i++) {
                 visit[i] = new Array(NUM_CELLS);
-                for (var j = 0; j < NUM_CELLS; j++) {
-                    visit[i][j] = 0;
-                }
             }
-            var oz = Math.floor(Math.floor(this.zombie.position.z) / CELL_SIZE + 0.5);
-            var ox = Math.floor(Math.floor(this.zombie.position.x) / CELL_SIZE + 0.5);
-            var sz = Math.floor(Math.floor(this.player.position.z) / CELL_SIZE + 0.5);
-            var sx = Math.floor(Math.floor(this.player.position.x) / CELL_SIZE + 0.5);
-            this.queue.push(new element(sz, sx, 0));
+            for (var z = 0; z < this.zombie.length; z++) {
+                this.zombie[z].queue = [];
+                for (var i = 0; i < NUM_CELLS; i++) {
+                    for (var j = 0; j < NUM_CELLS; j++) {
+                        visit[i][j] = 0;
+                    }
+                }
 
-            var pointing = 0;
-            var found = 0;
-            while (1) {
-                for (var i = -1; i <= 1; i++) {
-                    for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
-                        if (this.grid[sz + i][sx + j].type != '#' && visit[sz + i][sx + j] == 0) {
-                            this.queue.push(new element(sz + i, sx + j, pointing));
-                            visit[sz + i][sx + j] = 1;
-                            if (sz + i == oz && sx + j == ox) {
-                                this.zombqueue = this.queue.length - 1;
-                                found = 1;
+                var oz = Math.floor(Math.floor(this.zombie[z].mesh.position.z) / CELL_SIZE + 0.5);
+                var ox = Math.floor(Math.floor(this.zombie[z].mesh.position.x) / CELL_SIZE + 0.5);
+                var sz = Math.floor(Math.floor(this.player.position.z) / CELL_SIZE + 0.5);
+                var sx = Math.floor(Math.floor(this.player.position.x) / CELL_SIZE + 0.5);
+                this.zombie[z].queue.push(new element(sz, sx, 0));
+                var pointing = 0;
+                var found = 0;
+                while (1) {
+                    for (var i = -1; i <= 1; i++) {
+                        for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
+                            if (this.grid[sz + i][sx + j].type != '#' && visit[sz + i][sx + j] == 0) {
+                                this.zombie[z].queue.push(new element(sz + i, sx + j, pointing));
+                                visit[sz + i][sx + j] = 1;
+                                if (sz + i == oz && sx + j == ox) {
+                                    this.zombie[z].at = this.zombie[z].queue.length - 1;
+                                    found = 1;
+                                }
                             }
                         }
                     }
-                }
-                if (found == 1) {
-                    break;
-                }
-                pointing++;
-                sz = this.queue[pointing].sz;
-                sx = this.queue[pointing].sx;
-            }
-
-            var start = this.zombqueue;
-            while (this.grid[this.queue[start].sz][this.queue[start].sx].type == '+') {
-                if (start == 0) {
-                    break;
-                }
-                start = this.queue[start].p;
-            }
-            if (start != 0) {
-
-                var link = this.queue[start].p;
-                while (1) {
-                    while (this.grid[this.queue[link].sz][this.queue[link].sx].type != '+') {
-                        this.queue[start].p = link;
-                        if (link == 0) {
-                            break;
-                        }
-                        link = this.queue[link].p;
+                    if (found == 1) {
+                        break;
                     }
+                    pointing++;
+                    sz = this.zombie[z].queue[pointing].sz;
+                    sx = this.zombie[z].queue[pointing].sx;
+                }
 
-                    start = this.queue[link].p;
+                var start = this.zombie[z].at;
+                while (this.grid[this.zombie[z].queue[start].sz][this.zombie[z].queue[start].sx].type == '+') {
                     if (start == 0) {
                         break;
                     }
-                    while (this.grid[this.queue[start].sz][this.queue[start].sx].type == '+') {
+                    start = this.zombie[z].queue[start].p;
+                }
+                if (start != 0) {
+                    var link = this.zombie[z].queue[start].p;
+                    while (1) {
+                        while (this.grid[this.zombie[z].queue[link].sz][this.zombie[z].queue[link].sx].type != '+') {
+                            this.zombie[z].queue[start].p = link;
+                            if (link == 0) {
+                                break;
+                            }
+                            link = this.zombie[z].queue[link].p;
+                        }
+
+                        start = this.zombie[z].queue[link].p;
                         if (start == 0) {
                             break;
                         }
-                        start = this.queue[start].p;
+                        while (this.grid[this.zombie[z].queue[start].sz][this.zombie[z].queue[start].sx].type == '+') {
+                            if (start == 0) {
+                                break;
+                            }
+                            start = this.zombie[z].queue[start].p;
+                        }
+                        link = this.zombie[z].queue[start].p;
                     }
-                    link = this.queue[start].p;
                 }
             }
         }
@@ -315,69 +318,73 @@ function Game(renderer, canvas) {
             this.searchDelay += this.clock.getDelta();
         }
 
-        var moveToz = this.queue[this.queue[this.zombqueue].p].sz * CELL_SIZE;
-        var moveTox = this.queue[this.queue[this.zombqueue].p].sx * CELL_SIZE;
-        var dz = moveToz - this.zombie.position.z;
-        var dx = moveTox - this.zombie.position.x;
-        if (dx * dx + dz * dz > 1e-6) {
-            var direction = Math.atan2(dx, dz);
-            if (Math.abs(this.zombie.rotation.y - direction) > 1e-6) {
-                if (Math.abs(this.zombie.rotation.y - direction) > Math.PI) {
-                    if (this.zombie.rotation.y > direction) {
-                        if (this.zombie.rotation.y > direction + 2 * Math.PI - 0.2) {
-                            this.zombie.rotation.y = direction;
+        for (var z = 0; z < this.zombie.length; z++) {
+            var moveToz = this.zombie[z].queue[this.zombie[z].queue[this.zombie[z].at].p].sz * CELL_SIZE;
+            var moveTox = this.zombie[z].queue[this.zombie[z].queue[this.zombie[z].at].p].sx * CELL_SIZE;
+            var dz = moveToz - this.zombie[z].mesh.position.z;
+            var dx = moveTox - this.zombie[z].mesh.position.x;
+            if (dx * dx + dz * dz > 1e-6) {
+                var direction = Math.atan2(dx, dz);
+                if (Math.abs(this.zombie[z].mesh.rotation.y - direction) > 1e-6) {
+                    if (Math.abs(this.zombie[z].mesh.rotation.y - direction) > Math.PI) {
+                        if (this.zombie[z].mesh.rotation.y > direction) {
+                            if (this.zombie[z].mesh.rotation.y > direction + 2 * Math.PI - 0.2) {
+                                this.zombie[z].mesh.rotation.y = direction;
+                            }
+                            else {
+                                this.zombie[z].mesh.rotation.y += 0.2;
+                                if (this.zombie[z].mesh.rotation.y > Math.PI) {
+                                    this.zombie[z].mesh.rotation.y -= 2 * Math.PI;
+                                }
+                            }
                         }
                         else {
-                            this.zombie.rotation.y += 0.2;
-                            if (this.zombie.rotation.y > Math.PI) {
-                                this.zombie.rotation.y -= 2 * Math.PI;
+                            if (this.zombie[z].mesh.rotation.y < direction - 2 * Math.PI + 0.2) {
+                                this.zombie[z].mesh.rotation.y = direction;
+                            }
+                            else {
+                                this.zombie[z].mesh.rotation.y -= 0.2;
+                                if (this.zombie[z].mesh.rotation.y <= -Math.PI) {
+                                    this.zombie[z].mesh.rotation.y += 2 * Math.PI;
+                                }
                             }
                         }
                     }
                     else {
-                        if (this.zombie.rotation.y < direction - 2 * Math.PI + 0.2) {
-                            this.zombie.rotation.y = direction;
+                        if (this.zombie[z].mesh.rotation.y > direction) {
+                            if (this.zombie[z].mesh.rotation.y < direction + 0.2) {
+                                this.zombie[z].mesh.rotation.y = direction;
+                            }
+                            else {
+                                this.zombie[z].mesh.rotation.y -= 0.2;
+                            }
                         }
                         else {
-                            this.zombie.rotation.y -= 0.2;
-                            if (this.zombie.rotation.y <= -Math.PI) {
-                                this.zombie.rotation.y += 2 * Math.PI;
+                            if (this.zombie[z].mesh.rotation.y > direction - 0.2) {
+                                this.zombie[z].mesh.rotation.y = direction;
+                            }
+                            else {
+                                this.zombie[z].mesh.rotation.y += 0.2;
                             }
                         }
                     }
                 }
                 else {
-                    if (this.zombie.rotation.y > direction) {
-                        if (this.zombie.rotation.y < direction + 0.2) {
-                            this.zombie.rotation.y = direction;
-                        }
-                        else {
-                            this.zombie.rotation.y -= 0.2;
-                        }
+                    var dis = Math.sqrt(dx * dx + dz * dz);
+                    if (dis < this.zombie[z].vel) {
+                        this.zombie[z].mesh.position.addSelf(new THREE.Vector3(dx, 0, dz));
+                        this.zombie[z].at = this.zombie[z].queue[this.zombie[z].at].p;
                     }
                     else {
-                        if (this.zombie.rotation.y > direction - 0.2) {
-                            this.zombie.rotation.y = direction;
-                        }
-                        else {
-                            this.zombie.rotation.y += 0.2;
-                        }
+                        this.zombie[z].mesh.position.addSelf(
+                            new THREE.Vector3(this.zombie[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
+                            0,
+                            this.zombie[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
+                    }
+                    if ((moveToz - this.zombie[z].mesh.position.z) * (moveToz - this.zombie[z].mesh.position.z) + (moveTox - this.zombie[z].mesh.position.x) * (moveTox - this.zombie[z].mesh.position.x) < 1e-6) {
+                        this.zombie[z].at = this.zombie[z].queue[this.zombie[z].at].p;
                     }
                 }
-            }
-            else {
-                var dis = Math.sqrt(dx * dx + dz * dz);
-                if (dis < zombieVel) {
-                    this.zombie.position.addSelf(new THREE.Vector3(dx, 0, dz));
-                    this.zombqueue = this.queue[this.zombqueue].p;
-                }
-                else {
-                    this.zombie.position.addSelf(new THREE.Vector3(zombieVel * dx / Math.sqrt(dx * dx + dz * dz), 0, zombieVel * dz / Math.sqrt(dx * dx + dz * dz)));
-                }
-                if ((moveToz - this.zombie.position.z) * (moveToz - this.zombie.position.z) + (moveTox - this.zombie.position.x) * (moveTox - this.zombie.position.x) < 1e-6) {
-                    this.zombqueue = this.queue[this.zombqueue].p;
-                }
-
             }
         }
 
