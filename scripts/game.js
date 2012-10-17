@@ -121,7 +121,7 @@ function Game(renderer, canvas) {
             bulletVel = 4,
 	    zombieVel = 1,
             bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
-            bulletMat = new THREE.MeshLambertMaterial({ 
+            bulletMat = new THREE.MeshLambertMaterial({
                 color: 0xffffff,
                 specular: 0xffffff,
                 shininess: 100
@@ -178,7 +178,7 @@ function Game(renderer, canvas) {
         //   another way to handle this would be to check the .distance
         //   property of the intersects[0].object when using ray for 
         //   object intersection testing.
-        rayVec = new THREE.Vector3(0,0,1);
+        rayVec = new THREE.Vector3(0, 0, 1);
         this.projector.unprojectVector(rayVec, this.camera);
         input.viewRay = new THREE.Ray(
             this.player.position,                             // origin
@@ -192,8 +192,8 @@ function Game(renderer, canvas) {
         // TODO: limit amount of ammunition!
 
         // This allows the player to fire as fast as they can click
-        if (input.click === 0) { 
-            this.bulletDelay = refireTime; 
+        if (input.click === 0) {
+            this.bulletDelay = refireTime;
         }
 
         if (input.click === 1) {
@@ -201,7 +201,7 @@ function Game(renderer, canvas) {
             var intersects = input.viewRay.intersectObjects(this.objects),
                 selected = null;
             if (intersects.length > 0) {
-                selected = intersects[0].object; 
+                selected = intersects[0].object;
                 if (selected.name === "door") {
                     this.level.toggleDoor(selected.doorIndex);
                 }
@@ -218,7 +218,7 @@ function Game(renderer, canvas) {
                     vel: new THREE.Vector3(
                         input.viewRay.direction.x * bulletVel,
                         input.viewRay.direction.y * bulletVel,
-                        input.viewRay.direction.z * bulletVel 
+                        input.viewRay.direction.z * bulletVel
                     ),
                     // Adding viewRay.direction moves the bullet 
                     // out in front of the camera a bit so it isn't clipped
@@ -235,146 +235,160 @@ function Game(renderer, canvas) {
                 this.scene.add(bullet.mesh);
             }
         }
-	var CELL_SIZE=32;
-	if (this.searchDelay>=1) {
-	    this.searchDelay=0;
-	    this.queue=[];
-	    var NUM_CELLS=25;
-	    var visit=new Array(NUM_CELLS);
-	    for (var i=0;i<NUM_CELLS;i++) {
-		visit[i]=new Array(NUM_CELLS);
-		for (var j=0;j<NUM_CELLS;j++){
-		    visit[i][j]=0;
-		}
-	    }
-	    var oz=Math.floor(Math.floor(this.zombie.position.z)/CELL_SIZE+0.5);
-	    var ox=Math.floor(Math.floor(this.zombie.position.x)/CELL_SIZE+0.5);
-	    var sz=Math.floor(Math.floor(this.player.position.z)/CELL_SIZE+0.5);
-	    var sx=Math.floor(Math.floor(this.player.position.x)/CELL_SIZE+0.5);
-	    this.queue.push(new element(sz,sx,0));
-	    
-	    var pointing=0;
-	    var found=0;
-	    while (1){
-	    	for (var i=-1;i<=1;i++){
-	    	    for (var j=-1+Math.abs(i);j<=1-Math.abs(i);j++){
-	    		if (this.grid[sz+i][sx+j].type!='#' && visit[sz+i][sx+j]==0){
-	    		    this.queue.push(new element(sz+i,sx+j,pointing));
-			    visit[sz+i][sx+j]=1;
-			    if (sz+i==oz && sx+j==ox) {
-				this.zombqueue=this.queue.length-1;
-				found=1;
-			    }
-			}
-	    	    }
-		}
-		if (found==1) {
-		    break;
-		}		
-		pointing++;
-		sz=this.queue[pointing].sz;
-		sx=this.queue[pointing].sx;
-	    }
-
-	    var start=this.zombqueue;
-	    while (this.grid[this.queue[start].sz][this.queue[start].sx].type=='+') {
-		start=this.queue[start].p;
-	    }
-	    var link=this.queue[start].p;
-	    while (1) {
-		while (this.grid[this.queue[link].sz][this.queue[link].sx].type!='+') {
-		    this.queue[start].p=link;
-		    if (link==0) {
-			break;
-		    }
-		    link=this.queue[link].p;
-		}
-		start=this.queue[link].p;
-		while (this.grid[this.queue[start].sz][this.queue[start].sx].type=='+') {
-		    start=this.queue[start].p;
-		}
-		if (start==0) {
-		    break;
-		}
-		link=this.queue[start].p;
-	    }    
 
 
-	    
-	}
-	else{
-	    this.searchDelay+=this.clock.getDelta();
-	}
+        var CELL_SIZE = 32;
+        if (this.searchDelay >= 1) {
+            this.searchDelay = 0;
+            this.queue = [];
+            var NUM_CELLS = 25;
+            var visit = new Array(NUM_CELLS);
+            for (var i = 0; i < NUM_CELLS; i++) {
+                visit[i] = new Array(NUM_CELLS);
+                for (var j = 0; j < NUM_CELLS; j++) {
+                    visit[i][j] = 0;
+                }
+            }
+            var oz = Math.floor(Math.floor(this.zombie.position.z) / CELL_SIZE + 0.5);
+            var ox = Math.floor(Math.floor(this.zombie.position.x) / CELL_SIZE + 0.5);
+            var sz = Math.floor(Math.floor(this.player.position.z) / CELL_SIZE + 0.5);
+            var sx = Math.floor(Math.floor(this.player.position.x) / CELL_SIZE + 0.5);
+            this.queue.push(new element(sz, sx, 0));
 
-	var moveToz=this.queue[this.queue[this.zombqueue].p].sz*CELL_SIZE;
-	var moveTox=this.queue[this.queue[this.zombqueue].p].sx*CELL_SIZE;
-	var dz=moveToz-this.zombie.position.z;
-	var dx=moveTox-this.zombie.position.x;
-	if (dx!=0 || dz!=0) {
-	    if (this.zombie.rotation.y!=Math.atan2(dx,dz)) {		
-		if (Math.abs(this.zombie.rotation.y-Math.atan2(dx,dz))>Math.PI) {
-		    if (this.zombie.rotation.y>Math.atan2(dx,dz)) {
-			if (this.zombie.rotation.y>Math.atan2(dx,dz)+2*Math.PI-0.2) {
-			    this.zombie.rotation.y=Math.atan2(dx,dz);
-			}
-			else {
-			    this.zombie.rotation.y+=0.2;
-			    if (this.zombie.rotation.y>Math.PI) {
-				this.zombie.rotation.y-=2*Math.PI;
-			    }
-			}
-		    }
-		    else {
-			if (this.zombie.rotation.y<Math.atan2(dx,dz)-2*Math.PI+0.2) {
-			    this.zombie.rotation.y=Math.atan2(dx,dz);
-			}
-			else {
-			    this.zombie.rotation.y-=0.2;
-			    if (this.zombie.rotation.y<=-Math.PI) {
-				this.zombie.rotation.y+=2*Math.PI;
-			    }
-			}
-		    }
-		}
-		else {
-		    if (this.zombie.rotation.y>Math.atan2(dx,dz)) {
-			if (this.zombie.rotation.y<Math.atan2(dx,dz)+0.2) {
-			    this.zombie.rotation.y=Math.atan2(dx,dz);
-			}
-			else {
-			    this.zombie.rotation.y-=0.2;
-			}
-		    }
-		    else {
-			if (this.zombie.rotation.y>Math.atan2(dx,dz)-0.2) {
-			    this.zombie.rotation.y=Math.atan2(dx,dz);
-			}
-			else {
-			    this.zombie.rotation.y+=0.2;
-			}
-		    }
-		}
-	    }
-	    else{
-		var dis=Math.sqrt(dx*dx+dz*dz);
-		if (dis<zombieVel) {
-		    this.zombie.position.addSelf(new THREE.Vector3(dx,0,dz));
-		    this.zombqueue=this.queue[this.zombqueue].p;
-		}
-		else{
-		    this.zombie.position.addSelf(new THREE.Vector3(zombieVel*dx/Math.sqrt(dx*dx+dz*dz),0,zombieVel*dz/Math.sqrt(dx*dx+dz*dz)));
-		}
-	    }
-	}
+            var pointing = 0;
+            var found = 0;
+            while (1) {
+                for (var i = -1; i <= 1; i++) {
+                    for (var j = -1 + Math.abs(i); j <= 1 - Math.abs(i); j++) {
+                        if (this.grid[sz + i][sx + j].type != '#' && visit[sz + i][sx + j] == 0) {
+                            this.queue.push(new element(sz + i, sx + j, pointing));
+                            visit[sz + i][sx + j] = 1;
+                            if (sz + i == oz && sx + j == ox) {
+                                this.zombqueue = this.queue.length - 1;
+                                found = 1;
+                            }
+                        }
+                    }
+                }
+                if (found == 1) {
+                    break;
+                }
+                pointing++;
+                sz = this.queue[pointing].sz;
+                sx = this.queue[pointing].sx;
+            }
+
+            var start = this.zombqueue;
+            while (this.grid[this.queue[start].sz][this.queue[start].sx].type == '+') {
+                if (start == 0) {
+                    break;
+                }
+                start = this.queue[start].p;
+            }
+            if (start != 0) {
+
+                var link = this.queue[start].p;
+                while (1) {
+                    while (this.grid[this.queue[link].sz][this.queue[link].sx].type != '+') {
+                        this.queue[start].p = link;
+                        if (link == 0) {
+                            break;
+                        }
+                        link = this.queue[link].p;
+                    }
+
+                    start = this.queue[link].p;
+                    if (start == 0) {
+                        break;
+                    }
+                    while (this.grid[this.queue[start].sz][this.queue[start].sx].type == '+') {
+                        if (start == 0) {
+                            break;
+                        }
+                        start = this.queue[start].p;
+                    }
+                    link = this.queue[start].p;
+                }
+            }
+        }
+        else {
+            this.searchDelay += this.clock.getDelta();
+        }
+
+        var moveToz = this.queue[this.queue[this.zombqueue].p].sz * CELL_SIZE;
+        var moveTox = this.queue[this.queue[this.zombqueue].p].sx * CELL_SIZE;
+        var dz = moveToz - this.zombie.position.z;
+        var dx = moveTox - this.zombie.position.x;
+        if (dx * dx + dz * dz > 1e-6) {
+            var direction = Math.atan2(dx, dz);
+            if (Math.abs(this.zombie.rotation.y - direction) > 1e-6) {
+                if (Math.abs(this.zombie.rotation.y - direction) > Math.PI) {
+                    if (this.zombie.rotation.y > direction) {
+                        if (this.zombie.rotation.y > direction + 2 * Math.PI - 0.2) {
+                            this.zombie.rotation.y = direction;
+                        }
+                        else {
+                            this.zombie.rotation.y += 0.2;
+                            if (this.zombie.rotation.y > Math.PI) {
+                                this.zombie.rotation.y -= 2 * Math.PI;
+                            }
+                        }
+                    }
+                    else {
+                        if (this.zombie.rotation.y < direction - 2 * Math.PI + 0.2) {
+                            this.zombie.rotation.y = direction;
+                        }
+                        else {
+                            this.zombie.rotation.y -= 0.2;
+                            if (this.zombie.rotation.y <= -Math.PI) {
+                                this.zombie.rotation.y += 2 * Math.PI;
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (this.zombie.rotation.y > direction) {
+                        if (this.zombie.rotation.y < direction + 0.2) {
+                            this.zombie.rotation.y = direction;
+                        }
+                        else {
+                            this.zombie.rotation.y -= 0.2;
+                        }
+                    }
+                    else {
+                        if (this.zombie.rotation.y > direction - 0.2) {
+                            this.zombie.rotation.y = direction;
+                        }
+                        else {
+                            this.zombie.rotation.y += 0.2;
+                        }
+                    }
+                }
+            }
+            else {
+                var dis = Math.sqrt(dx * dx + dz * dz);
+                if (dis < zombieVel) {
+                    this.zombie.position.addSelf(new THREE.Vector3(dx, 0, dz));
+                    this.zombqueue = this.queue[this.zombqueue].p;
+                }
+                else {
+                    this.zombie.position.addSelf(new THREE.Vector3(zombieVel * dx / Math.sqrt(dx * dx + dz * dz), 0, zombieVel * dz / Math.sqrt(dx * dx + dz * dz)));
+                }
+                if ((moveToz - this.zombie.position.z) * (moveToz - this.zombie.position.z) + (moveTox - this.zombie.position.x) * (moveTox - this.zombie.position.x) < 1e-6) {
+                    this.zombqueue = this.queue[this.zombqueue].p;
+                }
+
+            }
+        }
 
         // Update all the bullets, move backwards through array 
         // to avoid problems when removing bullets
-        for(var i = this.bullets.length - 1; i >= 0; --i) {
+        for (var i = this.bullets.length - 1; i >= 0; --i) {
             // Remove bullets that are too old
             // TODO: also remove if bullet has collided with something
             if (--this.bullets[i].lifetime <= 0) {
                 this.scene.remove(this.bullets[i].mesh);
-                this.bullets.splice(i,1);
+                this.bullets.splice(i, 1);
             } else { // Update the bullet's position based on its velocity
                 this.bullets[i].pos.addSelf(this.bullets[i].vel);
                 this.bullets[i].mesh.position = this.bullets[i].pos;
