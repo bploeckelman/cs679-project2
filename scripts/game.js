@@ -35,7 +35,6 @@ function Game(renderer, canvas) {
 	this.p=p;
     }
     this.zombqueue;
-    this.searchEnable=1;
 
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
@@ -70,9 +69,11 @@ function Game(renderer, canvas) {
             game.level.startPos.x, 16, game.level.startPos.y);
         game.scene.add(game.player);
 
+        var texture= THREE.ImageUtils.loadTexture("images/crate.gif");
+
 	game.zombie = new THREE.Mesh(
             new THREE.CubeGeometry(8, 20, 4),
-            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+            new THREE.MeshBasicMaterial({ map: texture })
         );
 	
 	game.zombie.position.set(
@@ -235,7 +236,7 @@ function Game(renderer, canvas) {
             }
         }
 	var CELL_SIZE=32;
-	if (this.searchDelay>=1 && this.searchEnable==1) {
+	if (this.searchDelay>=1) {
 	    this.searchDelay=0;
 	    this.queue=[];
 	    var NUM_CELLS=25;
@@ -272,31 +273,98 @@ function Game(renderer, canvas) {
 		}		
 		pointing++;
 		sz=this.queue[pointing].sz;
-		sx=this.queue[pointing].sx;     
+		sx=this.queue[pointing].sx;
 	    }
+
+	    var start=this.zombqueue;
+	    while (this.grid[this.queue[start].sz][this.queue[start].sx].type=='+') {
+		start=this.queue[start].p;
+	    }
+	    var link=this.queue[start].p;
+	    while (1) {
+		while (this.grid[this.queue[link].sz][this.queue[link].sx].type!='+') {
+		    this.queue[start].p=link;
+		    if (link==0) {
+			break;
+		    }
+		    link=this.queue[link].p;
+		}
+		start=this.queue[link].p;
+		while (this.grid[this.queue[start].sz][this.queue[start].sx].type=='+') {
+		    start=this.queue[start].p;
+		}
+		if (start==0) {
+		    break;
+		}
+		link=this.queue[start].p;
+	    }    
+
+
 	    
 	}
 	else{
 	    this.searchDelay+=this.clock.getDelta();
 	}
 
-	var moveToz=this.queue[this.zombqueue].sz*CELL_SIZE;
-	var moveTox=this.queue[this.zombqueue].sx*CELL_SIZE;
+	var moveToz=this.queue[this.queue[this.zombqueue].p].sz*CELL_SIZE;
+	var moveTox=this.queue[this.queue[this.zombqueue].p].sx*CELL_SIZE;
 	var dz=moveToz-this.zombie.position.z;
 	var dx=moveTox-this.zombie.position.x;
 	if (dx!=0 || dz!=0) {
-	    this.searchEnable=0;
-	    var dis=Math.sqrt(dx*dx+dz*dz);
-	    if (dis<zombieVel) {
-		this.zombie.position.addSelf(new THREE.Vector3(dx,0,dz));
+	    if (this.zombie.rotation.y!=Math.atan2(dx,dz)) {		
+		if (Math.abs(this.zombie.rotation.y-Math.atan2(dx,dz))>Math.PI) {
+		    if (this.zombie.rotation.y>Math.atan2(dx,dz)) {
+			if (this.zombie.rotation.y>Math.atan2(dx,dz)+2*Math.PI-0.2) {
+			    this.zombie.rotation.y=Math.atan2(dx,dz);
+			}
+			else {
+			    this.zombie.rotation.y+=0.2;
+			    if (this.zombie.rotation.y>Math.PI) {
+				this.zombie.rotation.y-=2*Math.PI;
+			    }
+			}
+		    }
+		    else {
+			if (this.zombie.rotation.y<Math.atan2(dx,dz)-2*Math.PI+0.2) {
+			    this.zombie.rotation.y=Math.atan2(dx,dz);
+			}
+			else {
+			    this.zombie.rotation.y-=0.2;
+			    if (this.zombie.rotation.y<=-Math.PI) {
+				this.zombie.rotation.y+=2*Math.PI;
+			    }
+			}
+		    }
+		}
+		else {
+		    if (this.zombie.rotation.y>Math.atan2(dx,dz)) {
+			if (this.zombie.rotation.y<Math.atan2(dx,dz)+0.2) {
+			    this.zombie.rotation.y=Math.atan2(dx,dz);
+			}
+			else {
+			    this.zombie.rotation.y-=0.2;
+			}
+		    }
+		    else {
+			if (this.zombie.rotation.y>Math.atan2(dx,dz)-0.2) {
+			    this.zombie.rotation.y=Math.atan2(dx,dz);
+			}
+			else {
+			    this.zombie.rotation.y+=0.2;
+			}
+		    }
+		}
 	    }
 	    else{
-		this.zombie.position.addSelf(new THREE.Vector3(zombieVel*dx/Math.sqrt(dx*dx+dz*dz),0,zombieVel*dz/Math.sqrt(dx*dx+dz*dz)));
+		var dis=Math.sqrt(dx*dx+dz*dz);
+		if (dis<zombieVel) {
+		    this.zombie.position.addSelf(new THREE.Vector3(dx,0,dz));
+		    this.zombqueue=this.queue[this.zombqueue].p;
+		}
+		else{
+		    this.zombie.position.addSelf(new THREE.Vector3(zombieVel*dx/Math.sqrt(dx*dx+dz*dz),0,zombieVel*dz/Math.sqrt(dx*dx+dz*dz)));
+		}
 	    }
-	}
-	else{
-	    this.zombqueue=this.queue[this.zombqueue].p;
-	    this.searchEnable=1;
 	}
 
         // Update all the bullets, move backwards through array 
