@@ -35,7 +35,7 @@ function Level(numRooms, game) {
     this.mapContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
-    var zombieNumber = 3;
+    var zombieNumber = 15;
     this.zombiePos = [];
 
     // Static geometry groups ------------------------
@@ -574,7 +574,7 @@ function Level(numRooms, game) {
                 door.canToggle = true;
             }, DOOR_TIMEOUT);
         } else if (door.doorState === "open" && door.canToggle) {
-            this.state[door.position.z / CELL_SIZE][door.position.x / CELL_SIZE] = 0;
+            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = 0;
             tween = new TWEEN.Tween({ rot: Math.PI / 2 })
                 .to({ rot: Math.PI }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)

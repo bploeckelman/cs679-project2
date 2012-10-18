@@ -237,12 +237,21 @@ function Game(renderer, canvas) {
         }
 
         if (this.searchDelay >= 1) {
-            this.searchDelay = 0;            
+            this.searchDelay = 0;
             var visit = new Array(NUM_CELLS.y);
             for (var i = 0; i < NUM_CELLS.y; i++) {
                 visit[i] = new Array(NUM_CELLS.x);
             }
             for (var z = 0; z < this.zombie.length; z++) {
+                var oz = Math.floor(Math.floor(this.zombie[z].mesh.position.z) / CELL_SIZE + 0.5);
+                var ox = Math.floor(Math.floor(this.zombie[z].mesh.position.x) / CELL_SIZE + 0.5);
+                var sz = Math.floor(Math.floor(this.player.position.z) / CELL_SIZE + 0.5);
+                var sx = Math.floor(Math.floor(this.player.position.x) / CELL_SIZE + 0.5);
+
+                if (this.level.grid[sz][sx].type == CELL_TYPES.door && this.level.state[sz][sx] == 0) {
+                    continue;
+                }
+
                 this.zombie[z].queue = [];
                 for (var i = 0; i < NUM_CELLS.y; i++) {
                     for (var j = 0; j < NUM_CELLS.x; j++) {
@@ -250,30 +259,27 @@ function Game(renderer, canvas) {
                     }
                 }
 
-                var oz = Math.floor(Math.floor(this.zombie[z].mesh.position.z) / CELL_SIZE + 0.5);
-                var ox = Math.floor(Math.floor(this.zombie[z].mesh.position.x) / CELL_SIZE + 0.5);
-                var sz = Math.floor(Math.floor(this.player.position.z) / CELL_SIZE + 0.5);
-                var sx = Math.floor(Math.floor(this.player.position.x) / CELL_SIZE + 0.5);
+
                 this.zombie[z].queue.push(new element(sz, sx, 0));
                 var pointing = 0;
                 var found = 0;
                 this.zombie[z].at = -1;
                 while (1) {
-                    if (this.level.grid[sz][sx].type == CELL_TYPES.door && this.level.state[sz][sx] == 0) {
-                        break;
-                    }
                     for (var i = -1; i <= 1; i++) {
                         for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
-                            if (this.level.grid[sz + i][sx + j].type != CELL_TYPES.wall && 
-                                visit[sz + i][sx + j] == 0 &&
-                                (this.level.grid[sz + i][sx + j].type != CELL_TYPES.door || this.level.state[sz + i][sx + j] == 1)
-                                ) {
+                            if (sz + i == oz && sx + j == ox) {
                                 this.zombie[z].queue.push(new element(sz + i, sx + j, pointing));
-                                visit[sz + i][sx + j] = 1;
-                                if (sz + i == oz && sx + j == ox) {
-                                    this.zombie[z].at = this.zombie[z].queue.length - 1;
-                                    found = 1;
-                                    break;
+                                this.zombie[z].at = this.zombie[z].queue.length - 1;
+                                found = 1;
+                                break;
+                            }
+                            else {
+                                if (this.level.grid[sz + i][sx + j].type != CELL_TYPES.wall &&
+                                    visit[sz + i][sx + j] == 0 &&
+                                    (this.level.grid[sz + i][sx + j].type != CELL_TYPES.door || this.level.state[sz + i][sx + j] == 1)
+                                    ) {
+                                    visit[sz + i][sx + j] = 1;
+                                    this.zombie[z].queue.push(new element(sz + i, sx + j, pointing));
                                 }
                             }
                         }
@@ -449,7 +455,7 @@ function Game(renderer, canvas) {
                         if (stop == 0) {
                             this.zombie[z].mesh.position.x = hopeTo.x;
                             this.zombie[z].mesh.position.z = hopeTo.z;
-                        }                        
+                        }
                     }
                     if ((moveToz - this.zombie[z].mesh.position.z) * (moveToz - this.zombie[z].mesh.position.z) + (moveTox - this.zombie[z].mesh.position.x) * (moveTox - this.zombie[z].mesh.position.x) < 1e-6) {
                         this.zombie[z].at = this.zombie[z].queue[this.zombie[z].at].p;
