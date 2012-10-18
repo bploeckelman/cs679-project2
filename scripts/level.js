@@ -244,6 +244,14 @@ function Level(numRooms, game) {
                 this.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
             }
         }
+
+        this.state = new Array(NUM_CELLS.y);
+        for (y = 0; y < NUM_CELLS.y; ++y) {
+            this.state[y] = new Array(NUM_CELLS.x);
+            for (x = 0; x < NUM_CELLS.x; ++x) {
+                this.state[y][x] = 0;
+            }
+        }
     };
 
 
@@ -442,9 +450,10 @@ function Level(numRooms, game) {
         mesh.name = "door";
         mesh.canToggle = true;
         mesh.doorState = "closed";
+        mesh.centerx = x;
+        mesh.centerz = y;
         mesh.doorIndex = this.geometry.doors.push(mesh) - 1;
         mesh.position.set(x, CELL_SIZE / 2, y);
-
         game.objects.push(mesh);
         game.scene.add(mesh);
 
@@ -549,6 +558,7 @@ function Level(numRooms, game) {
 
         var door = this.geometry.doors[index], tween;
         if (door.doorState === "closed" && door.canToggle) {
+            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = 1;
             tween = new TWEEN.Tween({ rot: Math.PI })
                 .to({ rot: Math.PI / 2 }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
@@ -564,6 +574,7 @@ function Level(numRooms, game) {
                 door.canToggle = true;
             }, DOOR_TIMEOUT);
         } else if (door.doorState === "open" && door.canToggle) {
+            this.state[door.position.z / CELL_SIZE][door.position.x / CELL_SIZE] = 0;
             tween = new TWEEN.Tween({ rot: Math.PI / 2 })
                 .to({ rot: Math.PI }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
@@ -723,7 +734,7 @@ function Level(numRooms, game) {
                     continue;
                 }
 
-                if (cell.type !== CELL_TYPES.void) {
+                if (cell.type !== CELL_TYPES.void && cell.type !== CELL_TYPES.start && cell.type !==CELL_TYPES.zomstart) {
                     mapContext.fillStyle = color;
                     mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
                 }
@@ -796,7 +807,7 @@ function Cell(x, y, type) {
     this.isInterior = function () {
         // Don't include stairs, as they don't belong next to a door 
         return (this.type === CELL_TYPES.empty
-             || this.type === CELL_TYPES.light);
+             || this.type === CELL_TYPES.light || this.type === CELL_TYPES.start || this.type === CELL_TYPES.zomstart);
     };
 }
 
