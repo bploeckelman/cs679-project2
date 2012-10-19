@@ -23,6 +23,7 @@ function Game(renderer, canvas) {
     this.zombie = [];
     this.oldplayer = new THREE.Vector3();
     this.searchDelay = 1;
+    this.firstOver;
     this.element = {
         sz: 0,
         sx: 0,
@@ -113,11 +114,58 @@ function Game(renderer, canvas) {
         console.log("Game initialized.");
     })(this);
 
+    this.ending = function () {
+        var mainCanvas = document.getElementById("canvas");
+        // Create and position the information, then add it to the document
+        endingInfo = document.createElement("canvas");
+        endingInfo.id = "endinginfo";
+        endingInfo.style.position = "absolute";
+        endingInfo.width = canvas.width;
+        endingInfo.height = canvas.height;
+        // TODO: have to handle window resizing
+        endingInfo.style.bottom = 0;
+        endingInfo.style.right = 0;
+        document.getElementById("container").appendChild(endingInfo);
+
+        // Save the 2d context for this canvas
+        Context = endingInfo.getContext("2d");
+
+        // Clear the map
+        Context.save();
+        Context.setTransform(1, 0, 0, 1, 0, 0);
+        Context.clearRect(0, 0, endingInfo.width, endingInfo.height);
+        Context.restore();
+        
+        Context.font = '60px Arial';
+        Context.textBaseline = 'middle';
+        Context.textAlign = 'center';
+        if (this.zombie.length == 0) {
+            Context.fillStyle = "#00ff00";
+            Context.fillText("Zombies are all killed!", endingInfo.width / 2, endingInfo.height / 2);
+        }
+        else {
+            Context.fillStyle = "#ff0000";
+            Context.fillText("You died!", endingInfo.width / 2, endingInfo.height / 2);
+        }
+
+    };
+
 
     // Update everything in the scene
     // ------------------------------------------------------------------------
     this.update = function (input) {
+        if (this.zombie.length == 0 || this.player.health == 0) {
+            if (this.firstOver == 0) {
+                this.firstOver = 1;
+            }
+            else {
+                this.ending();
+                return;
+            }
+        }
+
         this.level.update();
+              
 
         updateMovement(this, input);
         updateBullets(this, input);
@@ -317,6 +365,7 @@ function updateBullets(game, input) {
                     if (selected.name === "zombie") {
                         game.zombie[selected.index].health -= 5;
                         if (game.zombie[selected.index].health <= 0) {
+                            game.player.money += 1000;
                             game.scene.remove(selected);
                             game.zomobjects.splice(selected.index, 1);
                             game.zombie.splice(selected.index, 1);

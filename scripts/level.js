@@ -36,7 +36,7 @@ function Level(numRooms, game) {
     this.playerContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
-    var zombieNumber = 15;
+    var zombieNumber = 5;
     this.zombiePos = [];
 
     // Static geometry groups ------------------------
