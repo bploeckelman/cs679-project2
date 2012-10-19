@@ -81,6 +81,7 @@ function Game(renderer, canvas) {
             Azombie = {
                 mesh: new THREE.Mesh(zombieGeom, zombieMat),
                 vel: 0.5,
+                health: 10,
                 queue: [],
                 at: 0
             };
@@ -292,6 +293,7 @@ function updateBullets(game, input) {
                 selected = null;
             if (intersects1.length > 0 && intersects2.length == 0) {
                 selected = intersects1[0].object;
+                
             }
 
             if (intersects1.length == 0 && intersects2.length > 0) {
@@ -300,26 +302,31 @@ function updateBullets(game, input) {
 
             if (intersects1.length > 0 && intersects2.length > 0) {
                 if (intersects1[0].distance > intersects2[0].distance) {
-                    selected = intersects1[0].object;
+                    selected = intersects2[0].object;
                 }
                 else {
-                    selected = intersect2[0].object;
+                    selected = intersect1[0].object;
                 }
             }
-
-            if (selected.name === "door") {
-                game.level.toggleDoor(selected.doorIndex);
-            }
-            else {
-                if (selected.name === "zombie") {
-                    game.scene.remove(selected);
-                    game.zomobjects.splice(selected.index, 1);
-                    game.zombie.splice(selected.index, 1);
-                    for (var z = selected.index; z < game.zombie.length; z++) {
-                        game.zombie[z].mesh.index -= 1;
+   
+            if (selected != null) {
+                if (selected.name === "door") {
+                    game.level.toggleDoor(selected.doorIndex);
+                }
+                else {
+                    if (selected.name === "zombie") {
+                        game.zombie[selected.index].health -= 5;
+                        if (game.zombie[selected.index].health <= 0) {
+                            game.scene.remove(selected);
+                            game.zomobjects.splice(selected.index, 1);
+                            game.zombie.splice(selected.index, 1);
+                            for (var z = selected.index; z < game.zombie.length; z++) {
+                                game.zombie[z].mesh.index -= 1;
+                            }
+                        }
                     }
                 }
-            }            
+            }
 
             // Slow down firing rate if player is holding the mouse button down
             game.bulletDelay = 0;
