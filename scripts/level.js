@@ -778,6 +778,11 @@ function Level(numRooms, game) {
     this.update = function () {
         // Update dynamic stuff
         this.updateMinimap();
+
+        // Draw the player's healthbar
+        // TODO: use another 2d canvas for gui stuff like this, like the minimap
+        var healthText = document.getElementById("healthbar");
+        healthText.innerText = "player health: " + game.player.health + "%";
     };
 
 

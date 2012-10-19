@@ -64,6 +64,10 @@ function Game(renderer, canvas) {
         );
         game.player.position.set(
             game.level.startPos.x, 16, game.level.startPos.y);
+        game.player.canBeHurt = true;
+        game.player.health = 100;
+        game.player.ammo = 50;
+        game.player.inventory = [];
         game.scene.add(game.player);
 
         var zombieGeom = new THREE.CubeGeometry(8, 20, 4);
@@ -73,7 +77,7 @@ function Game(renderer, canvas) {
         for (var z = 0; z < game.level.zombiePos.length; z++) {
             Azombie = {
                 mesh: new THREE.Mesh(zombieGeom, zombieMat),
-                vel: 0.8,
+                vel: 0.5,
                 queue: [],
                 at: 0
             };
@@ -106,33 +110,13 @@ function Game(renderer, canvas) {
     // Update everything in the scene
     // ------------------------------------------------------------------------
     this.update = function (input) {
-        // Update the level
         this.level.update();
 
-        // Update camera/player movement + view ray
         updateMovement(this, input);
-
-        // Handle bullets
-        // TODO: add collision code for bullets
-        // TODO: limit amount of ammunition!
         updateBullets(this, input);
-
-        // Update zombies
         updateZombies(this);
-
-        // Update the player's light
-        this.lights[0].position.set(
-            this.player.position.x,
-            this.player.position.y + 32,
-            this.player.position.z);
-
-        //collision detection code
         handleCollisions(this, input);
-
-        // HACK: make the player a little bit taller
-        if (this.player.position.y < 16) {
-            this.player.position.y = 16;
-        }
+        updatePlayer(this, input);        
 
         TWEEN.update();
     };
@@ -146,6 +130,48 @@ function Game(renderer, canvas) {
     };
 
 } // end Game object
+
+
+
+// ----------------------------------------------------------------------------
+// Update the player 
+// ----------------------------------------------------------------------------
+var HURT_DISTANCE = 16,
+    HURT_TIMEOUT = 1000,
+    HURT_AMOUNT = 5;
+function updatePlayer (game, input) {
+    // Check for zombie touching
+    for(var i = 0; i < game.zombie.length; ++i) {
+        var dist = game.player.position.distanceTo(game.zombie[i].mesh.position);
+        // Hurt the player if a zombie is close enough
+        // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
+        if (dist < HURT_DISTANCE && game.player.canBeHurt) {
+            game.player.health -= HURT_AMOUNT;
+            // TODO: handle player death when health <= 0
+            if (game.player.health < 0)
+                game.player.health = 0;
+            game.player.canBeHurt = false;
+            console.log("ouch! health = " + game.player.health);
+
+            setTimeout(function () {
+                game.player.canBeHurt = true;
+            }, HURT_TIMEOUT);
+                    
+            break;
+        }
+    }
+    
+    // HACK: make the player a little bit taller
+    if (game.player.position.y < 16) {
+        game.player.position.y = 16;
+    }
+
+    // Update the player's light
+    game.lights[0].position.set(
+        game.player.position.x,
+        game.player.position.y + 32,
+        game.player.position.z);
+}
 
 
 // ----------------------------------------------------------------------------
@@ -218,6 +244,8 @@ function updateMovement (game, input) {
 
 // ----------------------------------------------------------------------------
 // Update all the Game's Bullets 
+// TODO: add collision code for bullets
+// TODO: limit amount of ammunition!
 // ----------------------------------------------------------------------------
 function updateBullets (game, input) {
     var refireTime = 0.2,

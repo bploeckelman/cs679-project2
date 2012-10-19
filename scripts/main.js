@@ -24,7 +24,14 @@
 
     // Style html a bit
     document.getElementsByTagName("body")[0].style.background = "rgb(64,64,64)";
+    document.getElementsByTagName("body")[0].style.margin = "0";
+    document.getElementsByTagName("body")[0].style.padding = "0";
+    document.getElementsByTagName("body")[0].style.overflow = "hidden";
 
+    document.getElementById("healthbar").style.width = "25%";
+    document.getElementById("healthbar").style.margin = "auto 0px";
+    document.getElementById("healthbar").style.text_align = "center";
+    document.getElementById("healthbar").style.color = "rgb(255,0,0)";
 
     // Setup sizes and add the renderer to the document 
     canvas.width = canvasWidth;
