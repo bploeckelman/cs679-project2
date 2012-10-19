@@ -781,7 +781,7 @@ function Level(numRooms, game) {
         // Draw the zombie
         mapContext.strokeStyle = "#0000ff";
         mapContext.lineWidth = 3;
-        for (var z = 0; z < zombieNumber; z++) {
+        for (var z = 0; z < game.zombie.length; z++) {
             mapContext.beginPath();
             zx = Math.floor(game.zombie[z].mesh.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
             zy = Math.floor(game.zombie[z].mesh.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
@@ -813,6 +813,8 @@ function Level(numRooms, game) {
         playerContext.strokeText("0", playerInfo.width * 11 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Ammo:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
         playerContext.strokeText(game.player.ammo.toString(), playerInfo.width * 15 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("$:", playerInfo.width * 12.8 / 20, playerInfo.height / 4);
+        playerContext.strokeText(game.player.money.toString(), playerInfo.width * 14.5 / 20, playerInfo.height / 4);
     };
 
 

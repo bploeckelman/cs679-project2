@@ -14,6 +14,7 @@ function Game(renderer, canvas) {
     this.camera = null;
     this.viewRay = null;
     this.objects = [];
+    this.zomobjects = [];
     this.lights = [];
     this.bullets = [];
     this.bulletDelay = 0;
@@ -68,6 +69,7 @@ function Game(renderer, canvas) {
         game.player.health = 100;
         game.player.armor = 100;
         game.player.ammo = 50;
+        game.player.money = 10000;
         game.player.inventory = [];
         game.scene.add(game.player);
 
@@ -82,8 +84,11 @@ function Game(renderer, canvas) {
                 queue: [],
                 at: 0
             };
-            Azombie.mesh.position = new THREE.Vector3(game.level.zombiePos[z].x, 10, game.level.zombiePos[z].y),
+            Azombie.mesh.position = new THREE.Vector3(game.level.zombiePos[z].x, 10, game.level.zombiePos[z].y);
+            Azombie.mesh.name = "zombie";
             game.zombie.push(Azombie);
+            game.zomobjects.push(Azombie.mesh);
+            Azombie.mesh.index = game.zombie.length - 1;
             game.scene.add(Azombie.mesh);
         };
 
@@ -117,7 +122,7 @@ function Game(renderer, canvas) {
         updateBullets(this, input);
         updateZombies(this);
         handleCollisions(this, input);
-        updatePlayer(this, input);        
+        updatePlayer(this, input);
 
         TWEEN.update();
     };
@@ -141,9 +146,9 @@ var HURT_DISTANCE = 16,
     HURT_TIMEOUT = 1000,
     HURT_AMOUNT = 5,
     ZOMBIE_DISTANCE = 10;
-function updatePlayer (game, input) {
+function updatePlayer(game, input) {
     // Check for zombie touching
-    for(var i = 0; i < game.zombie.length; ++i) {
+    for (var i = 0; i < game.zombie.length; ++i) {
         var dist = game.player.position.distanceTo(game.zombie[i].mesh.position);
         // Hurt the player if a zombie is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
@@ -190,7 +195,7 @@ function updatePlayer (game, input) {
 // ----------------------------------------------------------------------------
 // Update based on player movement: camera, player position/jumping, view ray
 // ----------------------------------------------------------------------------
-function updateMovement (game, input) {
+function updateMovement(game, input) {
     var triggerAD = input.trigger.A - input.trigger.D,
         triggerWS = input.trigger.W - input.trigger.S,
         triggerQE = input.trigger.Q - input.trigger.E,
@@ -260,10 +265,10 @@ function updateMovement (game, input) {
 // TODO: add collision code for bullets
 // TODO: limit amount of ammunition!
 // ----------------------------------------------------------------------------
-function updateBullets (game, input) {
+function updateBullets(game, input) {
     var refireTime = 0.2,
         bullet,
-        bulletVel = 4,
+        bulletVel = 10,
         bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
         bulletMat = new THREE.MeshLambertMaterial({
             color: 0xffffff,
@@ -277,19 +282,46 @@ function updateBullets (game, input) {
     }
 
     if (input.click === 1) {
-        // Toggle doors if there are any directly in line of sight 
-        var intersects = input.viewRay.intersectObjects(game.objects),
-            selected = null;
-        if (intersects.length > 0) {
-            selected = intersects[0].object;
+        if (game.bulletDelay < refireTime) {
+            game.bulletDelay += game.clock.getDelta();
+        }
+        else {
+            // Toggle doors if there are any directly in line of sight 
+            var intersects1 = input.viewRay.intersectObjects(game.objects),
+                intersects2 = input.viewRay.intersectObjects(game.zomobjects),
+                selected = null;
+            if (intersects1.length > 0 && intersects2.length == 0) {
+                selected = intersects1[0].object;
+            }
+
+            if (intersects1.length == 0 && intersects2.length > 0) {
+                selected = intersects2[0].object;
+            }
+
+            if (intersects1.length > 0 && intersects2.length > 0) {
+                if (intersects1[0].distance > intersects2[0].distance) {
+                    selected = intersects1[0].object;
+                }
+                else {
+                    selected = intersect2[0].object;
+                }
+            }
+
             if (selected.name === "door") {
                 game.level.toggleDoor(selected.doorIndex);
             }
-        }
+            else {
+                if (selected.name === "zombie") {
+                    game.scene.remove(selected);
+                    game.zomobjects.splice(selected.index, 1);
+                    game.zombie.splice(selected.index, 1);
+                    for (var z = selected.index; z < game.zombie.length; z++) {
+                        game.zombie[z].mesh.index -= 1;
+                    }
+                }
+            }            
 
-        // Slow down firing rate if player is holding the mouse button down
-        game.bulletDelay += game.clock.getDelta();
-        if (game.bulletDelay > refireTime) {
+            // Slow down firing rate if player is holding the mouse button down
             game.bulletDelay = 0;
 
             // Create a new bullet object
