@@ -305,7 +305,7 @@ function updateBullets(game, input) {
                     selected = intersects2[0].object;
                 }
                 else {
-                    selected = intersect1[0].object;
+                    selected = intersects1[0].object;
                 }
             }
    
