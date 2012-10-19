@@ -66,6 +66,7 @@ function Game(renderer, canvas) {
             game.level.startPos.x, 16, game.level.startPos.y);
         game.player.canBeHurt = true;
         game.player.health = 100;
+        game.player.armor = 100;
         game.player.ammo = 50;
         game.player.inventory = [];
         game.scene.add(game.player);
@@ -147,18 +148,28 @@ function updatePlayer (game, input) {
         // Hurt the player if a zombie is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
-            game.player.health -= HURT_AMOUNT;
-            // TODO: handle player death when health <= 0
-            if (game.player.health < 0)
-                game.player.health = 0;
-            game.player.canBeHurt = false;
-            console.log("ouch! health = " + game.player.health);
-
+            if (game.player.armor > 0) {
+                game.player.armor -= HURT_AMOUNT;
+                // TODO: handle player death when health <= 0
+                if (game.player.armor < 0) {
+                    game.player.health += game.player.armor;
+                    game.player.armor = 0;
+                }
+                game.player.canBeHurt = false;
+            }
+            else {
+                game.player.health -= HURT_AMOUNT;
+                // TODO: handle player death when health <= 0
+                if (game.player.health < 0)
+                    game.player.health = 0;
+                game.player.canBeHurt = false;
+            }
+            console.log("ouch! Armor = " + game.player.armor + ", " + "health = " + game.player.health);
 
             setTimeout(function () {
                 game.player.canBeHurt = true;
             }, HURT_TIMEOUT);
-                    
+
             break;
         }
     }
