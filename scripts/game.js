@@ -78,8 +78,14 @@ function Game(renderer, canvas) {
         var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
         var zombieMat = new THREE.MeshLambertMaterial({ map: texture });
 
+		var loader = new THREE.JSONLoader(true);
+		var tempCounter = 0;
+		
         for (var z = 0; z < game.level.zombiePos.length; z++) {
             Azombie = {
+				x: game.level.zombiePos[z].x,
+				y: 0,
+				z: game.level.zombiePos[z].y,
                 mesh: new THREE.Mesh(zombieGeom, zombieMat),
                 vel: 0.5,
                 health: 10,
@@ -91,6 +97,17 @@ function Game(renderer, canvas) {
             game.zombie.push(Azombie);
             game.zomobjects.push(Azombie.mesh);
             Azombie.mesh.index = game.zombie.length - 1;
+			
+			
+			loader.load( "models/zombie.js", function(geometry) {
+				game.zombie[tempCounter].mesh = new THREE.Mesh(geometry,new THREE.MeshFaceMaterial);
+				game.zombie[tempCounter].mesh.position.set(game.zombie[tempCounter].x, game.zombie[tempCounter].y, game.zombie[tempCounter].z);
+				game.zombie[tempCounter].mesh.scale.set(15, 12, 15);
+				game.zombie[tempCounter].mesh.name = "zombie";
+				game.scene.add(game.zombie[tempCounter].mesh);
+				tempCounter++;
+			});
+			
             game.scene.add(Azombie.mesh);
         };
 
