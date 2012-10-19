@@ -33,6 +33,7 @@ function Level(numRooms, game) {
     };
     this.mapCanvas = null;
     this.mapContext = null;
+    this.playerContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
     var zombieNumber = 15;
@@ -625,45 +626,45 @@ function Level(numRooms, game) {
         var x, y, cell, cellA, cellB;
 
         for (y = 2; y < NUM_CELLS.y - 2; ++y)
-        for (x = 2; x < NUM_CELLS.x - 2; ++x) {
-            cell = this.grid[y][x];
+            for (x = 2; x < NUM_CELLS.x - 2; ++x) {
+                cell = this.grid[y][x];
 
-            if (cell.type === CELL_TYPES.wall) {
-                // Get neighbor cells
-                celly1 = this.grid[y - 1][x];
-                celly2 = this.grid[y + 1][x];
-                celly3 = this.grid[y - 2][x];
-                celly4 = this.grid[y + 2][x];
+                if (cell.type === CELL_TYPES.wall) {
+                    // Get neighbor cells
+                    celly1 = this.grid[y - 1][x];
+                    celly2 = this.grid[y + 1][x];
+                    celly3 = this.grid[y - 2][x];
+                    celly4 = this.grid[y + 2][x];
 
-                cellx1 = this.grid[y][x - 1];
-                cellx2 = this.grid[y][x + 1];
-                cellx3 = this.grid[y][x - 2];
-                cellx4 = this.grid[y][x + 2];
+                    cellx1 = this.grid[y][x - 1];
+                    cellx2 = this.grid[y][x + 1];
+                    cellx3 = this.grid[y][x - 2];
+                    cellx4 = this.grid[y][x + 2];
 
-                // If no neighbor cell is a door...
-                if (celly1.type !== CELL_TYPES.door && celly2.type !== CELL_TYPES.door
-                 && celly3.type !== CELL_TYPES.door && celly4.type !== CELL_TYPES.door
-                 && cellx1.type !== CELL_TYPES.door && cellx2.type !== CELL_TYPES.door
-                 && cellx3.type !== CELL_TYPES.door && cellx4.type !== CELL_TYPES.door) {
-                    // If both immediate y neighbors are interior cells...
-                    if (celly1.isInterior() && celly2.isInterior()) {
-                        // Found a potential door!, add location to the list
-                        console.log("Potential door @ (" + x + "," + y + ")");
-                        cell.type = CELL_TYPES.door;
-                        cell.doorType = "vertical";
-                        continue;
-                    }
-                    // If both immediate x neighbors are interior cells...
-                    if (cellx1.isInterior() && cellx2.isInterior()) {
-                        // Found a potential door!, add location to the list
-                        console.log("Potential door @ (" + x + "," + y + ")");
-                        cell.type = CELL_TYPES.door;
-                        cell.doorType = "horizontal";
-                        continue;
+                    // If no neighbor cell is a door...
+                    if (celly1.type !== CELL_TYPES.door && celly2.type !== CELL_TYPES.door
+                     && celly3.type !== CELL_TYPES.door && celly4.type !== CELL_TYPES.door
+                     && cellx1.type !== CELL_TYPES.door && cellx2.type !== CELL_TYPES.door
+                     && cellx3.type !== CELL_TYPES.door && cellx4.type !== CELL_TYPES.door) {
+                        // If both immediate y neighbors are interior cells...
+                        if (celly1.isInterior() && celly2.isInterior()) {
+                            // Found a potential door!, add location to the list
+                            console.log("Potential door @ (" + x + "," + y + ")");
+                            cell.type = CELL_TYPES.door;
+                            cell.doorType = "vertical";
+                            continue;
+                        }
+                        // If both immediate x neighbors are interior cells...
+                        if (cellx1.isInterior() && cellx2.isInterior()) {
+                            // Found a potential door!, add location to the list
+                            console.log("Potential door @ (" + x + "," + y + ")");
+                            cell.type = CELL_TYPES.door;
+                            cell.doorType = "horizontal";
+                            continue;
+                        }
                     }
                 }
             }
-        }
     };
 
 
@@ -697,6 +698,23 @@ function Level(numRooms, game) {
         this.mapColors.start = "#00ff00";
     };
 
+    this.generateInformation = function () {
+        var mainCanvas = document.getElementById("canvas");
+
+        // Create and position the information, then add it to the document
+        playerInfo = document.createElement("canvas");
+        playerInfo.id = "info";
+        playerInfo.style.position = "absolute";
+        playerInfo.width = canvas.width * 0.95;
+        playerInfo.height = canvas.height * 0.22;
+        // TODO: have to handle window resizing
+        playerInfo.style.bottom = 0;
+        playerInfo.style.right = 0;
+        document.getElementById("container").appendChild(playerInfo);
+
+        // Save the 2d context for this canvas
+        playerContext = playerInfo.getContext("2d");
+    }
 
     // Update minimap
     // --------------------------------
@@ -747,7 +765,7 @@ function Level(numRooms, game) {
                     continue;
                 }
 
-                if (cell.type !== CELL_TYPES.void && cell.type !== CELL_TYPES.start && cell.type !==CELL_TYPES.zomstart) {
+                if (cell.type !== CELL_TYPES.void && cell.type !== CELL_TYPES.start && cell.type !== CELL_TYPES.zomstart) {
                     mapContext.fillStyle = color;
                     mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
                 }
@@ -772,17 +790,46 @@ function Level(numRooms, game) {
         }
     };
 
+    // Update player
+    // --------------------------------
+    this.updatePlayer = function () {
+        // Clear the map
+        playerContext.save();
+        playerContext.setTransform(1, 0, 0, 1, 0, 0);
+        playerContext.clearRect(0, 0, playerInfo.width, playerInfo.height);
+        playerContext.restore();
+
+        // Blend the map a bit
+        playerContext.globalAlpha = 0.5;
+        playerContext.strokeStyle = "#ff7f00";
+        playerContext.font = '40px Arial';
+        playerContext.textBaseline = 'middle';
+        playerContext.textAlign = 'center';
+        playerContext.strokeText("Health:", playerInfo.width * 2 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.health.toString(), playerInfo.width * 3.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Armor:", playerInfo.width * 6 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("0", playerInfo.width * 7.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Time:", playerInfo.width * 10 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("0", playerInfo.width * 11.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Bullets:", playerInfo.width * 15 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("0", playerInfo.width * 16.5 / 20, playerInfo.height / 1.5);
+    };
+
+
+
+
 
     // Update this level
     // --------------------------------
     this.update = function () {
         // Update dynamic stuff
         this.updateMinimap();
+        this.updatePlayer();
 
         // Draw the player's healthbar
         // TODO: use another 2d canvas for gui stuff like this, like the minimap
-        var healthText = document.getElementById("healthbar");
-        healthText.innerText = "player health: " + game.player.health + "%";
+        //var healthText = document.getElementById("healthbar");
+        //healthText.innerText = "player health: " + game.player.health + "%";
     };
 
 
@@ -797,6 +844,7 @@ function Level(numRooms, game) {
         level.populateGrid();
         level.generateFeatures();
         level.generateMinimap();
+        level.generateInformation();
         level.generateGeometry();
         console.info("Level generation completed.");
 

@@ -138,7 +138,8 @@ function Game(renderer, canvas) {
 // ----------------------------------------------------------------------------
 var HURT_DISTANCE = 16,
     HURT_TIMEOUT = 1000,
-    HURT_AMOUNT = 5;
+    HURT_AMOUNT = 5,
+    ZOMBIE_DISTANCE = 10;
 function updatePlayer (game, input) {
     // Check for zombie touching
     for(var i = 0; i < game.zombie.length; ++i) {
@@ -152,6 +153,7 @@ function updatePlayer (game, input) {
                 game.player.health = 0;
             game.player.canBeHurt = false;
             console.log("ouch! health = " + game.player.health);
+
 
             setTimeout(function () {
                 game.player.canBeHurt = true;
@@ -497,7 +499,7 @@ function updateZombies(game) {
                     hopeTo.add(game.zombie[z].mesh.position, new THREE.Vector3(dx, 0, dz));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < 100) {
+                    if (hx * hx + hz * hz < HURT_DISTANCE) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.zombie.length; p++) {
@@ -506,7 +508,7 @@ function updateZombies(game) {
                         }
                         var hx = hopeTo.x - game.zombie[p].mesh.position.x;
                         var hz = hopeTo.z - game.zombie[p].mesh.position.z;
-                        if (hx * hx + hz * hz < 100) {
+                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE) {
                             stop = 1;
                             break;
                         }
@@ -525,7 +527,7 @@ function updateZombies(game) {
                         game.zombie[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < 100) {
+                    if (hx * hx + hz * hz < HURT_DISTANCE) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.zombie.length; p++) {
@@ -534,7 +536,7 @@ function updateZombies(game) {
                         }
                         var hx = hopeTo.x - game.zombie[p].mesh.position.x;
                         var hz = hopeTo.z - game.zombie[p].mesh.position.z;
-                        if (hx * hx + hz * hz < 100) {
+                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE) {
                             stop = 1;
                             break;
                         }
