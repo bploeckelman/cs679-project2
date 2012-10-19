@@ -162,7 +162,7 @@ function updatePlayer (game, input) {
             break;
         }
     }
-    
+
     // HACK: make the player a little bit taller
     if (game.player.position.y < 16) {
         game.player.position.y = 16;
@@ -282,26 +282,30 @@ function updateBullets (game, input) {
             game.bulletDelay = 0;
 
             // Create a new bullet object
-            bullet = {
-                mesh: new THREE.Mesh(bulletGeom, bulletMat),
-                vel: new THREE.Vector3(
-                    input.viewRay.direction.x * bulletVel,
-                    input.viewRay.direction.y * bulletVel,
-                    input.viewRay.direction.z * bulletVel
-                ),
-                // Adding viewRay.direction moves the bullet 
-                // out in front of the camera a bit so it isn't clipped
-                pos: new THREE.Vector3(
-                    input.viewRay.origin.x + input.viewRay.direction.x,
-                    input.viewRay.origin.y,
-                    input.viewRay.origin.z + input.viewRay.direction.z
-                ),
-                lifetime: 1000
-            };
+            if (game.player.ammo >= 1) {
+                bullet = {
+                    mesh: new THREE.Mesh(bulletGeom, bulletMat),
+                    vel: new THREE.Vector3(
+                        input.viewRay.direction.x * bulletVel,
+                        input.viewRay.direction.y * bulletVel,
+                        input.viewRay.direction.z * bulletVel
+                    ),
+                    // Adding viewRay.direction moves the bullet 
+                    // out in front of the camera a bit so it isn't clipped
+                    pos: new THREE.Vector3(
+                        input.viewRay.origin.x + input.viewRay.direction.x,
+                        input.viewRay.origin.y,
+                        input.viewRay.origin.z + input.viewRay.direction.z
+                    ),
+                    lifetime: 1000
+                };
 
-            // Add the new bullet to the scene and bullets array
-            game.bullets.push(bullet);
-            game.scene.add(bullet.mesh);
+                // Add the new bullet to the scene and bullets array
+                game.bullets.push(bullet);
+                game.scene.add(bullet.mesh);
+
+                --game.player.ammo;
+            }
         }
     }
 

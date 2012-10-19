@@ -705,7 +705,7 @@ function Level(numRooms, game) {
         playerInfo = document.createElement("canvas");
         playerInfo.id = "info";
         playerInfo.style.position = "absolute";
-        playerInfo.width = canvas.width * 0.95;
+        playerInfo.width = canvas.width * 0.75;
         playerInfo.height = canvas.height * 0.22;
         // TODO: have to handle window resizing
         playerInfo.style.bottom = 0;
@@ -801,22 +801,23 @@ function Level(numRooms, game) {
 
         // Blend the map a bit
         playerContext.globalAlpha = 0.5;
-        playerContext.strokeStyle = "#ff7f00";
-        playerContext.font = '40px Arial';
+        playerContext.font = '20px Arial';
         playerContext.textBaseline = 'middle';
         playerContext.textAlign = 'center';
-        playerContext.strokeText("Health:", playerInfo.width * 2 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.health.toString(), playerInfo.width * 3.5 / 20, playerInfo.height / 1.5);
+
+        playerContext.fillStyle = "#ff0000";
+        playerContext.fillText("Health:", playerInfo.width * 2 / 15, playerInfo.height / 1.5);
+        playerContext.fillText(game.player.health.toString(), playerInfo.width * 3.5 / 15, playerInfo.height / 1.5);
+        /*
         playerContext.strokeText("Armor:", playerInfo.width * 6 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("0", playerInfo.width * 7.5 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Time:", playerInfo.width * 10 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("0", playerInfo.width * 11.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Bullets:", playerInfo.width * 15 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("0", playerInfo.width * 16.5 / 20, playerInfo.height / 1.5);
+        */
+        playerContext.fillStyle = "#00ff00";
+        playerContext.fillText("Bullets:", playerInfo.width * 6 / 15, playerInfo.height / 1.5);
+        playerContext.fillText(game.player.ammo.toString(), playerInfo.width * 7.5 / 15, playerInfo.height / 1.5);
     };
-
-
-
 
 
     // Update this level
