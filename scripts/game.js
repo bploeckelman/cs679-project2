@@ -104,154 +104,21 @@ function Game(renderer, canvas) {
 
 
     // Update everything in the scene
-    // TODO: try to move most of this stuff out of here so the update function 
-    //       becomes cleaner and specialized updates are handled elsewhere
-    // for example:
-    // updateCamera() updatePlayer() updateBullets() updateLights() handleCollisions()
     // ------------------------------------------------------------------------
     this.update = function (input) {
-        var triggerAD = input.trigger.A - input.trigger.D,
-            triggerWS = input.trigger.W - input.trigger.S,
-            triggerQE = input.trigger.Q - input.trigger.E,
-            look = new THREE.Vector3(),
-            velocity = 8,
-            xzNorm,
-            rayVec,
-            refireTime = 0.2,
-            bullet,
-            bulletVel = 4,
-            bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
-            bulletMat = new THREE.MeshLambertMaterial({
-                color: 0xffffff,
-                specular: 0xffffff,
-                shininess: 100
-            });
-
         // Update the level
         this.level.update();
 
-        // Reorient camera
-        if (!document.pointerLockEnabled) {
-            if ((input.mouseX - canvas.offsetLeft) / canvas.width < 0.2) {
-                input.center -= 0.1 * (0.2 - (input.mouseX - canvas.offsetLeft) / canvas.width);
-            }
-            if ((input.mouseX - canvas.offsetLeft) / canvas.width > 0.8) {
-                input.center += 0.1 * ((input.mouseX - canvas.offsetLeft) / canvas.width - 0.8);
-            }
-        }
-        input.f.z = Math.sin(input.theta) * Math.sin(input.phi + input.center)
-        input.f.x = Math.sin(input.theta) * Math.cos(input.phi + input.center);
-        input.f.y = Math.cos(input.theta);
-
-        // Handle jumping
-        if (input.hold == 1) {
-            if (input.trigger.Jump == 1) {
-                input.v = velocity;
-                input.trigger.Jump = 0;
-                input.hold = 0;
-                this.player.position.y += input.v;
-                input.v -= 0.5;
-            }
-        } else {
-            this.player.position.y += input.v;
-            input.v -= 0.5;
-        }
-
-        // Update player position
-        xzNorm = Math.sqrt(input.f.x * input.f.x + input.f.z * input.f.z);
-        this.player.position.add(
-            this.player.position,
-            new THREE.Vector3(
-                triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-                triggerQE * input.f.y * 10, //previouly, triggerWS * input.f.y,
-                triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
-            )
-        );
-
-        // Update camera position/lookat 
-        this.camera.position = this.player.position;
-        look.add(this.camera.position, input.f);
-        this.camera.lookAt(look);
-
-        // Update the view ray (center of canvas into screen)
-        // NOTE: the near/far range is set short for doors
-        //   another way to handle this would be to check the .distance
-        //   property of the intersects[0].object when using ray for 
-        //   object intersection testing.
-        rayVec = new THREE.Vector3(0, 0, 1);
-        this.projector.unprojectVector(rayVec, this.camera);
-        input.viewRay = new THREE.Ray(
-            this.player.position,                             // origin
-            rayVec.subSelf(this.player.position).normalize(), // direction
-            0, 64                                             // near, far
-        );
+        // Update camera/player movement + view ray
+        updateMovement(this, input);
 
         // Handle bullets
-        // TODO: move this stuff out into a function
         // TODO: add collision code for bullets
         // TODO: limit amount of ammunition!
-
-        // This allows the player to fire as fast as they can click
-        if (input.click === 0) {
-            this.bulletDelay = refireTime;
-        }
-
-        if (input.click === 1) {
-            // Toggle doors if there are any directly in line of sight 
-            var intersects = input.viewRay.intersectObjects(this.objects),
-                selected = null;
-            if (intersects.length > 0) {
-                selected = intersects[0].object;
-                if (selected.name === "door") {
-                    this.level.toggleDoor(selected.doorIndex);
-                }
-            }
-
-            // Slow down firing rate if player is holding the mouse button down
-            this.bulletDelay += this.clock.getDelta();
-            if (this.bulletDelay > refireTime) {
-                this.bulletDelay = 0;
-
-                // Create a new bullet object
-                bullet = {
-                    mesh: new THREE.Mesh(bulletGeom, bulletMat),
-                    vel: new THREE.Vector3(
-                        input.viewRay.direction.x * bulletVel,
-                        input.viewRay.direction.y * bulletVel,
-                        input.viewRay.direction.z * bulletVel
-                    ),
-                    // Adding viewRay.direction moves the bullet 
-                    // out in front of the camera a bit so it isn't clipped
-                    pos: new THREE.Vector3(
-                        input.viewRay.origin.x + input.viewRay.direction.x,
-                        input.viewRay.origin.y,
-                        input.viewRay.origin.z + input.viewRay.direction.z
-                    ),
-                    lifetime: 1000
-                };
-
-                // Add the new bullet to the scene and bullets array
-                this.bullets.push(bullet);
-                this.scene.add(bullet.mesh);
-            }
-        }
+        updateBullets(this, input);
 
         // Update zombies
         updateZombies(this);
-
-        // Update all the bullets, move backwards through array 
-        // to avoid problems when removing bullets
-        for (var i = this.bullets.length - 1; i >= 0; --i) {
-            // Remove bullets that are too old
-            // TODO: also remove if bullet has collided with something
-            if (--this.bullets[i].lifetime <= 0) {
-                this.scene.remove(this.bullets[i].mesh);
-                this.bullets.splice(i, 1);
-            } else { // Update the bullet's position based on its velocity
-                this.bullets[i].pos.addSelf(this.bullets[i].vel);
-                this.bullets[i].mesh.position = this.bullets[i].pos;
-            }
-        }
 
         // Update the player's light
         this.lights[0].position.set(
@@ -279,6 +146,149 @@ function Game(renderer, canvas) {
     };
 
 } // end Game object
+
+
+// ----------------------------------------------------------------------------
+// Update based on player movement: camera, player position/jumping, view ray
+// ----------------------------------------------------------------------------
+function updateMovement (game, input) {
+    var triggerAD = input.trigger.A - input.trigger.D,
+        triggerWS = input.trigger.W - input.trigger.S,
+        triggerQE = input.trigger.Q - input.trigger.E,
+        jumpVelocity = 4;
+
+    // Reorient camera
+    if (!document.pointerLockEnabled) {
+        if ((input.mouseX - canvas.offsetLeft) / canvas.width < 0.2) {
+            input.center -= 0.1 * (0.2 - (input.mouseX - canvas.offsetLeft) / canvas.width);
+        }
+        if ((input.mouseX - canvas.offsetLeft) / canvas.width > 0.8) {
+            input.center += 0.1 * ((input.mouseX - canvas.offsetLeft) / canvas.width - 0.8);
+        }
+    }
+    input.f.z = Math.sin(input.theta) * Math.sin(input.phi + input.center)
+    input.f.x = Math.sin(input.theta) * Math.cos(input.phi + input.center);
+    input.f.y = Math.cos(input.theta);
+
+    // Handle jumping
+    if (input.hold == 1) {
+        if (input.trigger.Jump == 1) {
+            input.v = jumpVelocity;
+            input.trigger.Jump = 0;
+            input.hold = 0;
+            game.player.position.y += input.v;
+            input.v -= 0.4;
+        }
+    } else {
+        game.player.position.y += input.v;
+        input.v -= 0.3;
+    }
+
+    // Update player position
+    var xzNorm = Math.sqrt(input.f.x * input.f.x + input.f.z * input.f.z);
+    game.player.position.add(
+        game.player.position,
+        new THREE.Vector3(
+            triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
+            triggerQE * input.f.y * 10, //previouly, triggerWS * input.f.y,
+            triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
+        )
+    );
+
+    // Update camera position/lookat 
+    game.camera.position = game.player.position;
+    var look = new THREE.Vector3();
+    look.add(game.camera.position, input.f);
+    game.camera.lookAt(look);
+
+    // Update the view ray (center of canvas into screen)
+    // NOTE: the near/far range is set short for doors
+    //   another way to handle game would be to check the .distance
+    //   property of the intersects[0].object when using ray for 
+    //   object intersection testing.
+    var rayVec = new THREE.Vector3(0, 0, 1);
+    game.projector.unprojectVector(rayVec, game.camera);
+    input.viewRay = new THREE.Ray(
+        game.player.position,                             // origin
+        rayVec.subSelf(game.player.position).normalize(), // direction
+        0, 64                                             // near, far
+    );
+}
+
+
+// ----------------------------------------------------------------------------
+// Update all the Game's Bullets 
+// ----------------------------------------------------------------------------
+function updateBullets (game, input) {
+    var refireTime = 0.2,
+        bullet,
+        bulletVel = 4,
+        bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
+        bulletMat = new THREE.MeshLambertMaterial({
+            color: 0xffffff,
+            specular: 0xffffff,
+            shininess: 100
+        });
+
+    // This allows the player to fire as fast as they can click
+    if (input.click === 0) {
+        game.bulletDelay = refireTime;
+    }
+
+    if (input.click === 1) {
+        // Toggle doors if there are any directly in line of sight 
+        var intersects = input.viewRay.intersectObjects(game.objects),
+            selected = null;
+        if (intersects.length > 0) {
+            selected = intersects[0].object;
+            if (selected.name === "door") {
+                game.level.toggleDoor(selected.doorIndex);
+            }
+        }
+
+        // Slow down firing rate if player is holding the mouse button down
+        game.bulletDelay += game.clock.getDelta();
+        if (game.bulletDelay > refireTime) {
+            game.bulletDelay = 0;
+
+            // Create a new bullet object
+            bullet = {
+                mesh: new THREE.Mesh(bulletGeom, bulletMat),
+                vel: new THREE.Vector3(
+                    input.viewRay.direction.x * bulletVel,
+                    input.viewRay.direction.y * bulletVel,
+                    input.viewRay.direction.z * bulletVel
+                ),
+                // Adding viewRay.direction moves the bullet 
+                // out in front of the camera a bit so it isn't clipped
+                pos: new THREE.Vector3(
+                    input.viewRay.origin.x + input.viewRay.direction.x,
+                    input.viewRay.origin.y,
+                    input.viewRay.origin.z + input.viewRay.direction.z
+                ),
+                lifetime: 1000
+            };
+
+            // Add the new bullet to the scene and bullets array
+            game.bullets.push(bullet);
+            game.scene.add(bullet.mesh);
+        }
+    }
+
+    // Update all the bullets, move backwards through array 
+    // to avoid problems when removing bullets
+    for (var i = game.bullets.length - 1; i >= 0; --i) {
+        // Remove bullets that are too old
+        // TODO: also remove if bullet has collided with something
+        if (--game.bullets[i].lifetime <= 0) {
+            game.scene.remove(game.bullets[i].mesh);
+            game.bullets.splice(i, 1);
+        } else { // Update the bullet's position based on its velocity
+            game.bullets[i].pos.addSelf(game.bullets[i].vel);
+            game.bullets[i].mesh.position = game.bullets[i].pos;
+        }
+    }
+}
 
 
 // ----------------------------------------------------------------------------
