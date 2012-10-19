@@ -624,33 +624,46 @@ function Level(numRooms, game) {
     this.addDoors = function () {
         var x, y, cell, cellA, cellB;
 
-        for (y = 1; y < NUM_CELLS.y - 1; ++y)
-            for (x = 1; x < NUM_CELLS.x - 1; ++x) {
-                cell = this.grid[y][x];
+        for (y = 2; y < NUM_CELLS.y - 2; ++y)
+        for (x = 2; x < NUM_CELLS.x - 2; ++x) {
+            cell = this.grid[y][x];
 
-                if (cell.type === CELL_TYPES.wall) {
-                    cellA = this.grid[y - 1][x];
-                    cellB = this.grid[y + 1][x];
-                    if (cellA.isInterior() && cellB.isInterior()) {
+            if (cell.type === CELL_TYPES.wall) {
+                // Get neighbor cells
+                celly1 = this.grid[y - 1][x];
+                celly2 = this.grid[y + 1][x];
+                celly3 = this.grid[y - 2][x];
+                celly4 = this.grid[y + 2][x];
+
+                cellx1 = this.grid[y][x - 1];
+                cellx2 = this.grid[y][x + 1];
+                cellx3 = this.grid[y][x - 2];
+                cellx4 = this.grid[y][x + 2];
+
+                // If no neighbor cell is a door...
+                if (celly1.type !== CELL_TYPES.door && celly2.type !== CELL_TYPES.door
+                 && celly3.type !== CELL_TYPES.door && celly4.type !== CELL_TYPES.door
+                 && cellx1.type !== CELL_TYPES.door && cellx2.type !== CELL_TYPES.door
+                 && cellx3.type !== CELL_TYPES.door && cellx4.type !== CELL_TYPES.door) {
+                    // If both immediate y neighbors are interior cells...
+                    if (celly1.isInterior() && celly2.isInterior()) {
                         // Found a potential door!, add location to the list
                         console.log("Potential door @ (" + x + "," + y + ")");
                         cell.type = CELL_TYPES.door;
                         cell.doorType = "vertical";
-                        // TODO
                         continue;
                     }
-                    cellA = this.grid[y][x - 1];
-                    cellB = this.grid[y][x + 1];
-                    if (cellA.isInterior() && cellB.isInterior()) {
+                    // If both immediate x neighbors are interior cells...
+                    if (cellx1.isInterior() && cellx2.isInterior()) {
                         // Found a potential door!, add location to the list
                         console.log("Potential door @ (" + x + "," + y + ")");
                         cell.type = CELL_TYPES.door;
                         cell.doorType = "horizontal";
-                        // TODO
                         continue;
                     }
                 }
             }
+        }
     };
 
 
@@ -767,13 +780,6 @@ function Level(numRooms, game) {
         this.updateMinimap();
     };
 
-
-    // Update this level
-    // --------------------------------
-    this.update = function () {
-        // Update dynamic stuff
-        this.updateMinimap();
-    };
 
 
     // ------------------------------------------------------------------------
