@@ -23,7 +23,7 @@ function Game(renderer, canvas) {
     this.zombie = [];
     this.oldplayer = new THREE.Vector3();
     this.searchDelay = 1;
-    this.firstOver;
+    this.firstOver = 0;
     this.element = {
         sz: 0,
         sx: 0,
@@ -43,9 +43,6 @@ function Game(renderer, canvas) {
         NEAR = 1,
         FAR = 500;
 
-    var eyeup;//eyeup=this.camera.position.y-this.player.position.y
-    var debug = 0;//set it to be zero in real game. -40 means camera is 40 pixels behind a box
-
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -61,7 +58,7 @@ function Game(renderer, canvas) {
 
         // Setup player
         game.player = new THREE.Mesh(
-            new THREE.CubeGeometry(10, 22, 5),
+            new THREE.CubeGeometry(9, 17, 3.5),
             new THREE.MeshBasicMaterial({ color: 0x00ff00 })
         );
         game.player.position.set(
@@ -74,49 +71,46 @@ function Game(renderer, canvas) {
         game.player.inventory = [];
         game.scene.add(game.player);
 
-        var zombieGeom = new THREE.CubeGeometry(8, 20, 4);
-        var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
-        var zombieMat = new THREE.MeshLambertMaterial({ map: texture });
+        var zombieGeom = new THREE.CubeGeometry(9, 17, 3.5);
+        var texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
+        zombieMat = new THREE.MeshLambertMaterial({ map: texture });
+        zombieMat.transparent = true;
 
-		var loader = new THREE.JSONLoader(true);
-		var tempCounter = 0;
-		
+        var loader = new THREE.JSONLoader(true);
+        var tempCounter = 0;
+
         for (var z = 0; z < game.level.zombiePos.length; z++) {
             Azombie = {
-				x: game.level.zombiePos[z].x,
-				y: 0,
-				z: game.level.zombiePos[z].y,
-                mesh: new THREE.Mesh(zombieGeom, zombieMat),
-                vel: 0.5,
+                x: game.level.zombiePos[z].x,
+                y: 0,
+                z: game.level.zombiePos[z].y,
+                mesh1: new THREE.Mesh(zombieGeom, zombieMat),
+                vel: 0.1,
                 health: 10,
                 queue: [],
                 at: 0
             };
-            Azombie.mesh.position = new THREE.Vector3(game.level.zombiePos[z].x, 10, game.level.zombiePos[z].y);
-            Azombie.mesh.name = "zombie";
+            Azombie.mesh1.position = new THREE.Vector3(game.level.zombiePos[z].x, 10, game.level.zombiePos[z].y);
+            Azombie.mesh1.name = "zombie";
             game.zombie.push(Azombie);
-            game.zomobjects.push(Azombie.mesh);
-            Azombie.mesh.index = game.zombie.length - 1;
-			
-			
-			loader.load( "models/zombie.js", function(geometry) {
-				game.zombie[tempCounter].mesh = new THREE.Mesh(geometry,new THREE.MeshFaceMaterial);
-				game.zombie[tempCounter].mesh.position.set(game.zombie[tempCounter].x, game.zombie[tempCounter].y, game.zombie[tempCounter].z);
-				game.zombie[tempCounter].mesh.scale.set(15, 12, 15);
-				game.zombie[tempCounter].mesh.name = "zombie";
-				game.scene.add(game.zombie[tempCounter].mesh);
-				tempCounter++;
-			});
-			
-            game.scene.add(Azombie.mesh);
+            game.zomobjects.push(Azombie.mesh1);
+            game.scene.add(Azombie.mesh1);
+            Azombie.mesh1.index = z;
+
+
+            loader.load("models/zombie.js", function (geometry) {
+                game.zombie[tempCounter].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                game.zombie[tempCounter].mesh2.position.set(game.zombie[tempCounter].x, game.zombie[tempCounter].y, game.zombie[tempCounter].z);
+                game.zombie[tempCounter].mesh2.scale.set(12.5, 10, 12.5);
+                game.zombie[tempCounter].mesh2.name = "zombie";
+                game.scene.add(game.zombie[tempCounter].mesh2);
+                tempCounter++;
+            });
         };
 
         // Setup camera
         game.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
-        game.camera.position.add(
-            game.player.position,
-            new THREE.Vector3(0, eyeup, debug));
-        game.camera.lookAt(new THREE.Vector3(50, 0, 50));
+        game.camera.position.set(game.player.position.x, game.player.position.y, game.player.position.z);
         game.scene.add(game.camera);
 
         // Setup a light that will move with the player
@@ -164,7 +158,6 @@ function Game(renderer, canvas) {
             Context.fillStyle = "#ff0000";
             Context.fillText("You died!", endingInfo.width / 2, endingInfo.height / 2);
         }
-
     };
 
 
@@ -172,17 +165,21 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     this.update = function (input) {
         if (this.zombie.length == 0 || this.player.health == 0) {
+            console.log(this.firstOver);
             if (this.firstOver == 0) {
                 this.firstOver = 1;
             }
             else {
-                this.ending();
+                if (this.firstOver == 1) {
+                    this.ending();
+                    this.firstOver = 2;
+                }
                 return;
             }
         }
 
         this.level.update();
-              
+
 
         updateMovement(this, input);
         updateBullets(this, input);
@@ -208,14 +205,14 @@ function Game(renderer, canvas) {
 // ----------------------------------------------------------------------------
 // Update the player 
 // ----------------------------------------------------------------------------
-var HURT_DISTANCE = 16,
+var HURT_DISTANCE = 18,
     HURT_TIMEOUT = 1000,
     HURT_AMOUNT = 5,
-    ZOMBIE_DISTANCE = 10;
+    ZOMBIE_DISTANCE = 18;
 function updatePlayer(game, input) {
     // Check for zombie touching
     for (var i = 0; i < game.zombie.length; ++i) {
-        var dist = game.player.position.distanceTo(game.zombie[i].mesh.position);
+        var dist = game.player.position.distanceTo(game.zombie[i].mesh1.position);
         // Hurt the player if a zombie is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
@@ -347,7 +344,7 @@ function updateBullets(game, input) {
         game.bulletDelay = refireTime;
     }
 
-    if (input.click === 1) {
+    if (input.click === 1 && game.player.ammo >= 1) {
         if (game.bulletDelay < refireTime) {
             game.bulletDelay += game.clock.getDelta();
         }
@@ -357,8 +354,7 @@ function updateBullets(game, input) {
                 intersects2 = input.viewRay.intersectObjects(game.zomobjects),
                 selected = null;
             if (intersects1.length > 0 && intersects2.length == 0) {
-                selected = intersects1[0].object;
-                
+                selected = intersects1[0].object;                
             }
 
             if (intersects1.length == 0 && intersects2.length > 0) {
@@ -373,7 +369,7 @@ function updateBullets(game, input) {
                     selected = intersects1[0].object;
                 }
             }
-   
+               
             if (selected != null) {
                 if (selected.name === "door") {
                     game.level.toggleDoor(selected.doorIndex);
@@ -383,11 +379,12 @@ function updateBullets(game, input) {
                         game.zombie[selected.index].health -= 5;
                         if (game.zombie[selected.index].health <= 0) {
                             game.player.money += 1000;
-                            game.scene.remove(selected);
+                            game.scene.remove(game.zombie[selected.index].mesh1);
+                            game.scene.remove(game.zombie[selected.index].mesh2);
                             game.zomobjects.splice(selected.index, 1);
                             game.zombie.splice(selected.index, 1);
                             for (var z = selected.index; z < game.zombie.length; z++) {
-                                game.zombie[z].mesh.index -= 1;
+                                game.zombie[z].mesh1.index -= 1;
                             }
                         }
                     }
@@ -398,30 +395,28 @@ function updateBullets(game, input) {
             game.bulletDelay = 0;
 
             // Create a new bullet object
-            if (game.player.ammo >= 1) {
-                bullet = {
-                    mesh: new THREE.Mesh(bulletGeom, bulletMat),
-                    vel: new THREE.Vector3(
-                        input.viewRay.direction.x * bulletVel,
-                        input.viewRay.direction.y * bulletVel,
-                        input.viewRay.direction.z * bulletVel
-                    ),
-                    // Adding viewRay.direction moves the bullet 
-                    // out in front of the camera a bit so it isn't clipped
-                    pos: new THREE.Vector3(
-                        input.viewRay.origin.x + input.viewRay.direction.x,
-                        input.viewRay.origin.y,
-                        input.viewRay.origin.z + input.viewRay.direction.z
-                    ),
-                    lifetime: 1000
-                };
+            bullet = {
+                mesh: new THREE.Mesh(bulletGeom, bulletMat),
+                vel: new THREE.Vector3(
+                    input.viewRay.direction.x * bulletVel,
+                    input.viewRay.direction.y * bulletVel,
+                    input.viewRay.direction.z * bulletVel
+                ),
+                // Adding viewRay.direction moves the bullet 
+                // out in front of the camera a bit so it isn't clipped
+                pos: new THREE.Vector3(
+                    input.viewRay.origin.x + input.viewRay.direction.x,
+                    input.viewRay.origin.y,
+                    input.viewRay.origin.z + input.viewRay.direction.z
+                ),
+                lifetime: 1000
+            };
 
-                // Add the new bullet to the scene and bullets array
-                game.bullets.push(bullet);
-                game.scene.add(bullet.mesh);
+            // Add the new bullet to the scene and bullets array
+            game.bullets.push(bullet);
+            game.scene.add(bullet.mesh);
 
-                --game.player.ammo;
-            }
+            --game.player.ammo;            
         }
     }
 
@@ -452,8 +447,8 @@ function updateZombies(game) {
             visit[i] = new Array(NUM_CELLS.x);
         }
         for (var z = 0; z < game.zombie.length; z++) {
-            var oz = Math.floor(Math.floor(game.zombie[z].mesh.position.z) / CELL_SIZE + 0.5);
-            var ox = Math.floor(Math.floor(game.zombie[z].mesh.position.x) / CELL_SIZE + 0.5);
+            var oz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
+            var ox = Math.floor(Math.floor(game.zombie[z].mesh1.position.x) / CELL_SIZE + 0.5);
             var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
 
@@ -558,55 +553,61 @@ function updateZombies(game) {
             var moveToz = game.zombie[z].queue[game.zombie[z].queue[game.zombie[z].at].p].sz * CELL_SIZE;
             var moveTox = game.zombie[z].queue[game.zombie[z].queue[game.zombie[z].at].p].sx * CELL_SIZE;
         }
-        var dz = moveToz - game.zombie[z].mesh.position.z;
-        var dx = moveTox - game.zombie[z].mesh.position.x;
+        var dz = moveToz - game.zombie[z].mesh1.position.z;
+        var dx = moveTox - game.zombie[z].mesh1.position.x;
         if (dx * dx + dz * dz > 1e-6) {
             var direction = Math.atan2(dx, dz);
             var needMove = 1;
-            if (Math.abs(game.zombie[z].mesh.rotation.y - direction) > 1e-6) {
-                if (Math.abs(game.zombie[z].mesh.rotation.y - direction) > Math.PI) {
-                    if (game.zombie[z].mesh.rotation.y > direction) {
-                        if (game.zombie[z].mesh.rotation.y > direction + 2 * Math.PI - 0.2) {
-                            game.zombie[z].mesh.rotation.y = direction;
+            if (Math.abs(game.zombie[z].mesh1.rotation.y - direction) > 1e-6) {
+                if (Math.abs(game.zombie[z].mesh1.rotation.y - direction) > Math.PI) {
+                    if (game.zombie[z].mesh1.rotation.y > direction) {
+                        if (game.zombie[z].mesh1.rotation.y > direction + 2 * Math.PI - 0.2) {
+                            game.zombie[z].mesh1.rotation.y = direction;
+                            game.zombie[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh.rotation.y += 0.2;
-                            if (game.zombie[z].mesh.rotation.y > Math.PI) {
-                                game.zombie[z].mesh.rotation.y -= 2 * Math.PI;
+                            game.zombie[z].mesh1.rotation.y += 0.2;
+                            if (game.zombie[z].mesh1.rotation.y > Math.PI) {
+                                game.zombie[z].mesh1.rotation.y -= 2 * Math.PI;
+                                game.zombie[z].mesh2.rotation.y -= 2 * Math.PI;
                             }
                         }
                     }
                     else {
-                        if (game.zombie[z].mesh.rotation.y < direction - 2 * Math.PI + 0.2) {
-                            game.zombie[z].mesh.rotation.y = direction;
+                        if (game.zombie[z].mesh1.rotation.y < direction - 2 * Math.PI + 0.2) {
+                            game.zombie[z].mesh1.rotation.y = direction;
+                            game.zombie[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh.rotation.y -= 0.2;
-                            if (game.zombie[z].mesh.rotation.y <= -Math.PI) {
-                                game.zombie[z].mesh.rotation.y += 2 * Math.PI;
+                            game.zombie[z].mesh1.rotation.y -= 0.2;
+                            if (game.zombie[z].mesh1.rotation.y <= -Math.PI) {
+                                game.zombie[z].mesh1.rotation.y += 2 * Math.PI;
+                                game.zombie[z].mesh2.rotation.y += 2 * Math.PI;
                             }
                         }
                     }
                 }
                 else {
-                    if (game.zombie[z].mesh.rotation.y > direction) {
-                        if (game.zombie[z].mesh.rotation.y < direction + 0.2) {
-                            game.zombie[z].mesh.rotation.y = direction;
+                    if (game.zombie[z].mesh1.rotation.y > direction) {
+                        if (game.zombie[z].mesh1.rotation.y < direction + 0.2) {
+                            game.zombie[z].mesh1.rotation.y = direction;
+                            game.zombie[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh.rotation.y -= 0.2;
-                        }
+                            game.zombie[z].mesh1.rotation.y -= 0.2;
+                            game.zombie[z].mesh2.rotation.y -= 0.2;                        }
                     }
                     else {
-                        if (game.zombie[z].mesh.rotation.y > direction - 0.2) {
-                            game.zombie[z].mesh.rotation.y = direction;
-                        }
+                        if (game.zombie[z].mesh1.rotation.y > direction - 0.2) {
+                            game.zombie[z].mesh1.rotation.y = direction;
+                            game.zombie[z].mesh2.rotation.y = direction;                        }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh.rotation.y += 0.2;
+                            game.zombie[z].mesh1.rotation.y += 0.2;
+                            game.zombie[z].mesh2.rotation.y += 0.2;
                         }
                     }
                 }
@@ -616,7 +617,7 @@ function updateZombies(game) {
                 var hopeTo = new THREE.Vector3();
                 var stop = 0;
                 if (dis < game.zombie[z].vel) {
-                    hopeTo.add(game.zombie[z].mesh.position, new THREE.Vector3(dx, 0, dz));
+                    hopeTo.add(game.zombie[z].mesh1.position, new THREE.Vector3(dx, 0, dz));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
                     if (hx * hx + hz * hz < HURT_DISTANCE) {
@@ -626,8 +627,8 @@ function updateZombies(game) {
                         if (p == z) {
                             continue;
                         }
-                        var hx = hopeTo.x - game.zombie[p].mesh.position.x;
-                        var hz = hopeTo.z - game.zombie[p].mesh.position.z;
+                        var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
+                        var hz = hopeTo.z - game.zombie[p].mesh1.position.z;
                         if (hx * hx + hz * hz < ZOMBIE_DISTANCE) {
                             stop = 1;
                             break;
@@ -635,13 +636,15 @@ function updateZombies(game) {
                     }
 
                     if (stop == 0) {
-                        game.zombie[z].mesh.position.x = hopeTo.x;
-                        game.zombie[z].mesh.position.z = hopeTo.z;
+                        game.zombie[z].mesh1.position.x = hopeTo.x;
+                        game.zombie[z].mesh1.position.z = hopeTo.z;
+                        game.zombie[z].mesh2.position.x = hopeTo.x;
+                        game.zombie[z].mesh2.position.z = hopeTo.z;
                         game.zombie[z].at = game.zombie[z].queue[game.zombie[z].at].p;
                     }
                 }
                 else {
-                    hopeTo.add(game.zombie[z].mesh.position, new THREE.Vector3(
+                    hopeTo.add(game.zombie[z].mesh1.position, new THREE.Vector3(
                         game.zombie[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
                         0,
                         game.zombie[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
@@ -654,19 +657,21 @@ function updateZombies(game) {
                         if (p == z) {
                             continue;
                         }
-                        var hx = hopeTo.x - game.zombie[p].mesh.position.x;
-                        var hz = hopeTo.z - game.zombie[p].mesh.position.z;
+                        var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
+                        var hz = hopeTo.z - game.zombie[p].mesh1.position.z;
                         if (hx * hx + hz * hz < ZOMBIE_DISTANCE) {
                             stop = 1;
                             break;
                         }
                     }
                     if (stop == 0) {
-                        game.zombie[z].mesh.position.x = hopeTo.x;
-                        game.zombie[z].mesh.position.z = hopeTo.z;
+                        game.zombie[z].mesh1.position.x = hopeTo.x;
+                        game.zombie[z].mesh1.position.z = hopeTo.z;
+                        game.zombie[z].mesh2.position.x = hopeTo.x;
+                        game.zombie[z].mesh2.position.z = hopeTo.z;
                     }
                 }
-                if ((moveToz - game.zombie[z].mesh.position.z) * (moveToz - game.zombie[z].mesh.position.z) + (moveTox - game.zombie[z].mesh.position.x) * (moveTox - game.zombie[z].mesh.position.x) < 1e-6) {
+                if ((moveToz - game.zombie[z].mesh1.position.z) * (moveToz - game.zombie[z].mesh1.position.z) + (moveTox - game.zombie[z].mesh1.position.x) * (moveTox - game.zombie[z].mesh1.position.x) < 1e-6) {
                     game.zombie[z].at = game.zombie[z].queue[game.zombie[z].at].p;
                 }
             }
@@ -754,7 +759,7 @@ function handleCollisions(game, input) {
                     }
 
                     game.player.position.add(game.oldplayer, new THREE.Vector3(i, j, k));
-                    game.camera.position.add(game.player.position, new THREE.Vector3(0, game.eyeup, game.debug));
+                    game.camera.position.set(game.player.position.x, game.player.position.y, game.player.position.z);
                 }
 
                 ray = new THREE.Ray(new THREE.Vector3().add(game.player.position, new THREE.Vector3(0, -0.1, 0)), directionVector.clone().normalize());

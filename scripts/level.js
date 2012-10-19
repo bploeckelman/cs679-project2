@@ -597,7 +597,7 @@ function Level(numRooms, game) {
     // Add randomized starting location for player
     // -------------------------------------------
     this.addStartPosition = function () {
-        var x, y;
+        var x, y,playerRoom;
 
         while (true) {
             x = randInt(1, NUM_CELLS.x - 1);
@@ -605,6 +605,7 @@ function Level(numRooms, game) {
             if (this.grid[y][x].type === CELL_TYPES.empty) {
                 this.grid[y][x].type = CELL_TYPES.start;
                 this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
+                playerRoom = this.grid[this.startPos.y/CELL_SIZE][this.startPos.x/CELL_SIZE].roomIndex;
                 break;
             }
         }
@@ -612,7 +613,7 @@ function Level(numRooms, game) {
         while (this.zombiePos.length < zombieNumber) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (this.grid[y][x].type === CELL_TYPES.empty) {
+            if (this.grid[y][x].type === CELL_TYPES.empty && this.grid[y][x].roomIndex != playerRoom) {
                 this.grid[y][x].type = CELL_TYPES.zomstart;
                 this.zombiePos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
             }
@@ -783,8 +784,8 @@ function Level(numRooms, game) {
         mapContext.lineWidth = 3;
         for (var z = 0; z < game.zombie.length; z++) {
             mapContext.beginPath();
-            zx = Math.floor(game.zombie[z].mesh.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
-            zy = Math.floor(game.zombie[z].mesh.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+            zx = Math.floor(game.zombie[z].mesh1.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+            zy = Math.floor(game.zombie[z].mesh1.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
             mapContext.arc(zx, zy, 3, 0, 2 * Math.PI, false);
             mapContext.stroke();
         }

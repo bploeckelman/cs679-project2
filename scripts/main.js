@@ -85,10 +85,10 @@ function setupInput (data) {
     data.click = 0;
     data.mouseX = canvas.offsetLeft+canvas.width/2;
     data.mouseY = canvas.offsetTop+canvas.height/2;
-    data.center = Math.PI/2;
+    data.center = -Math.PI/2;
     data.theta = Math.PI/2;
     data.phi = 0;
-    data.f = new THREE.Vector3(0,0,1);
+    data.f = new THREE.Vector3();
     data.v = 0;
     data.hold = 0;
     data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, Jump: 0 };
