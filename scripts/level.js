@@ -250,7 +250,7 @@ function Level(numRooms, game) {
         for (y = 0; y < NUM_CELLS.y; ++y) {
             this.state[y] = new Array(NUM_CELLS.x);
             for (x = 0; x < NUM_CELLS.x; ++x) {
-                this.state[y][x] = 0;
+                this.state[y][x] = -1;
             }
         }
     };
@@ -454,6 +454,7 @@ function Level(numRooms, game) {
         mesh.centerx = x;
         mesh.centerz = y;
         mesh.doorIndex = this.geometry.doors.push(mesh) - 1;
+        this.state[y/CELL_SIZE][x/CELL_SIZE] = mesh.doorIndex;
         mesh.position.set(x, CELL_SIZE / 2, y);
         game.objects.push(mesh);
         game.scene.add(mesh);
@@ -559,7 +560,7 @@ function Level(numRooms, game) {
 
         var door = this.geometry.doors[index], tween;
         if (door.doorState === "closed" && door.canToggle) {
-            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = 1;
+            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = -2-this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE];
             tween = new TWEEN.Tween({ rot: Math.PI })
                 .to({ rot: Math.PI / 2 }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
@@ -575,7 +576,7 @@ function Level(numRooms, game) {
                 door.canToggle = true;
             }, DOOR_TIMEOUT);
         } else if (door.doorState === "open" && door.canToggle) {
-            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = 0;
+            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = -2-this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE];
             tween = new TWEEN.Tween({ rot: Math.PI / 2 })
                 .to({ rot: Math.PI }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
@@ -807,15 +808,15 @@ function Level(numRooms, game) {
         playerContext.textBaseline = 'middle';
         playerContext.textAlign = 'center';
         playerContext.strokeText("Health:", playerInfo.width * 1.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.health.toString(), playerInfo.width * 3 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.health, playerInfo.width * 3 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Armor:", playerInfo.width * 5.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.armor.toString(), playerInfo.width * 7 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.armor, playerInfo.width * 7 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Time:", playerInfo.width * 9.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("0", playerInfo.width * 11 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(Math.floor(game.timer)+"."+Math.floor((game.timer-Math.floor(game.timer))*10), playerInfo.width * 11 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Ammo:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.ammo.toString(), playerInfo.width * 15 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.ammo, playerInfo.width * 15 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("$:", playerInfo.width * 12.8 / 20, playerInfo.height / 4);
-        playerContext.strokeText(game.player.money.toString(), playerInfo.width * 14.5 / 20, playerInfo.height / 4);
+        playerContext.strokeText(game.player.money, playerInfo.width * 14.5 / 20, playerInfo.height / 4);
     };
 
 

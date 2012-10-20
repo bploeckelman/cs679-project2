@@ -24,6 +24,8 @@ function Game(renderer, canvas) {
     this.oldplayer = new THREE.Vector3();
     this.searchDelay = 1;
     this.firstOver = 0;
+    this.needToClose = -1;
+    this.timer = 60;
     this.element = {
         sz: 0,
         sx: 0,
@@ -152,11 +154,11 @@ function Game(renderer, canvas) {
         Context.textAlign = 'center';
         if (this.zombie.length == 0) {
             Context.fillStyle = "#00ff00";
-            Context.fillText("Zombies are all killed!", endingInfo.width / 2, endingInfo.height / 2);
+            Context.fillText("All zombies are killed!", endingInfo.width / 2, endingInfo.height / 2);
         }
         else {
             Context.fillStyle = "#ff0000";
-            Context.fillText("You died!", endingInfo.width / 2, endingInfo.height / 2);
+            Context.fillText("You lose the game!", endingInfo.width / 2, endingInfo.height / 2);
         }
     };
 
@@ -164,8 +166,11 @@ function Game(renderer, canvas) {
     // Update everything in the scene
     // ------------------------------------------------------------------------
     this.update = function (input) {
-        if (this.zombie.length == 0 || this.player.health == 0) {
-            console.log(this.firstOver);
+        this.timer -= this.clock.getDelta();
+        if (this.timer < 0) {
+            this.timer = 0;
+        }
+        if (this.zombie.length == 0 || this.player.health == 0 || this.timer == 0) {
             if (this.firstOver == 0) {
                 this.firstOver = 1;
             }
@@ -177,7 +182,6 @@ function Game(renderer, canvas) {
                 return;
             }
         }
-
         this.level.update();
 
 
@@ -354,7 +358,7 @@ function updateBullets(game, input) {
                 intersects2 = input.viewRay.intersectObjects(game.zomobjects),
                 selected = null;
             if (intersects1.length > 0 && intersects2.length == 0) {
-                selected = intersects1[0].object;                
+                selected = null;// intersects1[0].object;                
             }
 
             if (intersects1.length == 0 && intersects2.length > 0) {
@@ -366,29 +370,29 @@ function updateBullets(game, input) {
                     selected = intersects2[0].object;
                 }
                 else {
-                    selected = intersects1[0].object;
+                    selected = null;// intersects1[0].object;
                 }
             }
                
             if (selected != null) {
-                if (selected.name === "door") {
-                    game.level.toggleDoor(selected.doorIndex);
-                }
-                else {
-                    if (selected.name === "zombie") {
-                        game.zombie[selected.index].health -= 5;
-                        if (game.zombie[selected.index].health <= 0) {
-                            game.player.money += 1000;
-                            game.scene.remove(game.zombie[selected.index].mesh1);
-                            game.scene.remove(game.zombie[selected.index].mesh2);
-                            game.zomobjects.splice(selected.index, 1);
-                            game.zombie.splice(selected.index, 1);
-                            for (var z = selected.index; z < game.zombie.length; z++) {
-                                game.zombie[z].mesh1.index -= 1;
-                            }
+//                if (selected.name === "door") {
+//                    game.level.toggleDoor(selected.doorIndex);
+//                }
+//                else {
+                if (selected.name === "zombie") {
+                    game.zombie[selected.index].health -= 5;
+                    if (game.zombie[selected.index].health <= 0) {
+                        game.player.money += 1000;
+                        game.scene.remove(game.zombie[selected.index].mesh1);
+                        game.scene.remove(game.zombie[selected.index].mesh2);
+                        game.zomobjects.splice(selected.index, 1);
+                        game.zombie.splice(selected.index, 1);
+                        for (var z = selected.index; z < game.zombie.length; z++) {
+                            game.zombie[z].mesh1.index -= 1;
                         }
                     }
                 }
+                //}
             }
 
             // Slow down firing rate if player is holding the mouse button down
@@ -419,6 +423,44 @@ function updateBullets(game, input) {
             --game.player.ammo;            
         }
     }
+
+    function checkZombie() {
+        var dz = game.level.geometry.doors[game.needToClose].centerz / CELL_SIZE;
+        var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
+
+        for (var z = 0; z < game.zombie.length; z++) {
+            var sz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
+            var sx = Math.floor(Math.floor(game.zombie[z].mesh2.position.x) / CELL_SIZE + 0.5);
+            if (sz == dz && sx == dx) {
+                return false;
+            }
+        }
+            
+        return true;
+    }
+
+
+    if (input.trigger.F === 1) {
+        var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
+        var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
+        if (game.level.state[sz][sx] != -1) {
+            if (game.level.state[sz][sx] < 0) {
+                game.needToClose = -2 - game.level.state[sz][sx];
+            }
+            else {
+                game.level.toggleDoor(game.level.state[sz][sx]);
+                input.trigger.F = 0;
+            }
+        }
+        else {
+            if (game.needToClose != -1 && checkZombie()) {
+                game.level.toggleDoor(game.needToClose);
+                game.needToClose = -1;
+                input.trigger.F = 0;
+            }
+        }            
+    }
+
 
     // Update all the bullets, move backwards through array 
     // to avoid problems when removing bullets
@@ -452,7 +494,7 @@ function updateZombies(game) {
             var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
 
-            if (game.level.grid[sz][sx].type == CELL_TYPES.door && game.level.state[sz][sx] == 0) {
+            if (game.level.grid[sz][sx].type == CELL_TYPES.door && game.level.state[sz][sx] >= 0) {
                 continue;
             }
 
@@ -480,7 +522,7 @@ function updateZombies(game) {
                         else {
                             if (game.level.grid[sz + i][sx + j].type != CELL_TYPES.wall &&
                                 visit[sz + i][sx + j] == 0 &&
-                                (game.level.grid[sz + i][sx + j].type != CELL_TYPES.door || game.level.state[sz + i][sx + j] == 1)
+                                (game.level.grid[sz + i][sx + j].type != CELL_TYPES.door || game.level.state[sz + i][sx + j] <=-2)
                                 ) {
                                 visit[sz + i][sx + j] = 1;
                                 game.zombie[z].queue.push(new game.Element(sz + i, sx + j, pointing));
@@ -620,7 +662,7 @@ function updateZombies(game) {
                     hopeTo.add(game.zombie[z].mesh1.position, new THREE.Vector3(dx, 0, dz));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < HURT_DISTANCE) {
+                    if (hx * hx + hz * hz < HURT_DISTANCE  * HURT_DISTANCE / 4) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.zombie.length; p++) {
@@ -629,7 +671,7 @@ function updateZombies(game) {
                         }
                         var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
                         var hz = hopeTo.z - game.zombie[p].mesh1.position.z;
-                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE) {
+                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE * ZOMBIE_DISTANCE) {
                             stop = 1;
                             break;
                         }
@@ -650,7 +692,7 @@ function updateZombies(game) {
                         game.zombie[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < HURT_DISTANCE) {
+                    if (hx * hx + hz * hz < HURT_DISTANCE * HURT_DISTANCE / 4) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.zombie.length; p++) {
@@ -659,7 +701,7 @@ function updateZombies(game) {
                         }
                         var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
                         var hz = hopeTo.z - game.zombie[p].mesh1.position.z;
-                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE) {
+                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE * ZOMBIE_DISTANCE) {
                             stop = 1;
                             break;
                         }
