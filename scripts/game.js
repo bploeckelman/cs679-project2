@@ -10,6 +10,9 @@ function Game(renderer, canvas) {
     this.isRunning = true;
     this.numFrames = 0;
     this.clock = new THREE.Clock();
+    this.clock2 = new THREE.Clock();
+    this.clock3 = new THREE.Clock();
+    this.clock4 = new THREE.Clock();
     this.scene = null;
     this.camera = null;
     this.viewRay = null;
@@ -26,6 +29,9 @@ function Game(renderer, canvas) {
     this.firstOver = 0;
     this.needToClose = -1;
     this.timer = 60;
+    this.TNTtime = -1;
+    this.TNTRoom = -1;
+    this.Bomb = null;
     this.element = {
         sz: 0,
         sx: 0,
@@ -67,14 +73,20 @@ function Game(renderer, canvas) {
             game.level.startPos.x, 16, game.level.startPos.y);
         game.player.canBeHurt = true;
         game.player.health = 100;
-        game.player.armor = 100;
-        game.player.ammo = 50;
-        game.player.money = 10000;
+        game.player.armor = 0;
+        game.player.ammo = 0;
+        game.player.gun = 0;
+        game.player.TNT = 0;
+        game.player.money = 11000;
         game.player.inventory = [];
         game.scene.add(game.player);
 
+        game.bombGeom = new THREE.CubeGeometry(5, 5, 5);
+        var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
+        game.bombMat = new THREE.MeshLambertMaterial({ map: texture });
+
         var zombieGeom = new THREE.CubeGeometry(9, 17, 3.5);
-        var texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
+        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
         zombieMat = new THREE.MeshLambertMaterial({ map: texture });
         zombieMat.transparent = true;
 
@@ -148,11 +160,11 @@ function Game(renderer, canvas) {
         Context.setTransform(1, 0, 0, 1, 0, 0);
         Context.clearRect(0, 0, endingInfo.width, endingInfo.height);
         Context.restore();
-        
+
         Context.font = '60px Arial';
         Context.textBaseline = 'middle';
         Context.textAlign = 'center';
-        if (this.zombie.length == 0) {
+        if (this.zombie.length === 0) {
             Context.fillStyle = "#00ff00";
             Context.fillText("All zombies are killed!", endingInfo.width / 2, endingInfo.height / 2);
         }
@@ -166,22 +178,23 @@ function Game(renderer, canvas) {
     // Update everything in the scene
     // ------------------------------------------------------------------------
     this.update = function (input) {
-        this.timer -= this.clock.getDelta();
+        this.timer -= this.clock4.getDelta();
         if (this.timer < 0) {
             this.timer = 0;
         }
-        if (this.zombie.length == 0 || this.player.health == 0 || this.timer == 0) {
-            if (this.firstOver == 0) {
+        if (this.zombie.length === 0 || this.player.health === 0 || this.timer === 0) {
+            if (this.firstOver === 0) {
                 this.firstOver = 1;
             }
             else {
-                if (this.firstOver == 1) {
+                if (this.firstOver === 1) {
                     this.ending();
                     this.firstOver = 2;
                 }
                 return;
             }
         }
+        updateForce(this, input);
         this.level.update();
 
 
@@ -203,6 +216,30 @@ function Game(renderer, canvas) {
     };
 
 } // end Game object
+
+function updateForce(game, input) {
+    if (input.trigger.TNT === 1 && game.player.money >= 5000) {
+        game.player.TNT += 1;
+        game.player.money -= 5000;
+        input.trigger.TNT = 0;
+    }
+    if (input.trigger.Gun === 1 && game.player.gun === 0 && game.player.money >= 10000) {
+        game.player.gun = 1;
+        game.player.money -= 10000;
+        input.trigger.Gun = 0;
+    }
+
+    if (input.trigger.Armor === 1 && game.player.armor === 0 && game.player.money >= 8000) {
+        game.player.armor = 100;
+        game.player.money -= 8000;
+        input.trigger.Armor = 0;
+    }
+    if (input.trigger.Ammo === 1 && game.player.money >= 1000) {
+        game.player.ammo += 5;
+        game.player.money -= 1000;
+        input.trigger.Ammo = 0;
+    }
+}
 
 
 
@@ -282,8 +319,8 @@ function updateMovement(game, input) {
     input.f.y = Math.cos(input.theta);
 
     // Handle jumping
-    if (input.hold == 1) {
-        if (input.trigger.Jump == 1) {
+    if (input.hold === 1) {
+        if (input.trigger.Jump === 1) {
             input.v = jumpVelocity;
             input.trigger.Jump = 0;
             input.hold = 0;
@@ -327,11 +364,30 @@ function updateMovement(game, input) {
 }
 
 
+function checkZombie() {
+    var dz = game.level.geometry.doors[game.needToClose].centerz / CELL_SIZE;
+    var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
+
+    for (var z = 0; z < game.zombie.length; z++) {
+        var sz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
+        var sx = Math.floor(Math.floor(game.zombie[z].mesh2.position.x) / CELL_SIZE + 0.5);
+        if (sz === dz && sx === dx) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // ----------------------------------------------------------------------------
 // Update all the Game's Bullets 
 // TODO: add collision code for bullets
 // TODO: limit amount of ammunition!
 // ----------------------------------------------------------------------------
+var EXPLOSION_TIME = 10;
+var BULLET_DAMAGE0 = 5;
+var BULLET_DAMAGE1 = 10;
+var EXPLOSION_AMOUNT = 50;
 function updateBullets(game, input) {
     var refireTime = 0.2,
         bullet,
@@ -357,11 +413,11 @@ function updateBullets(game, input) {
             var intersects1 = input.viewRay.intersectObjects(game.objects),
                 intersects2 = input.viewRay.intersectObjects(game.zomobjects),
                 selected = null;
-            if (intersects1.length > 0 && intersects2.length == 0) {
-                selected = null;// intersects1[0].object;                
+            if (intersects1.length > 0 && intersects2.length === 0) {
+                selected = null; // intersects1[0].object;                
             }
 
-            if (intersects1.length == 0 && intersects2.length > 0) {
+            if (intersects1.length === 0 && intersects2.length > 0) {
                 selected = intersects2[0].object;
             }
 
@@ -370,17 +426,23 @@ function updateBullets(game, input) {
                     selected = intersects2[0].object;
                 }
                 else {
-                    selected = null;// intersects1[0].object;
+                    selected = null; // intersects1[0].object;
                 }
             }
-               
-            if (selected != null) {
-//                if (selected.name === "door") {
-//                    game.level.toggleDoor(selected.doorIndex);
-//                }
-//                else {
+
+            if (selected !== null) {
+                //                if (selected.name === "door") {
+                //                    game.level.toggleDoor(selected.doorIndex);
+                //                }
+                //                else {
                 if (selected.name === "zombie") {
-                    game.zombie[selected.index].health -= 5;
+                    if (game.player.gun === 0) {
+                        game.zombie[selected.index].health -= BULLET_DAMAGE0;
+                    }
+                    else {
+                        game.zombie[selected.index].health -= BULLET_DAMAGE1;
+                    }
+
                     if (game.zombie[selected.index].health <= 0) {
                         game.player.money += 1000;
                         game.scene.remove(game.zombie[selected.index].mesh1);
@@ -420,30 +482,14 @@ function updateBullets(game, input) {
             game.bullets.push(bullet);
             game.scene.add(bullet.mesh);
 
-            --game.player.ammo;            
+            --game.player.ammo;
         }
     }
-
-    function checkZombie() {
-        var dz = game.level.geometry.doors[game.needToClose].centerz / CELL_SIZE;
-        var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
-
-        for (var z = 0; z < game.zombie.length; z++) {
-            var sz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
-            var sx = Math.floor(Math.floor(game.zombie[z].mesh2.position.x) / CELL_SIZE + 0.5);
-            if (sz == dz && sx == dx) {
-                return false;
-            }
-        }
-            
-        return true;
-    }
-
 
     if (input.trigger.F === 1) {
         var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
         var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
-        if (game.level.state[sz][sx] != -1) {
+        if (game.level.state[sz][sx] !== -1) {
             if (game.level.state[sz][sx] < 0) {
                 game.needToClose = -2 - game.level.state[sz][sx];
             }
@@ -453,13 +499,82 @@ function updateBullets(game, input) {
             }
         }
         else {
-            if (game.needToClose != -1 && checkZombie()) {
+            if (game.needToClose !== -1 && checkZombie()) {
                 game.level.toggleDoor(game.needToClose);
                 game.needToClose = -1;
                 input.trigger.F = 0;
             }
-        }            
+        }
     }
+
+    if (input.trigger.R === 1) {
+        var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
+        var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
+        if (game.TNTtime < 0 && game.player.TNT >= 1 && game.level.grid[sz][sx].isInterior()) {
+            game.player.TNT -= 1;
+            game.TNTtime = EXPLOSION_TIME;
+            game.TNTRoom = game.level.grid[sz][sx].roomIndex;
+            game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
+            game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
+            game.scene.add(game.Bomb);
+            game.TNTindex = game.scene.length - 1;
+        }
+        input.trigger.R = 0;
+    }
+
+    if (game.TNTtime > 0) {
+        game.TNTtime -= game.clock3.getDelta();
+    }
+    else {
+        if (game.TNTtime > -0.5) {
+            game.scene.remove(game.Bomb);
+            game.Bomb = null;
+            game.TNTtime = -1;
+            var z = 0;
+            var oz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
+            var ox = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
+            if (game.level.grid[oz][ox].roomIndex === game.TNTRoom && game.level.grid[oz][ox].isInterior()) {
+                if (game.player.armor > 0) {
+                    game.player.armor -= EXPLOSION_AMOUNT;
+                    // TODO: handle player death when health <= 0
+                    if (game.player.armor < 0) {
+                        game.player.health += game.player.armor;
+                        game.player.armor = 0;
+                    }
+                    game.player.canBeHurt = false;
+                }
+                else {
+                    game.player.health -= EXPLOSION_AMOUNT;
+                    // TODO: handle player death when health <= 0
+                    if (game.player.health < 0)
+                        game.player.health = 0;
+                    game.player.canBeHurt = false;
+                }
+            }
+        }
+
+
+        while (z < game.zombie.length) {
+            var sz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
+            var sx = Math.floor(Math.floor(game.zombie[z].mesh2.position.x) / CELL_SIZE + 0.5);
+            if (game.level.grid[sz][sx].roomIndex === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
+                game.scene.remove(game.zombie[z].mesh1);
+                game.scene.remove(game.zombie[z].mesh2);
+                game.zomobjects.splice(z, 1);
+                game.zombie.splice(z, 1);
+                for (var t = z; t < game.zombie.length; t++) {
+                    game.zombie[t].mesh1.index -= 1;
+                }
+            }
+            else {
+                z++;
+            }
+        }
+    }
+
+
+
+
 
 
     // Update all the bullets, move backwards through array 
@@ -494,7 +609,7 @@ function updateZombies(game) {
             var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
 
-            if (game.level.grid[sz][sx].type == CELL_TYPES.door && game.level.state[sz][sx] >= 0) {
+            if (game.level.grid[sz][sx].type === CELL_TYPES.door && game.level.state[sz][sx] >= 0) {
                 continue;
             }
 
@@ -512,63 +627,63 @@ function updateZombies(game) {
             game.zombie[z].at = -1;
             while (1) {
                 for (var i = -1; i <= 1; i++) {
-                    for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
-                        if (sz + i == oz && sx + j == ox) {
+                    for (var j = -1 + Math.abs(i); j <= 1 - Math.abs(i); j++) {
+                        if (sz + i === oz && sx + j === ox) {
                             game.zombie[z].queue.push(new game.Element(sz + i, sx + j, pointing));
                             game.zombie[z].at = game.zombie[z].queue.length - 1;
                             found = 1;
                             break;
                         }
                         else {
-                            if (game.level.grid[sz + i][sx + j].type != CELL_TYPES.wall &&
-                                visit[sz + i][sx + j] == 0 &&
-                                (game.level.grid[sz + i][sx + j].type != CELL_TYPES.door || game.level.state[sz + i][sx + j] <=-2)
+                            if (game.level.grid[sz + i][sx + j].type !== CELL_TYPES.wall &&
+                                visit[sz + i][sx + j] === 0 &&
+                                (game.level.grid[sz + i][sx + j].type !== CELL_TYPES.door || game.level.state[sz + i][sx + j] <= -2)
                                 ) {
                                 visit[sz + i][sx + j] = 1;
                                 game.zombie[z].queue.push(new game.Element(sz + i, sx + j, pointing));
                             }
                         }
                     }
-                    if (found == 1) {
+                    if (found === 1) {
                         break;
                     }
                 }
-                if (found == 1) {
+                if (found === 1) {
                     break;
                 }
                 pointing++;
-                if (pointing == game.zombie[z].queue.length) {
+                if (pointing === game.zombie[z].queue.length) {
                     break;
                 }
                 sz = game.zombie[z].queue[pointing].sz;
                 sx = game.zombie[z].queue[pointing].sx;
             }
 
-            if (found == 1) {
+            if (found === 1) {
                 var start = game.zombie[z].at;
-                while (game.level.grid[game.zombie[z].queue[start].sz][game.zombie[z].queue[start].sx].type == CELL_TYPES.door) {
-                    if (start == 0) {
+                while (game.level.grid[game.zombie[z].queue[start].sz][game.zombie[z].queue[start].sx].type === CELL_TYPES.door) {
+                    if (start === 0) {
                         break;
                     }
                     start = game.zombie[z].queue[start].p;
                 }
-                if (start != 0) {
+                if (start !== 0) {
                     var link = game.zombie[z].queue[start].p;
                     while (1) {
-                        while (game.level.grid[game.zombie[z].queue[link].sz][game.zombie[z].queue[link].sx].type != CELL_TYPES.door) {
+                        while (game.level.grid[game.zombie[z].queue[link].sz][game.zombie[z].queue[link].sx].type !== CELL_TYPES.door) {
                             game.zombie[z].queue[start].p = link;
-                            if (link == 0) {
+                            if (link === 0) {
                                 break;
                             }
                             link = game.zombie[z].queue[link].p;
                         }
 
                         start = game.zombie[z].queue[link].p;
-                        if (start == 0) {
+                        if (start === 0) {
                             break;
                         }
-                        while (game.level.grid[game.zombie[z].queue[start].sz][game.zombie[z].queue[start].sx].type == CELL_TYPES.door) {
-                            if (start == 0) {
+                        while (game.level.grid[game.zombie[z].queue[start].sz][game.zombie[z].queue[start].sx].type === CELL_TYPES.door) {
+                            if (start === 0) {
                                 break;
                             }
                             start = game.zombie[z].queue[start].p;
@@ -580,14 +695,14 @@ function updateZombies(game) {
         }
     }
     else {
-        game.searchDelay += game.clock.getDelta();
+        game.searchDelay += game.clock2.getDelta();
     }
 
     for (var z = 0; z < game.zombie.length; z++) {
-        if (game.zombie[z].at == -1) {
+        if (game.zombie[z].at === -1) {
             continue;
         }
-        if (game.zombie[z].queue[game.zombie[z].at].p == 0) {
+        if (game.zombie[z].queue[game.zombie[z].at].p === 0) {
             moveToz = game.player.position.z;
             moveTox = game.player.position.x;
         }
@@ -640,12 +755,14 @@ function updateZombies(game) {
                         else {
                             needMove = 0;
                             game.zombie[z].mesh1.rotation.y -= 0.2;
-                            game.zombie[z].mesh2.rotation.y -= 0.2;                        }
+                            game.zombie[z].mesh2.rotation.y -= 0.2;
+                        }
                     }
                     else {
                         if (game.zombie[z].mesh1.rotation.y > direction - 0.2) {
                             game.zombie[z].mesh1.rotation.y = direction;
-                            game.zombie[z].mesh2.rotation.y = direction;                        }
+                            game.zombie[z].mesh2.rotation.y = direction;
+                        }
                         else {
                             needMove = 0;
                             game.zombie[z].mesh1.rotation.y += 0.2;
@@ -654,7 +771,7 @@ function updateZombies(game) {
                     }
                 }
             }
-            if (needMove == 1) {
+            if (needMove === 1) {
                 var dis = Math.sqrt(dx * dx + dz * dz);
                 var hopeTo = new THREE.Vector3();
                 var stop = 0;
@@ -662,11 +779,11 @@ function updateZombies(game) {
                     hopeTo.add(game.zombie[z].mesh1.position, new THREE.Vector3(dx, 0, dz));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < HURT_DISTANCE  * HURT_DISTANCE / 4) {
+                    if (hx * hx + hz * hz < HURT_DISTANCE * HURT_DISTANCE / 4) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.zombie.length; p++) {
-                        if (p == z) {
+                        if (p === z) {
                             continue;
                         }
                         var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
@@ -677,7 +794,7 @@ function updateZombies(game) {
                         }
                     }
 
-                    if (stop == 0) {
+                    if (stop === 0) {
                         game.zombie[z].mesh1.position.x = hopeTo.x;
                         game.zombie[z].mesh1.position.z = hopeTo.z;
                         game.zombie[z].mesh2.position.x = hopeTo.x;
@@ -696,7 +813,7 @@ function updateZombies(game) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.zombie.length; p++) {
-                        if (p == z) {
+                        if (p === z) {
                             continue;
                         }
                         var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
@@ -706,7 +823,7 @@ function updateZombies(game) {
                             break;
                         }
                     }
-                    if (stop == 0) {
+                    if (stop === 0) {
                         game.zombie[z].mesh1.position.x = hopeTo.x;
                         game.zombie[z].mesh1.position.z = hopeTo.z;
                         game.zombie[z].mesh2.position.x = hopeTo.x;
@@ -726,7 +843,7 @@ function updateZombies(game) {
 // Handle collision detection
 // ----------------------------------------------------------------------------
 function handleCollisions(game, input) {
-    if (input.trigger.A || input.trigger.D || input.trigger.W || input.trigger.S || input.hold == 0) {
+    if (input.trigger.A || input.trigger.D || input.trigger.W || input.trigger.S || input.hold === 0) {
         input.hold = 0;
         for (var vertexIndex = 0; vertexIndex < game.player.geometry.vertices.length; vertexIndex++) {
             var directionVector = game.player.geometry.vertices[vertexIndex].clone();

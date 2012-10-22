@@ -91,7 +91,7 @@ function setupInput (data) {
     data.f = new THREE.Vector3();
     data.v = 0;
     data.hold = 0;
-    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0 };
+    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0};
 
     canvas.requestPointerLock();
 
@@ -106,6 +106,11 @@ function setupInput (data) {
             case 69: data.trigger.E = 1; break;
             case 70: data.trigger.F = 1; break;
             case 32: data.trigger.Jump = 1; break;
+	    case 84: data.trigger.TNT = 1; break;
+	    case 71: data.trigger.Gun = 1; break;
+	    case 72: data.trigger.Armor = 1; break;
+	    case 66: data.trigger.Ammo = 1; break;
+	    case 82: data.trigger.R = 1; break;
         }
     }, false);
     

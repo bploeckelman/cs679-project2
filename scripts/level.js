@@ -1,5 +1,5 @@
 var CELL_TYPES = {
-    void: ".",
+    nothing: ".",
     empty: " ",
     wall: "#",
     door: "+",
@@ -11,9 +11,8 @@ var CELL_TYPES = {
 },
     CELL_SIZE = 32,
     NUM_CELLS = new THREE.Vector2(25, 25),
-
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
-    // Pass as last param into THREE.CubeGeometry() = only generate cube sides
+// Pass as last param into THREE.CubeGeometry() = only generate cube sides
     TOPLESS_CUBE = { px: true, nx: true, py: false, ny: false, pz: true, nz: true };
 
 // ----------------------------------------------------------------------------
@@ -105,7 +104,6 @@ function Level(numRooms, game) {
         }
     };
 
-
     // Generate randomly sized rooms and try to add them 
     // until one fits, or we've tried too many times
     // -------------------------------------------------
@@ -131,7 +129,6 @@ function Level(numRooms, game) {
             }
         }
     };
-
 
     // Generate all the rooms for a level
     // ----------------------------------
@@ -170,7 +167,6 @@ function Level(numRooms, game) {
         }
     };
 
-
     // Find a position for the specified room next to an existing room
     // ---------------------------------------------------------------
     this.findRoomAttachment = function (room) {
@@ -204,7 +200,6 @@ function Level(numRooms, game) {
         return { position: pos, target: rm };
     };
 
-
     // Populates grid with rooms
     // -------------------------------------------------------
     this.populateGrid = function () {
@@ -232,7 +227,6 @@ function Level(numRooms, game) {
         }
     };
 
-
     // Generate a 2d array of NUM_CELLS.x by NUM_CELLS.y cells
     // -------------------------------------------------------
     this.generateGridCells = function () {
@@ -242,7 +236,7 @@ function Level(numRooms, game) {
         for (y = 0; y < NUM_CELLS.y; ++y) {
             this.grid[y] = new Array(NUM_CELLS.x);
             for (x = 0; x < NUM_CELLS.x; ++x) {
-                this.grid[y][x] = new Cell(x, y, CELL_TYPES.void);
+                this.grid[y][x] = new Cell(x, y, CELL_TYPES.nothing);
             }
         }
 
@@ -280,14 +274,12 @@ function Level(numRooms, game) {
         }
     };
 
-
     // Create features in the map
     // --------------------------------
     this.generateFeatures = function () {
         this.addDoors();
         this.addStartPosition();
     };
-
 
     // Creates new geometry based on grid layout
     // -----------------------------------------
@@ -301,7 +293,7 @@ function Level(numRooms, game) {
                 yy = y * CELL_SIZE;
 
                 // Generate geometry according to cell type
-                if (cell.type === CELL_TYPES.void) {
+                if (cell.type === CELL_TYPES.nothing) {
                     continue;
                 } else if (cell.type === CELL_TYPES.empty
                         || cell.type === CELL_TYPES.start
@@ -378,13 +370,13 @@ function Level(numRooms, game) {
     var NORMAL_MATERIAL = new THREE.MeshNormalMaterial(),
         WALL_MATERIAL = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE }),
         WALL_FULL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE }),
-        // Geometry -----
+    // Geometry -----
         WALL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE,
             1, 2, 1, NORMAL_MATERIAL, TOPLESS_CUBE),
         WALL_FULL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE,
             1, 1, 1, NORMAL_MATERIAL,
             { px: true, nx: true, py: false, ny: true, pz: true, nz: true }),
-        // Mesh -----
+    // Mesh -----
         WALL_MESH = new THREE.Mesh(WALL_GEOMETRY, NORMAL_MATERIAL);
 
     // Set the material for each face of the wall geometry
@@ -454,7 +446,7 @@ function Level(numRooms, game) {
         mesh.centerx = x;
         mesh.centerz = y;
         mesh.doorIndex = this.geometry.doors.push(mesh) - 1;
-        this.state[y/CELL_SIZE][x/CELL_SIZE] = mesh.doorIndex;
+        this.state[y / CELL_SIZE][x / CELL_SIZE] = mesh.doorIndex;
         mesh.position.set(x, CELL_SIZE / 2, y);
         game.objects.push(mesh);
         game.scene.add(mesh);
@@ -550,6 +542,8 @@ function Level(numRooms, game) {
     };
 
 
+
+
     // Toggle the specified door open or closed
     // ----------------------------------------
     this.toggleDoor = function (index) {
@@ -560,7 +554,7 @@ function Level(numRooms, game) {
 
         var door = this.geometry.doors[index], tween;
         if (door.doorState === "closed" && door.canToggle) {
-            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = -2-this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE];
+            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = -2 - this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE];
             tween = new TWEEN.Tween({ rot: Math.PI })
                 .to({ rot: Math.PI / 2 }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
@@ -576,7 +570,7 @@ function Level(numRooms, game) {
                 door.canToggle = true;
             }, DOOR_TIMEOUT);
         } else if (door.doorState === "open" && door.canToggle) {
-            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = -2-this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE];
+            this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE] = -2 - this.state[door.centerz / CELL_SIZE][door.centerx / CELL_SIZE];
             tween = new TWEEN.Tween({ rot: Math.PI / 2 })
                 .to({ rot: Math.PI }, DOOR_TIMEOUT)
                 .easing(TWEEN.Easing.Elastic.Out)
@@ -598,7 +592,7 @@ function Level(numRooms, game) {
     // Add randomized starting location for player
     // -------------------------------------------
     this.addStartPosition = function () {
-        var x, y,playerRoom;
+        var x, y, playerRoom;
 
         while (true) {
             x = randInt(1, NUM_CELLS.x - 1);
@@ -606,7 +600,7 @@ function Level(numRooms, game) {
             if (this.grid[y][x].type === CELL_TYPES.empty) {
                 this.grid[y][x].type = CELL_TYPES.start;
                 this.startPos = new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE);
-                playerRoom = this.grid[this.startPos.y/CELL_SIZE][this.startPos.x/CELL_SIZE].roomIndex;
+                playerRoom = this.grid[this.startPos.y / CELL_SIZE][this.startPos.x / CELL_SIZE].roomIndex;
                 break;
             }
         }
@@ -614,13 +608,12 @@ function Level(numRooms, game) {
         while (this.zombiePos.length < zombieNumber) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
-            if (this.grid[y][x].type === CELL_TYPES.empty && this.grid[y][x].roomIndex != playerRoom) {
+            if (this.grid[y][x].type === CELL_TYPES.empty && this.grid[y][x].roomIndex !== playerRoom) {
                 this.grid[y][x].type = CELL_TYPES.zomstart;
                 this.zombiePos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
             }
         }
     };
-
 
     // Add doors to the map
     // --------------------------------
@@ -669,7 +662,6 @@ function Level(numRooms, game) {
             }
     };
 
-
     // Generate minimap using a 2d canvas
     // ----------------------------------
     this.generateMinimap = function () {
@@ -690,7 +682,7 @@ function Level(numRooms, game) {
         mapContext = mapCanvas.getContext("2d");
 
         // Setup colors for each cell type
-        this.mapColors.void = "#202020";
+        this.mapColors.nothing = "#202020";
         this.mapColors.empty = "#000000";
         this.mapColors.wall = "#c0c0c0";
         this.mapColors.door = "#00ffff";
@@ -748,7 +740,7 @@ function Level(numRooms, game) {
 
                 // This is sorta hacky, but it works...
                 switch (cell.type) {
-                    case CELL_TYPES.void: color = this.mapColors.void; break;
+                    case CELL_TYPES.nothing: color = this.mapColors.nothing; break;
                     case CELL_TYPES.empty: color = this.mapColors.empty; break;
                     case CELL_TYPES.wall: color = this.mapColors.wall; break;
                     case CELL_TYPES.door: color = this.mapColors.door; break;
@@ -767,7 +759,7 @@ function Level(numRooms, game) {
                     continue;
                 }
 
-                if (cell.type !== CELL_TYPES.void && cell.type !== CELL_TYPES.start && cell.type !== CELL_TYPES.zomstart) {
+                if (cell.type !== CELL_TYPES.nothing && cell.type !== CELL_TYPES.start && cell.type !== CELL_TYPES.zomstart) {
                     mapContext.fillStyle = color;
                     mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
                 }
@@ -807,16 +799,24 @@ function Level(numRooms, game) {
         playerContext.font = '40px Arial';
         playerContext.textBaseline = 'middle';
         playerContext.textAlign = 'center';
-        playerContext.strokeText("Health:", playerInfo.width * 1.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.health, playerInfo.width * 3 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Armor:", playerInfo.width * 5.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.armor, playerInfo.width * 7 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Time:", playerInfo.width * 9.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(Math.floor(game.timer)+"."+Math.floor((game.timer-Math.floor(game.timer))*10), playerInfo.width * 11 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Ammo:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.ammo, playerInfo.width * 15 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("$:", playerInfo.width * 12.8 / 20, playerInfo.height / 4);
-        playerContext.strokeText(game.player.money, playerInfo.width * 14.5 / 20, playerInfo.height / 4);
+        playerContext.strokeText("Health:", playerInfo.width * 1 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.health, playerInfo.width * 2.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Armor:", playerInfo.width * 4 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.armor, playerInfo.width * 5.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Time:", playerInfo.width * 7 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10), playerInfo.width * 8.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Ammo:", playerInfo.width * 10.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.ammo, playerInfo.width * 11.5 / 20, playerInfo.height / 1.5);
+        if (game.TNTtime < -0.5) {
+            playerContext.strokeText("T:", playerInfo.width * 12 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText(game.player.TNT, playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
+        }
+        else {
+            playerContext.strokeText("R:", playerInfo.width * 12 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText(Math.floor(game.TNTtime) + "." + Math.floor((game.TNTtime - Math.floor(game.TNTtime)) * 10), playerInfo.width * 13 / 20, playerInfo.height / 1.5);
+        }
+        playerContext.strokeText("$:", playerInfo.width * 14 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.money, playerInfo.width * 15.5 / 20, playerInfo.height / 1.5);
     };
 
 
@@ -952,7 +952,7 @@ function Room(size) {
                 + "," + this.top() + "," + this.bottom() + ")\n",
             x, y;
         for (y = 0; y < this.tiles.length; ++y) {
-            if (y != 0) { str += "\n"; }
+            if (y !== 0) { str += "\n"; }
             for (x = 0; x < this.tiles[0].length; ++x) {
                 str += this.tiles[y][x];
             }
@@ -968,5 +968,5 @@ function Room(size) {
     this.top = function () { return this.pos.y; };
     this.bottom = function () { return this.pos.y + this.size.y - 1; };
 
-} // end Room object
-
+}  // end Room object
+    
