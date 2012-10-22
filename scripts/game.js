@@ -59,7 +59,7 @@ function Game(renderer, canvas) {
 
         // Setup scene
         game.scene = new THREE.Scene();
-        game.scene.add(new THREE.AmbientLight(0x101010));
+        game.scene.add(new THREE.AmbientLight(0x4f4f4f));
 
         // Load the test level
         game.level = new Level(10, game);
@@ -364,7 +364,7 @@ function updateMovement(game, input) {
 }
 
 
-function checkZombie() {
+function checkZombie(game) {
     var dz = game.level.geometry.doors[game.needToClose].centerz / CELL_SIZE;
     var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
 
@@ -401,12 +401,15 @@ function updateBullets(game, input) {
 
     // This allows the player to fire as fast as they can click
     if (input.click === 0) {
-        game.bulletDelay = refireTime;
+        game.bulletDelay += game.clock.getDelta();
+        if (game.bulletDelay > refireTime) {
+            game.bulletDelay = refireTime;
+        }
     }
 
     if (input.click === 1 && game.player.ammo >= 1) {
         if (game.bulletDelay < refireTime) {
-            game.bulletDelay += game.clock.getDelta();
+            game.bulletDelay += game.clock.getDelta();           
         }
         else {
             // Toggle doors if there are any directly in line of sight 
@@ -438,6 +441,8 @@ function updateBullets(game, input) {
                 if (selected.name === "zombie") {
                     if (game.player.gun === 0) {
                         game.zombie[selected.index].health -= BULLET_DAMAGE0;
+                        console.log(BULLET_DAMAGE0);
+                        game.zombie[selected.index].health;                        
                     }
                     else {
                         game.zombie[selected.index].health -= BULLET_DAMAGE1;
@@ -499,7 +504,7 @@ function updateBullets(game, input) {
             }
         }
         else {
-            if (game.needToClose !== -1 && checkZombie()) {
+            if (game.needToClose !== -1 && checkZombie(game)) {
                 game.level.toggleDoor(game.needToClose);
                 game.needToClose = -1;
                 input.trigger.F = 0;
@@ -526,7 +531,7 @@ function updateBullets(game, input) {
         game.TNTtime -= game.clock3.getDelta();
     }
     else {
-        if (game.TNTtime > -0.5) {
+        if (game.TNTtime !== -1) {
             game.scene.remove(game.Bomb);
             game.Bomb = null;
             game.TNTtime = -1;

@@ -807,7 +807,7 @@ function Level(numRooms, game) {
         playerContext.strokeText(Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10), playerInfo.width * 8.5 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Ammo:", playerInfo.width * 10.5 / 20, playerInfo.height / 1.5);
         playerContext.strokeText(game.player.ammo, playerInfo.width * 11.5 / 20, playerInfo.height / 1.5);
-        if (game.TNTtime < -0.5) {
+        if (game.TNTtime === -1) {
             playerContext.strokeText("T:", playerInfo.width * 12 / 20, playerInfo.height / 1.5);
             playerContext.strokeText(game.player.TNT, playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
         }
