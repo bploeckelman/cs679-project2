@@ -15,12 +15,12 @@
         stats = new Stats(),
         inputData = {},
         game = null;
-        requestFrame = window.requestAnimationFrame
-                    || window.webkitRequestAnimationFrame
-                    || window.mozRequestAnimationFrame
-                    || window.oRequestAnimationFrame
-                    || window.msRequestAnimationFrame
-                    || function (callback) { window.setTimeout(callback, 1000 / 60); };
+    requestFrame = window.requestAnimationFrame
+                || window.webkitRequestAnimationFrame
+                || window.mozRequestAnimationFrame
+                || window.oRequestAnimationFrame
+                || window.msRequestAnimationFrame
+                || function (callback) { window.setTimeout(callback, 1000 / 60); };
 
     // Style html a bit
     document.getElementsByTagName("body")[0].style.background = "rgb(64,64,64)";
@@ -46,14 +46,14 @@
     stats.domElement.style.left = canvas.offsetLeft + "px";
     document.getElementById("container").appendChild(stats.domElement);
 
-   
+
 
     // Setup input handlers and populate input data object
     setupInput(inputData);
 
     // Create Game object
     game = new Game(renderer, canvas);
-	
+
 
     // Enter main loop
     (function mainLoop() {
@@ -63,15 +63,15 @@
         game.render();
         stats.end();
     })();
-	
-	window.onresize = function(event){
-       	game.camera.aspect = window.innerWidth / window.innerHeight;
-		game.camera.updateProjectionMatrix();
-		var canv = document.getElementById("canvas");
-		canv.height = window.innerHeight;
-		canv.width = window.innerWidth;
-		renderer.setSize( window.innerWidth, window.innerHeight );
-	}
+
+    window.onresize = function (event) {
+        game.camera.aspect = window.innerWidth / window.innerHeight;
+        game.camera.updateProjectionMatrix();
+        var canv = document.getElementById("canvas");
+        canv.height = window.innerHeight;
+        canv.width = window.innerWidth;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 })();
 
 
@@ -79,19 +79,19 @@
 // ----------------------------------------------------------------------------
 // Setup input handlers and populate input data object
 // ----------------------------------------------------------------------------
-function setupInput (data) {
+function setupInput(data) {
     // Setup input data structure
     data.viewRay = null;
     data.click = 0;
-    data.mouseX = canvas.offsetLeft+canvas.width/2;
-    data.mouseY = canvas.offsetTop+canvas.height/2;
-    data.center = -Math.PI/2;
-    data.theta = Math.PI/2;
+    data.mouseX = canvas.offsetLeft + canvas.width / 2;
+    data.mouseY = canvas.offsetTop + canvas.height / 2;
+    data.center = -Math.PI / 2;
+    data.theta = Math.PI / 2;
     data.phi = 0;
     data.f = new THREE.Vector3();
     data.v = 0;
     data.hold = 0;
-    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0};
+    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0 };
 
     canvas.requestPointerLock();
 
@@ -106,22 +106,22 @@ function setupInput (data) {
             case 69: data.trigger.E = 1; break;
             case 70: data.trigger.F = 1; break;
             case 32: data.trigger.Jump = 1; break;
-	    case 84: data.trigger.TNT = 1; break;
-	    case 71: data.trigger.Gun = 1; break;
-	    case 72: data.trigger.Armor = 1; break;
-	    case 66: data.trigger.Ammo = 1; break;
-	    case 82: data.trigger.R = 1; break;
+            case 84: data.trigger.TNT = 1; break;
+            case 71: data.trigger.Gun = 1; break;
+            case 72: data.trigger.Armor = 1; break;
+            case 66: data.trigger.Ammo = 1; break;
+            case 82: data.trigger.R = 1; break;
         }
     }, false);
-    
+
     // Hookup key input
     document.addEventListener("keyup", function (event) {
-        switch(event.keyCode) {
-            case 87: data.trigger.W=0; break;
-            case 83: data.trigger.S=0; break;
-            case 65: data.trigger.A=0; break;
-            case 68: data.trigger.D=0; break;
-            case 81: data.trigger.Q=0; break;
+        switch (event.keyCode) {
+            case 87: data.trigger.W = 0; break;
+            case 83: data.trigger.S = 0; break;
+            case 65: data.trigger.A = 0; break;
+            case 68: data.trigger.D = 0; break;
+            case 81: data.trigger.Q = 0; break;
             case 69: data.trigger.E = 0; break;
         }
     }, false);

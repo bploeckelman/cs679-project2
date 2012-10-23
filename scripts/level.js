@@ -9,6 +9,9 @@ var CELL_TYPES = {
     start: "*",
     zomstart: "z"
 },
+    MIN_ROOM_SIZE = 4,
+    MAX_ROOM_SIZE = 8,
+    MAP_CELL_SIZE = 8,
     CELL_SIZE = 32,
     NUM_CELLS = new THREE.Vector2(25, 25),
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
@@ -32,6 +35,7 @@ function Level(numRooms, game) {
     };
     this.mapCanvas = null;
     this.mapContext = null;
+    this.playInfo = null;
     this.playerContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
@@ -53,10 +57,7 @@ function Level(numRooms, game) {
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
     // ------------------------------------------------------------------------
-    var MIN_ROOM_SIZE = 4,
-        MAX_ROOM_SIZE = 8,
-        MAP_CELL_SIZE = 8,
-        DOOR_TIMEOUT = 750, // milliseconds between door toggles
+    var DOOR_TIMEOUT = 750, // milliseconds between door toggles
         FLOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/tile.png"),
         CEIL_TEXTURE = THREE.ImageUtils.loadTexture("images/stone.png"),
         WALL_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
@@ -665,22 +666,9 @@ function Level(numRooms, game) {
     // Generate minimap using a 2d canvas
     // ----------------------------------
     this.generateMinimap = function () {
-        var mainCanvas = document.getElementById("canvas");
-
-        // Create and position the map canvas, then add it to the document
-        mapCanvas = document.createElement("canvas");
-        mapCanvas.id = "minimap";
-        mapCanvas.style.position = "absolute";
-        mapCanvas.width = MAP_CELL_SIZE * NUM_CELLS.x;
-        mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
-        // TODO: have to handle window resizing
-        mapCanvas.style.bottom = 0;
-        mapCanvas.style.right = 0;
-        document.getElementById("container").appendChild(mapCanvas);
-
         // Save the 2d context for this canvas
+        mapCanvas = document.getElementById("minimap");
         mapContext = mapCanvas.getContext("2d");
-
         // Setup colors for each cell type
         this.mapColors.nothing = "#202020";
         this.mapColors.empty = "#000000";
@@ -693,20 +681,7 @@ function Level(numRooms, game) {
     };
 
     this.generateInformation = function () {
-        var mainCanvas = document.getElementById("canvas");
-
-        // Create and position the information, then add it to the document
-        playerInfo = document.createElement("canvas");
-        playerInfo.id = "info";
-        playerInfo.style.position = "absolute";
-        playerInfo.width = canvas.width * 0.95;
-        playerInfo.height = canvas.height * 0.22;
-        // TODO: have to handle window resizing
-        playerInfo.style.bottom = 0;
-        playerInfo.style.right = 0;
-        document.getElementById("container").appendChild(playerInfo);
-
-        // Save the 2d context for this canvas
+        playInfo = document.getElementById("info");
         playerContext = playerInfo.getContext("2d");
     }
 
@@ -806,10 +781,10 @@ function Level(numRooms, game) {
         playerContext.strokeText("Time:", playerInfo.width * 7 / 20, playerInfo.height / 1.5);
         playerContext.strokeText(Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10), playerInfo.width * 8.5 / 20, playerInfo.height / 1.5);
         playerContext.strokeText("Ammo:", playerInfo.width * 10.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.ammo, playerInfo.width * 11.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.ammo, playerInfo.width * 12 / 20, playerInfo.height / 1.5);
         if (game.TNTtime === -1) {
-            playerContext.strokeText("T:", playerInfo.width * 12 / 20, playerInfo.height / 1.5);
-            playerContext.strokeText(game.player.TNT, playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText("T:", playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText(game.player.TNT, playerInfo.width * 13 / 20, playerInfo.height / 1.5);
         }
         else {
             playerContext.strokeText("R:", playerInfo.width * 12 / 20, playerInfo.height / 1.5);
@@ -969,4 +944,4 @@ function Room(size) {
     this.bottom = function () { return this.pos.y + this.size.y - 1; };
 
 }  // end Room object
-    
+

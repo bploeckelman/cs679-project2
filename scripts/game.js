@@ -28,11 +28,52 @@ function Game(renderer, canvas) {
     this.searchDelay = 1;
     this.firstOver = 0;
     this.needToClose = -1;
-    this.timer = 60;
+    this.timer = 10;
     this.TNTtime = -1;
     this.TNTRoom = -1;
     this.Bomb = null;
-    this.element = {
+    this.newLevel = 1;
+    this.preammo = 0;
+    this.preTNT = 0;
+    this.premoney = 9500;
+    this.mainCanvas = document.getElementById("canvas");
+    // Create and position the information, then add it to the document
+    this.endingInfo = document.createElement("canvas");
+    this.endingInfo.id = "endinginfo";
+    this.endingInfo.style.position = "absolute";
+    this.endingInfo.width = canvas.width;
+    this.endingInfo.height = canvas.height;
+    // TODO: have to handle window resizing
+    this.endingInfo.style.bottom = 0;
+    this.endingInfo.style.right = 0;
+    document.getElementById("container").appendChild(this.endingInfo);
+
+    // Save the 2d context for this canvas
+    this.Context = this.endingInfo.getContext("2d");
+
+    // Create and position the map canvas, then add it to the document
+    this.mapCanvas = document.createElement("canvas");
+    this.mapCanvas.id = "minimap";
+    this.mapCanvas.style.position = "absolute";
+    this.mapCanvas.width = MAP_CELL_SIZE * NUM_CELLS.x;
+    this.mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
+    // TODO: have to handle window resizing
+    this.mapCanvas.style.bottom = 0;
+    this.mapCanvas.style.right = 0;
+    document.getElementById("container").appendChild(this.mapCanvas);
+
+    // Create and position the information, then add it to the document
+    playerInfo = document.createElement("canvas");
+    playerInfo.id = "info";
+    playerInfo.style.position = "absolute";
+    playerInfo.width = canvas.width * 0.95;
+    playerInfo.height = canvas.height * 0.22;
+    // TODO: have to handle window resizing
+    playerInfo.style.bottom = 0;
+    playerInfo.style.right = 0;
+    document.getElementById("container").appendChild(playerInfo);
+
+    this.Element = {
         sz: 0,
         sx: 0,
         p: 0
@@ -54,36 +95,55 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
-    (function init(game) {
+    this.init = function () {
         console.log("Game initializing...");
+        this.scene = null;
+        this.camera = null;
+        this.viewRay = null;
+        this.objects = [];
+        this.zomobjects = [];
+        this.lights = [];
+        this.bullets = [];
+        this.bulletDelay = 0;
+        this.level = null;
+        this.player = null;
+        this.zombie = [];
+        this.searchDelay = 1;
+        this.firstOver = 0;
+        this.needToClose = -1;
+        this.timer = 10;
+        this.TNTtime = -1;
+        this.TNTRoom = -1;
+        this.Bomb = null;
+        this.newLevel = 0;
 
         // Setup scene
-        game.scene = new THREE.Scene();
-        game.scene.add(new THREE.AmbientLight(0x4f4f4f));
+        this.scene = new THREE.Scene();
+        this.scene.add(new THREE.AmbientLight(0x4f4f4f));
 
         // Load the test level
-        game.level = new Level(10, game);
+        this.level = new Level(10, this);
 
         // Setup player
-        game.player = new THREE.Mesh(
+        this.player = new THREE.Mesh(
             new THREE.CubeGeometry(9, 17, 3.5),
             new THREE.MeshBasicMaterial({ color: 0x00ff00 })
         );
-        game.player.position.set(
-            game.level.startPos.x, 16, game.level.startPos.y);
-        game.player.canBeHurt = true;
-        game.player.health = 100;
-        game.player.armor = 0;
-        game.player.ammo = 0;
-        game.player.gun = 0;
-        game.player.TNT = 0;
-        game.player.money = 11000;
-        game.player.inventory = [];
-        game.scene.add(game.player);
+        this.player.position.set(
+            this.level.startPos.x, 16, this.level.startPos.y);
+        this.player.canBeHurt = true;
+        this.player.health = 100;
+        this.player.armor = 0;
+        this.player.ammo = this.preammo;
+        this.player.gun = 0;
+        this.player.TNT = this.preTNT;
+        this.player.money = this.premoney + 500;
+        this.player.inventory = [];
+        this.scene.add(this.player);
 
-        game.bombGeom = new THREE.CubeGeometry(5, 5, 5);
+        this.bombGeom = new THREE.CubeGeometry(5, 5, 5);
         var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
-        game.bombMat = new THREE.MeshLambertMaterial({ map: texture });
+        this.bombMat = new THREE.MeshLambertMaterial({ map: texture });
 
         var zombieGeom = new THREE.CubeGeometry(9, 17, 3.5);
         texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
@@ -93,91 +153,95 @@ function Game(renderer, canvas) {
         var loader = new THREE.JSONLoader(true);
         var tempCounter = 0;
 
-        for (var z = 0; z < game.level.zombiePos.length; z++) {
+        for (var z = 0; z < this.level.zombiePos.length; z++) {
             Azombie = {
-                x: game.level.zombiePos[z].x,
+                x: this.level.zombiePos[z].x,
                 y: 0,
-                z: game.level.zombiePos[z].y,
+                z: this.level.zombiePos[z].y,
                 mesh1: new THREE.Mesh(zombieGeom, zombieMat),
                 vel: 0.1,
                 health: 10,
                 queue: [],
                 at: 0
             };
-            Azombie.mesh1.position = new THREE.Vector3(game.level.zombiePos[z].x, 10, game.level.zombiePos[z].y);
+            Azombie.mesh1.position = new THREE.Vector3(this.level.zombiePos[z].x, 10, this.level.zombiePos[z].y);
             Azombie.mesh1.name = "zombie";
-            game.zombie.push(Azombie);
-            game.zomobjects.push(Azombie.mesh1);
-            game.scene.add(Azombie.mesh1);
+            this.zombie.push(Azombie);
+            this.zomobjects.push(Azombie.mesh1);
+            this.scene.add(Azombie.mesh1);
             Azombie.mesh1.index = z;
 
+            var Zoms = this.zombie;
+            var LScene = this.scene;
 
             loader.load("models/zombie.js", function (geometry) {
-                game.zombie[tempCounter].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                game.zombie[tempCounter].mesh2.position.set(game.zombie[tempCounter].x, game.zombie[tempCounter].y, game.zombie[tempCounter].z);
-                game.zombie[tempCounter].mesh2.scale.set(12.5, 10, 12.5);
-                game.zombie[tempCounter].mesh2.name = "zombie";
-                game.scene.add(game.zombie[tempCounter].mesh2);
+                Zoms[tempCounter].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                Zoms[tempCounter].mesh2.position.set(Zoms[tempCounter].x, Zoms[tempCounter].y, Zoms[tempCounter].z);
+                Zoms[tempCounter].mesh2.scale.set(12.5, 10, 12.5);
+                Zoms[tempCounter].mesh2.name = "zombie";
+                LScene.add(Zoms[tempCounter].mesh2);
                 tempCounter++;
             });
         };
 
         // Setup camera
-        game.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
-        game.camera.position.set(game.player.position.x, game.player.position.y, game.player.position.z);
-        game.scene.add(game.camera);
+        this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
+        this.camera.position.set(this.player.position.x, this.player.position.y, this.player.position.z);
+        this.scene.add(this.camera);
 
         // Setup a light that will move with the player
-        game.lights[0] = new THREE.PointLight(0xffccaa, 1.0, 100);
-        game.lights[0].position.set(
-            game.player.position.x,
-            game.player.position.y + 32,
-            game.player.position.z);
-        game.scene.add(game.lights[0]);
+        this.lights[0] = new THREE.PointLight(0xffccaa, 1.0, 100);
+        this.lights[0].position.set(
+            this.player.position.x,
+            this.player.position.y + 32,
+            this.player.position.z);
+        this.scene.add(this.lights[0]);
 
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
-    })(this);
+    };
 
     this.ending = function () {
-        var mainCanvas = document.getElementById("canvas");
-        // Create and position the information, then add it to the document
-        endingInfo = document.createElement("canvas");
-        endingInfo.id = "endinginfo";
-        endingInfo.style.position = "absolute";
-        endingInfo.width = canvas.width;
-        endingInfo.height = canvas.height;
-        // TODO: have to handle window resizing
-        endingInfo.style.bottom = 0;
-        endingInfo.style.right = 0;
-        document.getElementById("container").appendChild(endingInfo);
-
-        // Save the 2d context for this canvas
-        Context = endingInfo.getContext("2d");
-
         // Clear the map
-        Context.save();
-        Context.setTransform(1, 0, 0, 1, 0, 0);
-        Context.clearRect(0, 0, endingInfo.width, endingInfo.height);
-        Context.restore();
+        this.Context.save();
+        this.Context.setTransform(1, 0, 0, 1, 0, 0);
+        this.Context.clearRect(0, 0, this.endingInfo.width, this.endingInfo.height);
+        this.Context.restore();
 
-        Context.font = '60px Arial';
-        Context.textBaseline = 'middle';
-        Context.textAlign = 'center';
+        this.Context.font = '60px Arial';
+        this.Context.textBaseline = 'middle';
+        this.Context.textAlign = 'center';
         if (this.zombie.length === 0) {
-            Context.fillStyle = "#00ff00";
-            Context.fillText("All zombies are killed!", endingInfo.width / 2, endingInfo.height / 2);
+            this.Context.fillStyle = "#00ff00";
+            this.Context.fillText("All zombies are killed!", this.endingInfo.width / 2, this.endingInfo.height / 2);
         }
         else {
-            Context.fillStyle = "#ff0000";
-            Context.fillText("You lose the game!", endingInfo.width / 2, endingInfo.height / 2);
+            this.Context.fillStyle = "#ff0000";
+            this.Context.fillText("You lose the game!", this.endingInfo.width / 2, this.endingInfo.height / 2);
         }
+        this.newLevel = 1;
     };
+
+    this.clear = function () {
+        this.Context.save();
+        this.Context.setTransform(1, 0, 0, 1, 0, 0);
+        this.Context.clearRect(0, 0, this.endingInfo.width, this.endingInfo.height);
+        this.Context.restore();
+    }
 
 
     // Update everything in the scene
     // ------------------------------------------------------------------------
     this.update = function (input) {
+        if (this.newLevel === 1) {
+            if (this.player !== null) {
+                this.preammo = this.player.ammo;
+                this.preTNT = this.player.TNT;
+                this.premoney = this.player.money;
+            }
+            this.init();
+            this.clear();
+        }
         this.timer -= this.clock4.getDelta();
         if (this.timer < 0) {
             this.timer = 0;
@@ -191,7 +255,6 @@ function Game(renderer, canvas) {
                     this.ending();
                     this.firstOver = 2;
                 }
-                return;
             }
         }
         updateForce(this, input);
@@ -218,25 +281,32 @@ function Game(renderer, canvas) {
 } // end Game object
 
 function updateForce(game, input) {
-    if (input.trigger.TNT === 1 && game.player.money >= 5000) {
-        game.player.TNT += 1;
-        game.player.money -= 5000;
+    if (input.trigger.TNT === 1) {
+        if (game.player.money >= 5000) {
+            game.player.TNT += 1;
+            game.player.money -= 5000;
+        }
         input.trigger.TNT = 0;
     }
-    if (input.trigger.Gun === 1 && game.player.gun === 0 && game.player.money >= 10000) {
-        game.player.gun = 1;
-        game.player.money -= 10000;
+    if (input.trigger.Gun === 1) {
+        if (game.player.gun === 0 && game.player.money >= 10000) {
+            game.player.gun = 1;
+            game.player.money -= 10000;
+        }
         input.trigger.Gun = 0;
     }
-
-    if (input.trigger.Armor === 1 && game.player.armor === 0 && game.player.money >= 8000) {
-        game.player.armor = 100;
-        game.player.money -= 8000;
+    if (input.trigger.Armor === 1) {
+        if (game.player.armor === 0 && game.player.money >= 8000) {
+            game.player.armor = 100;
+            game.player.money -= 8000;
+        }
         input.trigger.Armor = 0;
     }
-    if (input.trigger.Ammo === 1 && game.player.money >= 1000) {
-        game.player.ammo += 5;
-        game.player.money -= 1000;
+    if (input.trigger.Ammo === 1) {
+        if (game.player.money >= 1000) {
+            game.player.ammo += 5;
+            game.player.money -= 1000;
+        }
         input.trigger.Ammo = 0;
     }
 }
@@ -409,7 +479,7 @@ function updateBullets(game, input) {
 
     if (input.click === 1 && game.player.ammo >= 1) {
         if (game.bulletDelay < refireTime) {
-            game.bulletDelay += game.clock.getDelta();           
+            game.bulletDelay += game.clock.getDelta();
         }
         else {
             // Toggle doors if there are any directly in line of sight 
@@ -442,7 +512,7 @@ function updateBullets(game, input) {
                     if (game.player.gun === 0) {
                         game.zombie[selected.index].health -= BULLET_DAMAGE0;
                         console.log(BULLET_DAMAGE0);
-                        game.zombie[selected.index].health;                        
+                        game.zombie[selected.index].health;
                     }
                     else {
                         game.zombie[selected.index].health -= BULLET_DAMAGE1;
@@ -632,7 +702,7 @@ function updateZombies(game) {
             game.zombie[z].at = -1;
             while (1) {
                 for (var i = -1; i <= 1; i++) {
-                    for (var j = -1 + Math.abs(i); j <= 1 - Math.abs(i); j++) {
+                    for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
                         if (sz + i === oz && sx + j === ox) {
                             game.zombie[z].queue.push(new game.Element(sz + i, sx + j, pointing));
                             game.zombie[z].at = game.zombie[z].queue.length - 1;
