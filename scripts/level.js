@@ -41,7 +41,6 @@ function Level(numRooms, game) {
     this.missionContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
-    var zombieNumber = 5;
     this.zombiePos = [];
 
     // Static geometry groups ------------------------
@@ -608,7 +607,7 @@ function Level(numRooms, game) {
             }
         }
 
-        while (this.zombiePos.length < zombieNumber) {
+        while (this.zombiePos.length < game.zombieNumber) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
             if (this.grid[y][x].type === CELL_TYPES.empty && this.grid[y][x].roomIndex !== playerRoom) {

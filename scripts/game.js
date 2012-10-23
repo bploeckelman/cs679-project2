@@ -32,10 +32,14 @@ function Game(renderer, canvas) {
     this.timer = 0;
     this.interval = -1;
     this.TNTtime = 0;
+    this.EXPLOSION_TIME = 0;
+    this.HURT_AMOUNT = 0;
+    this.zombieNumber = 0;
     this.TNTRoom = 0;
     this.Bomb = null;
     this.newMission = 1;
     this.Mission = 0;
+    this.maxMission = 8;
     this.preammo = 0;
     this.preTNT = 0;
     this.premoney = 9500;
@@ -111,6 +115,8 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     this.init = function () {
         console.log("Game initializing...");
+        this.Mission += 1;
+        this.newMission = 0;
         this.scene = null;
         this.camera = null;
         this.viewRay = null;
@@ -122,16 +128,17 @@ function Game(renderer, canvas) {
         this.level = null;
         this.player = null;
         this.zombie = [];
+        this.zombieNumber = this.Mission;
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.timer = 10;
+        this.timer = 105 - 5 * this.Mission;
+        this.EXPLOSION_TIME = 10.5 - 0.5 * this.Mission;
+        this.HURT_AMOUNT = 4 + this.Mission,
         this.clock4.getDelta();
         this.TNTtime = -1;
         this.TNTRoom = -1;
         this.Bomb = null;
-        this.Mission += 1;
-        this.newMission = 0;
 
         // Setup scene
         this.scene = new THREE.Scene();
@@ -175,8 +182,8 @@ function Game(renderer, canvas) {
                 y: 0,
                 z: this.level.zombiePos[z].y,
                 mesh1: new THREE.Mesh(zombieGeom, zombieMat),
-                vel: 0.1,
-                health: 10,
+                vel: 0.1 * this.Mission,
+                health: 10 * this.Mission,
                 queue: [],
                 at: 0
             };
@@ -228,14 +235,21 @@ function Game(renderer, canvas) {
         this.Context.textBaseline = 'middle';
         this.Context.textAlign = 'center';
         if (this.zombie.length === 0) {
-            this.Context.fillStyle = "#00ff00";
-            this.Context.fillText("All zombies are killed!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+            if (this.Mission === this.maxMission) {
+                this.Context.fillStyle = "#ff00ff";
+                this.Context.fillText("Congratulations! Zombies are all eliminated!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+            }
+            else {
+                this.Context.fillStyle = "#00ff00";
+                this.Context.fillText("All zombies are killed in this level!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+                this.newMission = 1;
+            }
         }
         else {
             this.Context.fillStyle = "#ff0000";
-            this.Context.fillText("You lose the game!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+            this.Context.fillText("You are dead, please try again!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+            this.newMission = 1;
         }
-        this.newMission = 1;
     };
 
     this.clear = function () {
@@ -281,13 +295,13 @@ function Game(renderer, canvas) {
             this.timer = 0;
         }
         if (this.zombie.length === 0 || this.player.health === 0 || this.timer === 0) {
-            if (this.firstOver === 0) {
-                this.firstOver = 1;
-            }
-            else {
-                if (this.firstOver === 1) {
-                    this.ending();
-                    this.firstOver = 2;
+            this.ending();
+            if (this.Mission === this.maxMission) {
+                if (this.firstOver === 0) {
+                    this.firstOver = 1;
+                }
+                else {
+                    return;
                 }
             }
         }
@@ -352,7 +366,6 @@ function updateForce(game, input) {
 // ----------------------------------------------------------------------------
 var HURT_DISTANCE = 18,
     HURT_TIMEOUT = 1000,
-    HURT_AMOUNT = 5,
     ZOMBIE_DISTANCE = 18;
 function updatePlayer(game, input) {
     // Check for zombie touching
@@ -362,7 +375,7 @@ function updatePlayer(game, input) {
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
             if (game.player.armor > 0) {
-                game.player.armor -= HURT_AMOUNT;
+                game.player.armor -= game.HURT_AMOUNT;
                 // TODO: handle player death when health <= 0
                 if (game.player.armor < 0) {
                     game.player.health += game.player.armor;
@@ -371,7 +384,7 @@ function updatePlayer(game, input) {
                 game.player.canBeHurt = false;
             }
             else {
-                game.player.health -= HURT_AMOUNT;
+                game.player.health -= game.HURT_AMOUNT;
                 // TODO: handle player death when health <= 0
                 if (game.player.health < 0)
                     game.player.health = 0;
@@ -488,7 +501,6 @@ function checkZombie(game) {
 // TODO: add collision code for bullets
 // TODO: limit amount of ammunition!
 // ----------------------------------------------------------------------------
-var EXPLOSION_TIME = 10;
 var BULLET_DAMAGE0 = 5;
 var BULLET_DAMAGE1 = 10;
 var EXPLOSION_AMOUNT = 50;
@@ -545,7 +557,6 @@ function updateBullets(game, input) {
                 if (selected.name === "zombie") {
                     if (game.player.gun === 0) {
                         game.zombie[selected.index].health -= BULLET_DAMAGE0;
-                        console.log(BULLET_DAMAGE0);
                         game.zombie[selected.index].health;
                     }
                     else {
@@ -621,7 +632,7 @@ function updateBullets(game, input) {
         var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
         if (game.TNTtime < 0 && game.player.TNT >= 1 && game.level.grid[sz][sx].isInterior()) {
             game.player.TNT -= 1;
-            game.TNTtime = EXPLOSION_TIME;
+            game.TNTtime = game.EXPLOSION_TIME;
             game.clock3.getDelta();
             game.TNTRoom = game.level.grid[sz][sx].roomIndex;
             game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
@@ -634,6 +645,9 @@ function updateBullets(game, input) {
 
     if (game.TNTtime > 0) {
         game.TNTtime -= game.clock3.getDelta();
+        if (game.TNTtime < 0) {
+            game.TNTtime = 0;
+        }
     }
     else {
         if (game.TNTtime !== -1) {
