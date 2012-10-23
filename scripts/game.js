@@ -13,6 +13,7 @@ function Game(renderer, canvas) {
     this.clock2 = new THREE.Clock();
     this.clock3 = new THREE.Clock();
     this.clock4 = new THREE.Clock();
+    this.clock5 = new THREE.Clock();
     this.scene = null;
     this.camera = null;
     this.viewRay = null;
@@ -29,6 +30,7 @@ function Game(renderer, canvas) {
     this.firstOver = 0;
     this.needToClose = 0;
     this.timer = 0;
+    this.interval = -1;
     this.TNTtime = 0;
     this.TNTRoom = 0;
     this.Bomb = null;
@@ -67,12 +69,23 @@ function Game(renderer, canvas) {
     playerInfo = document.createElement("canvas");
     playerInfo.id = "info";
     playerInfo.style.position = "absolute";
-    playerInfo.width = canvas.width * 0.95;
+    playerInfo.width = canvas.width * 0.98;
     playerInfo.height = canvas.height * 0.22;
     // TODO: have to handle window resizing
     playerInfo.style.bottom = 0;
     playerInfo.style.right = 0;
     document.getElementById("container").appendChild(playerInfo);
+
+    // Create and position the information, then add it to the document
+    missionInfo = document.createElement("canvas");
+    missionInfo.id = "mission";
+    missionInfo.style.position = "absolute";
+    missionInfo.width = canvas.width * 1;
+    missionInfo.height = canvas.height * 2.7;
+    // TODO: have to handle window resizing
+    missionInfo.style.bottom = 0;
+    missionInfo.style.right = 0;
+    document.getElementById("container").appendChild(missionInfo);
 
     this.Element = {
         sz: 0,
@@ -112,7 +125,7 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.timer = 60;
+        this.timer = 10;
         this.clock4.getDelta();
         this.TNTtime = -1;
         this.TNTRoom = -1;
@@ -235,16 +248,33 @@ function Game(renderer, canvas) {
 
     // Update everything in the scene
     // ------------------------------------------------------------------------
+    var intervalTime = 3;
     this.update = function (input) {
         if (this.newMission === 1) {
-            if (this.player !== null) {
-                this.preammo = this.player.ammo;
-                this.preTNT = this.player.TNT;
-                this.premoney = this.player.money;
+            if (this.player === null) {
+                this.init();
+                console.log("Mission: " + this.Mission);
             }
-            this.init();
-            console.log("Mission: " + this.Mission);
-            this.clear();
+            else {
+                if (this.interval === -1) {
+                    this.interval = intervalTime;
+                    this.clock5.getDelta();
+                }
+                else {
+                    if (this.interval > 0) {
+                        this.interval -= this.clock5.getDelta();
+                    }
+                    else {
+                        this.interval = -1;
+                        this.preammo = this.player.ammo;
+                        this.preTNT = this.player.TNT;
+                        this.premoney = this.player.money;
+                        this.init();
+                        console.log("Mission: " + this.Mission);
+                        this.clear();
+                    }
+                }
+            }
         }
         this.timer -= this.clock4.getDelta();
         if (this.timer < 0) {

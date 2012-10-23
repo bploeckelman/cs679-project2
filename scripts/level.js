@@ -37,6 +37,8 @@ function Level(numRooms, game) {
     this.mapContext = null;
     this.playInfo = null;
     this.playerContext = null;
+    this.missionInfo = null;
+    this.missionContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
     var zombieNumber = 5;
@@ -685,6 +687,11 @@ function Level(numRooms, game) {
         playerContext = playerInfo.getContext("2d");
     }
 
+    this.generateTitle = function () {
+        missionInfo = document.getElementById("mission");
+        missionContext = missionInfo.getContext("2d");
+    }
+
     // Update minimap
     // --------------------------------
     this.updateMinimap = function () {
@@ -794,6 +801,23 @@ function Level(numRooms, game) {
         playerContext.strokeText(game.player.money, playerInfo.width * 16.5 / 20, playerInfo.height / 1.5);
     };
 
+    this.updateMission = function () {
+        // Clear the map
+        missionContext.save();
+        missionContext.setTransform(1, 0, 0, 1, 0, 0);
+        missionContext.clearRect(0, 0, missionInfo.width, missionInfo.height);
+        missionContext.restore();
+
+        // Blend the map a bit
+        missionContext.globalAlpha = 0.5;
+        missionContext.fillStyle = "#00ff00";
+        missionContext.font = '30px Arial';
+        missionContext.textBaseline = 'middle';
+        missionContext.textAlign = 'center';
+        missionContext.fillText("Mission", missionInfo.width * 9.5 / 20, missionInfo.height / 1.5);
+        missionContext.fillText(game.Mission, missionInfo.width * 11 / 20, missionInfo.height / 1.5);
+    };
+
 
     // Update this level
     // --------------------------------
@@ -801,6 +825,7 @@ function Level(numRooms, game) {
         // Update dynamic stuff
         this.updateMinimap();
         this.updatePlayer();
+        this.updateMission();
 
         // Draw the player's healthbar
         // TODO: use another 2d canvas for gui stuff like this, like the minimap
@@ -821,6 +846,7 @@ function Level(numRooms, game) {
         level.generateFeatures();
         level.generateMinimap();
         level.generateInformation();
+        level.generateTitle();
         level.generateGeometry();
         console.info("Level generation completed.");
 
