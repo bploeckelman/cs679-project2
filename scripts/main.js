@@ -50,10 +50,8 @@
 
     // Setup input handlers and populate input data object
     setupInput(inputData);
-
     // Create Game object
     game = new Game(renderer, canvas);
-
 
     // Enter main loop
     (function mainLoop() {
@@ -93,8 +91,6 @@ function setupInput(data) {
     data.hold = 0;
     data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0 };
 
-    canvas.requestPointerLock();
-
     // Hookup key input
     document.addEventListener("keydown", function (event) {
         switch (event.keyCode) {
@@ -126,13 +122,10 @@ function setupInput(data) {
         }
     }, false);
 
-    canvas.addEventListener("click", function (event) {
+    document.addEventListener("mousedown", function (event) {
         if (!canvas.pointerLockEnabled) {
             canvas.requestPointerLock();
         }
-    }, false);
-
-    document.addEventListener("mousedown", function (event) {
         data.click = 1;
     }, false);
     document.addEventListener("mouseup", function (event) {

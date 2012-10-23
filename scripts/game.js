@@ -37,7 +37,7 @@ function Game(renderer, canvas) {
     this.zombieNumber = 0;
     this.TNTRoom = 0;
     this.Bomb = null;
-    this.newMission = 1;
+    this.newMission = 2;
     this.Mission = 0;
     this.maxMission = 8;
     this.preammo = 0;
@@ -115,7 +115,9 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     this.init = function () {
         console.log("Game initializing...");
-        this.Mission += 1;
+        if (this.newMission === 2) {
+            this.Mission += 1;
+        }
         this.newMission = 0;
         this.scene = null;
         this.camera = null;
@@ -132,7 +134,7 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.timer = 105 - 5 * this.Mission;
+        this.timer = 81 - this.Mission;
         this.EXPLOSION_TIME = 10.5 - 0.5 * this.Mission;
         this.HURT_AMOUNT = 4 + this.Mission,
         this.clock4.getDelta();
@@ -242,12 +244,12 @@ function Game(renderer, canvas) {
             else {
                 this.Context.fillStyle = "#00ff00";
                 this.Context.fillText("All zombies are killed in this level!", this.endingInfo.width / 2, this.endingInfo.height / 2);
-                this.newMission = 1;
+                this.newMission = 2;
             }
         }
         else {
             this.Context.fillStyle = "#ff0000";
-            this.Context.fillText("You are dead, please try again!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+            this.Context.fillText("You lose, please try again!", this.endingInfo.width / 2, this.endingInfo.height / 2);
             this.newMission = 1;
         }
     };
@@ -264,7 +266,7 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     var intervalTime = 3;
     this.update = function (input) {
-        if (this.newMission === 1) {
+        if (this.newMission > 0) {
             if (this.player === null) {
                 this.init();
                 console.log("Mission: " + this.Mission);
