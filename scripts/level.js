@@ -776,22 +776,22 @@ function Level(numRooms, game) {
         playerContext.textAlign = 'center';
         playerContext.strokeText("Health:", playerInfo.width * 1 / 20, playerInfo.height / 1.5);
         playerContext.strokeText(game.player.health, playerInfo.width * 2.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Armor:", playerInfo.width * 4 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.armor, playerInfo.width * 5.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Time:", playerInfo.width * 7 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10), playerInfo.width * 8.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Ammo:", playerInfo.width * 10.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.ammo, playerInfo.width * 12 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Armor:", playerInfo.width * 4.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.armor, playerInfo.width * 6 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Time:", playerInfo.width * 7.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10), playerInfo.width * 9 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("Ammo:", playerInfo.width * 11 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.ammo, playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
         if (game.TNTtime === -1) {
-            playerContext.strokeText("T:", playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
-            playerContext.strokeText(game.player.TNT, playerInfo.width * 13 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText("T:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText(game.player.TNT, playerInfo.width * 14.5 / 20, playerInfo.height / 1.5);
         }
         else {
-            playerContext.strokeText("R:", playerInfo.width * 12 / 20, playerInfo.height / 1.5);
-            playerContext.strokeText(Math.floor(game.TNTtime) + "." + Math.floor((game.TNTtime - Math.floor(game.TNTtime)) * 10), playerInfo.width * 13 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText("R:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
+            playerContext.strokeText(Math.floor(game.TNTtime) + "." + Math.floor((game.TNTtime - Math.floor(game.TNTtime)) * 10), playerInfo.width * 14.5 / 20, playerInfo.height / 1.5);
         }
-        playerContext.strokeText("$:", playerInfo.width * 14 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.money, playerInfo.width * 15.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText("$:", playerInfo.width * 15.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeText(game.player.money, playerInfo.width * 16.5 / 20, playerInfo.height / 1.5);
     };
 
 

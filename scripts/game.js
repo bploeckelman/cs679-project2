@@ -25,14 +25,15 @@ function Game(renderer, canvas) {
     this.player = null;
     this.zombie = [];
     this.oldplayer = new THREE.Vector3();
-    this.searchDelay = 1;
+    this.searchDelay = 0;
     this.firstOver = 0;
-    this.needToClose = -1;
-    this.timer = 10;
-    this.TNTtime = -1;
-    this.TNTRoom = -1;
+    this.needToClose = 0;
+    this.timer = 0;
+    this.TNTtime = 0;
+    this.TNTRoom = 0;
     this.Bomb = null;
-    this.newLevel = 1;
+    this.newMission = 1;
+    this.Mission = 0;
     this.preammo = 0;
     this.preTNT = 0;
     this.premoney = 9500;
@@ -111,11 +112,13 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.timer = 10;
+        this.timer = 60;
+        this.clock4.getDelta();
         this.TNTtime = -1;
         this.TNTRoom = -1;
         this.Bomb = null;
-        this.newLevel = 0;
+        this.Mission += 1;
+        this.newMission = 0;
 
         // Setup scene
         this.scene = new THREE.Scene();
@@ -219,7 +222,7 @@ function Game(renderer, canvas) {
             this.Context.fillStyle = "#ff0000";
             this.Context.fillText("You lose the game!", this.endingInfo.width / 2, this.endingInfo.height / 2);
         }
-        this.newLevel = 1;
+        this.newMission = 1;
     };
 
     this.clear = function () {
@@ -233,13 +236,14 @@ function Game(renderer, canvas) {
     // Update everything in the scene
     // ------------------------------------------------------------------------
     this.update = function (input) {
-        if (this.newLevel === 1) {
+        if (this.newMission === 1) {
             if (this.player !== null) {
                 this.preammo = this.player.ammo;
                 this.preTNT = this.player.TNT;
                 this.premoney = this.player.money;
             }
             this.init();
+            console.log("Mission: " + this.Mission);
             this.clear();
         }
         this.timer -= this.clock4.getDelta();
@@ -282,7 +286,7 @@ function Game(renderer, canvas) {
 
 function updateForce(game, input) {
     if (input.trigger.TNT === 1) {
-        if (game.player.money >= 5000) {
+        if (game.player.money >= 5000 && game.TNTtime === -1) {
             game.player.TNT += 1;
             game.player.money -= 5000;
         }
@@ -588,6 +592,7 @@ function updateBullets(game, input) {
         if (game.TNTtime < 0 && game.player.TNT >= 1 && game.level.grid[sz][sx].isInterior()) {
             game.player.TNT -= 1;
             game.TNTtime = EXPLOSION_TIME;
+            game.clock3.getDelta();
             game.TNTRoom = game.level.grid[sz][sx].roomIndex;
             game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
             game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);

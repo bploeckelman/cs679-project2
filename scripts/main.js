@@ -176,7 +176,7 @@ function setupInput(data) {
             data.phi -= 2 * Math.PI;
         }
     }
-    canvas.addEventListener("mousemove", function (event) {
+    document.addEventListener("mousemove", function (event) {
         event.preventDefault();
         if (document.pointerLockEnabled) {
             moveLookLocked(event.movementX, event.movementY);
