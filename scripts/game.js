@@ -33,16 +33,15 @@ function Game(renderer, canvas) {
     this.interval = -1;
     this.TNTtime = 0;
     this.EXPLOSION_TIME = 0;
-    this.HURT_AMOUNT = 0;
     this.monsterNumber = 0;
     this.TNTRoom = 0;
     this.Bomb = null;
     this.newMission = 2;
     this.Mission = 0;
-    this.maxMission = 8;
+    this.maxMission = 5;
     this.preammo = 0;
     this.preTNT = 0;
-    this.premoney = 9500;
+    this.premoney = 7000;
     this.modelLoaded = 0;
     this.tempCounter1 = { number: 0 };
     this.tempCounter2 = { number: 0 };
@@ -135,7 +134,7 @@ function Game(renderer, canvas) {
         if (this.modelLoaded === 0) {
             if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length && this.tempCounter3.number === this.monster.length) {
                 this.modelLoaded = 1;
-                this.timer = 81 - this.Mission;
+                this.timer = 80 + 10 * this.Mission;
                 this.clock4.getDelta();
                 return;
             }
@@ -168,7 +167,6 @@ function Game(renderer, canvas) {
         this.firstOver = 0;
         this.needToClose = -1;
         this.EXPLOSION_TIME = 10.5 - 0.5 * this.Mission;
-        this.HURT_AMOUNT = 4 + this.Mission,
         this.TNTtime = -1;
         this.TNTRoom = -1;
         this.Bomb = null;
@@ -194,7 +192,7 @@ function Game(renderer, canvas) {
         this.player.ammo = this.preammo;
         this.player.gun = 0;
         this.player.TNT = this.preTNT;
-        this.player.money = this.premoney + 500;
+        this.player.money = this.premoney + 3000;
         this.player.inventory = [];
         this.scene.add(this.player);
 
@@ -228,28 +226,33 @@ function Game(renderer, canvas) {
                 z: this.level.monsterPos[z].y,
                 type: randInt(1, 4),
                 mesh1: null,
-                health: 10 * this.Mission,
                 queue: [],
                 at: 0
             };
             switch (Amonster.type) {
                 case 1:
-                    Amonster.vel = 1 * this.Mission;
+                    Amonster.vel = 0.1 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(zombieGeom, zombieMat);
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 8.5, this.level.monsterPos[z].y);
+                    Amonster.health = 10 + 3 * this.Mission;
+                    Amonster.HURT_AMOUNT = 5 + 3 * this.Mission;
                     Amonster.y = 0;
                     break;
                 case 2:
-                    Amonster.vel = 3 * this.Mission;
+                    Amonster.vel = 0.5 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(lizardGeom, lizardMat);
-                    Amonster.y = 0;
+                    Amonster.health = 6 + this.Mission;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 3, this.level.monsterPos[z].y);
+                    Amonster.HURT_AMOUNT = 3 + this.Mission;
+                    Amonster.y = 0;
                     break;
                 case 3:
-                    Amonster.vel = 0.8 * this.Mission;
+                    Amonster.vel = 0.2 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(ghostGeom, ghostMat);
-                    Amonster.y = 0;
+                    Amonster.health = 8 + 2 * this.Mission;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 20, this.level.monsterPos[z].y);
+                    Amonster.HURT_AMOUNT = 4 + 2 * this.Mission;
+                    Amonster.y = 0;
                     break;
             }
             Amonster.mesh1.name = "monster";
@@ -457,7 +460,7 @@ function Game(renderer, canvas) {
 } // end Game object
 
 var TNT_AMOUNT = 1,
-    TNT_COST = 5000,
+    TNT_COST = 1500,
     AMMO_AMOUNT = 10,
     AMMO_COST = 1000,
     ARMOR_COST = 8000,
@@ -511,7 +514,7 @@ function updatePlayer(game, input) {
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
             if (game.player.armor > 0) {
-                game.player.armor -= game.HURT_AMOUNT;
+                game.player.armor -= game.monster[i].HURT_AMOUNT;
                 if (game.player.armor < 0) {
                     game.player.health += game.player.armor;
                     game.player.armor = 0;
@@ -519,7 +522,7 @@ function updatePlayer(game, input) {
                 game.player.canBeHurt = false;
             }
             else {
-                game.player.health -= game.HURT_AMOUNT;
+                game.player.health -= game.monster[i].HURT_AMOUNT;
                 if (game.player.health < 0)
                     game.player.health = 0;
                 game.player.canBeHurt = false;
@@ -721,7 +724,7 @@ function updateBullets(game, input) {
                     }
 
                     if (game.monster[selected.index].health <= 0) {
-                        game.player.money += 1000;
+                        game.player.money += 2000;
                         game.scene.remove(game.monster[selected.index].mesh1);
                         game.scene.remove(game.monster[selected.index].mesh2);
                         game.monobjects.splice(selected.index, 1);
