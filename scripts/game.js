@@ -142,7 +142,7 @@ function Game(renderer, canvas) {
         this.level = null;
         this.player = null;
         this.monster = [];
-        this.monsterNumber = this.Mission;
+        this.monsterNumber = this.Mission * 3;
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
@@ -183,27 +183,58 @@ function Game(renderer, canvas) {
         var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
         this.bombMat = new THREE.MeshLambertMaterial({ map: texture });
 
-        var monsterGeom = new THREE.CubeGeometry(9, 17, 3.5);
+        var zombieGeom = new THREE.CubeGeometry(9, 17, 3.5);
         texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
-        monsterMat = new THREE.MeshLambertMaterial({ map: texture });
-        monsterMat.transparent = true;
+        zombieMat = new THREE.MeshLambertMaterial({ map: texture });
+        zombieMat.transparent = true;
+
+        texture = new THREE.ImageUtils.loadTexture("images/crate.gif");//this is the bounding box of lizard, replace it with transparent image later
+
+        var lizardGeom = new THREE.CubeGeometry(9, 6, 15);
+        lizardMat = new THREE.MeshLambertMaterial({ map: texture });
+        lizardMat.transparent = true;
+
+        texture = new THREE.ImageUtils.loadTexture("images/disturb.jpg");//this is the bounding box of ghost, replace it with transparent image later
+
+        var ghostGeom = new THREE.CubeGeometry(9, 13, 4);
+        ghostMat = new THREE.MeshLambertMaterial({ map: texture });
+        ghostMat.transparent = true;
+
 
         var loader = new THREE.JSONLoader(true);
-        var tempCounter = 0;
+        var tempCounter1 = 0;
+        var tempCounter2 = 0;
+        var tempCounter3 = 0;
 
         for (var z = 0; z < this.level.monsterPos.length; z++) {
             Amonster = {
                 x: this.level.monsterPos[z].x,
-                y: 0,
                 z: this.level.monsterPos[z].y,
-                mesh1: new THREE.Mesh(monsterGeom, monsterMat),
+                type: randInt(1, 4),
+                mesh1: null,
                 vel: 0.1 * this.Mission,
                 health: 10 * this.Mission,
                 queue: [],
                 at: 0
             };
-            Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 10, this.level.monsterPos[z].y);
-            Amonster.mesh1.name = "zombie";
+            switch (Amonster.type) {
+                case 1:
+                    Amonster.mesh1 = new THREE.Mesh(zombieGeom, zombieMat);
+                    Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 8.5, this.level.monsterPos[z].y);
+                    Amonster.y = 8,5;
+                    break;
+                case 2:
+                    Amonster.mesh1 = new THREE.Mesh(lizardGeom, lizardMat);
+                    Amonster.y = 3;
+                    Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 3, this.level.monsterPos[z].y);
+                    break;
+                case 3:
+                    Amonster.mesh1 = new THREE.Mesh(ghostGeom, ghostMat);
+                    Amonster.y = 20;
+                    Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 20, this.level.monsterPos[z].y);
+                    break;
+            }
+            Amonster.mesh1.name = "monster";
             this.monster.push(Amonster);
             this.zomobjects.push(Amonster.mesh1);
             this.scene.add(Amonster.mesh1);
@@ -213,12 +244,36 @@ function Game(renderer, canvas) {
             var LScene = this.scene;
 
             loader.load("models/zombie.js", function (geometry) {
-                Zoms[tempCounter].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                Zoms[tempCounter].mesh2.position.set(Zoms[tempCounter].x, Zoms[tempCounter].y, Zoms[tempCounter].z);
-                Zoms[tempCounter].mesh2.scale.set(12.5, 10, 12.5);
-                Zoms[tempCounter].mesh2.name = "monster";
-                LScene.add(Zoms[tempCounter].mesh2);
-                tempCounter++;
+                if (Zoms[tempCounter1].type === 1) {                    
+                    Zoms[tempCounter1].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Zoms[tempCounter1].mesh2.position.set(Zoms[tempCounter1].x, Zoms[tempCounter1].y, Zoms[tempCounter1].z);
+                    Zoms[tempCounter1].mesh2.scale.set(12.5, 10, 12.5);
+                    Zoms[tempCounter1].mesh2.name = "monster";
+                    LScene.add(Zoms[tempCounter1].mesh2);
+                }
+                tempCounter1++;
+            });
+
+            loader.load("models/basicGun.js", function (geometry) {
+                if (Zoms[tempCounter2].type === 2) {                  
+                    Zoms[tempCounter2].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Zoms[tempCounter2].mesh2.position.set(Zoms[tempCounter2].x, Zoms[tempCounter2].y, Zoms[tempCounter2].z);
+                    Zoms[tempCounter2].mesh2.scale.set(2, 2, 2);
+                    Zoms[tempCounter2].mesh2.name = "monster";
+                    LScene.add(Zoms[tempCounter2].mesh2);
+                }
+                tempCounter2++;
+            });
+
+            loader.load("models/advancedGun.js", function (geometry) {
+                if (Zoms[tempCounter3].type === 3) {
+                    Zoms[tempCounter3].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Zoms[tempCounter3].mesh2.position.set(Zoms[tempCounter3].x, Zoms[tempCounter3].y, Zoms[tempCounter3].z);
+                    Zoms[tempCounter3].mesh2.scale.set(2, 2, 2);
+                    Zoms[tempCounter3].mesh2.name = "monster";
+                    LScene.add(Zoms[tempCounter3].mesh2);
+                }
+                tempCounter3++;
             });
         };
 		

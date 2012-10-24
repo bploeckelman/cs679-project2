@@ -754,9 +754,19 @@ function Level(numRooms, game) {
         mapContext.stroke();
 
         // Draw the monster
-        mapContext.strokeStyle = "#0000ff";
         mapContext.lineWidth = 3;
         for (var z = 0; z < game.monster.length; z++) {
+            switch (game.monster[z].type) {
+                case 1:
+                    mapContext.strokeStyle = "#0000ff";
+                    break;
+                case 2:
+                    mapContext.strokeStyle = "#00ff00";
+                    break;
+                case 3:
+                    mapContext.strokeStyle = "#ff00ff";
+                    break;
+            }
             mapContext.beginPath();
             zx = Math.floor(game.monster[z].mesh1.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
             zy = Math.floor(game.monster[z].mesh1.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
