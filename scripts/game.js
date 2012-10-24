@@ -24,7 +24,7 @@ function Game(renderer, canvas) {
     this.bulletDelay = 0;
     this.level = null;
     this.player = null;
-    this.zombie = [];
+    this.monster = [];
     this.oldplayer = new THREE.Vector3();
     this.searchDelay = 0;
     this.firstOver = 0;
@@ -34,7 +34,7 @@ function Game(renderer, canvas) {
     this.TNTtime = 0;
     this.EXPLOSION_TIME = 0;
     this.HURT_AMOUNT = 0;
-    this.zombieNumber = 0;
+    this.monsterNumber = 0;
     this.TNTRoom = 0;
     this.Bomb = null;
     this.newMission = 2;
@@ -141,8 +141,8 @@ function Game(renderer, canvas) {
         this.bulletDelay = 0;
         this.level = null;
         this.player = null;
-        this.zombie = [];
-        this.zombieNumber = this.Mission;
+        this.monster = [];
+        this.monsterNumber = this.Mission;
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
@@ -183,40 +183,40 @@ function Game(renderer, canvas) {
         var texture = new THREE.ImageUtils.loadTexture("images/crate.gif");
         this.bombMat = new THREE.MeshLambertMaterial({ map: texture });
 
-        var zombieGeom = new THREE.CubeGeometry(9, 17, 3.5);
+        var monsterGeom = new THREE.CubeGeometry(9, 17, 3.5);
         texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
-        zombieMat = new THREE.MeshLambertMaterial({ map: texture });
-        zombieMat.transparent = true;
+        monsterMat = new THREE.MeshLambertMaterial({ map: texture });
+        monsterMat.transparent = true;
 
         var loader = new THREE.JSONLoader(true);
         var tempCounter = 0;
 
-        for (var z = 0; z < this.level.zombiePos.length; z++) {
-            Azombie = {
-                x: this.level.zombiePos[z].x,
+        for (var z = 0; z < this.level.monsterPos.length; z++) {
+            Amonster = {
+                x: this.level.monsterPos[z].x,
                 y: 0,
-                z: this.level.zombiePos[z].y,
-                mesh1: new THREE.Mesh(zombieGeom, zombieMat),
+                z: this.level.monsterPos[z].y,
+                mesh1: new THREE.Mesh(monsterGeom, monsterMat),
                 vel: 0.1 * this.Mission,
                 health: 10 * this.Mission,
                 queue: [],
                 at: 0
             };
-            Azombie.mesh1.position = new THREE.Vector3(this.level.zombiePos[z].x, 10, this.level.zombiePos[z].y);
-            Azombie.mesh1.name = "zombie";
-            this.zombie.push(Azombie);
-            this.zomobjects.push(Azombie.mesh1);
-            this.scene.add(Azombie.mesh1);
-            Azombie.mesh1.index = z;
+            Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 10, this.level.monsterPos[z].y);
+            Amonster.mesh1.name = "zombie";
+            this.monster.push(Amonster);
+            this.zomobjects.push(Amonster.mesh1);
+            this.scene.add(Amonster.mesh1);
+            Amonster.mesh1.index = z;
 
-            var Zoms = this.zombie;
+            var Zoms = this.monster;
             var LScene = this.scene;
 
             loader.load("models/zombie.js", function (geometry) {
                 Zoms[tempCounter].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
                 Zoms[tempCounter].mesh2.position.set(Zoms[tempCounter].x, Zoms[tempCounter].y, Zoms[tempCounter].z);
                 Zoms[tempCounter].mesh2.scale.set(12.5, 10, 12.5);
-                Zoms[tempCounter].mesh2.name = "zombie";
+                Zoms[tempCounter].mesh2.name = "monster";
                 LScene.add(Zoms[tempCounter].mesh2);
                 tempCounter++;
             });
@@ -264,14 +264,14 @@ function Game(renderer, canvas) {
         this.Context.font = '60px Arial';
         this.Context.textBaseline = 'middle';
         this.Context.textAlign = 'center';
-        if (this.zombie.length === 0) {
+        if (this.monster.length === 0) {
             if (this.Mission === this.maxMission) {
                 this.Context.fillStyle = "#ff00ff";
-                this.Context.fillText("Congratulations! Zombies are all eliminated!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+                this.Context.fillText("Congratulations! monsters are all eliminated!", this.endingInfo.width / 2, this.endingInfo.height / 2);
             }
             else {
                 this.Context.fillStyle = "#00ff00";
-                this.Context.fillText("All zombies are killed in this level!", this.endingInfo.width / 2, this.endingInfo.height / 2);
+                this.Context.fillText("All monsters are killed in this level!", this.endingInfo.width / 2, this.endingInfo.height / 2);
                 this.newMission = 2;
             }
         }
@@ -324,7 +324,7 @@ function Game(renderer, canvas) {
         if (this.timer < 0) {
             this.timer = 0;
         }
-        if (this.zombie.length === 0 || this.player.health === 0 || this.timer === 0) {
+        if (this.monster.length === 0 || this.player.health === 0 || this.timer === 0) {
             this.ending();
             if (this.Mission === this.maxMission) {
                 if (this.firstOver === 0) {
@@ -341,7 +341,7 @@ function Game(renderer, canvas) {
 
         updateMovement(this, input);
         updateBullets(this, input);
-        updateZombies(this);
+        updatemonsters(this);
         handleCollisions(this, input);
         updatePlayer(this, input);
 
@@ -403,13 +403,13 @@ function updateForce(game, input) {
 // ----------------------------------------------------------------------------
 var HURT_DISTANCE = 18,
     HURT_TIMEOUT = 1000,
-    ZOMBIE_DISTANCE = 18,
+    monster_DISTANCE = 18,
     PAIN_TIMEOUT = HURT_TIMEOUT;
 function updatePlayer(game, input) {
-    // Check for zombie touching
-    for (var i = 0; i < game.zombie.length; ++i) {
-        var dist = game.player.position.distanceTo(game.zombie[i].mesh1.position);
-        // Hurt the player if a zombie is close enough
+    // Check for monster touching
+    for (var i = 0; i < game.monster.length; ++i) {
+        var dist = game.player.position.distanceTo(game.monster[i].mesh1.position);
+        // Hurt the player if a monster is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
             if (game.player.armor > 0) {
@@ -540,13 +540,13 @@ function updateMovement(game, input) {
 }
 
 
-function checkZombie(game) {
+function checkmonster(game) {
     var dz = game.level.geometry.doors[game.needToClose].centerz / CELL_SIZE;
     var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
 
-    for (var z = 0; z < game.zombie.length; z++) {
-        var sz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
-        var sx = Math.floor(Math.floor(game.zombie[z].mesh2.position.x) / CELL_SIZE + 0.5);
+    for (var z = 0; z < game.monster.length; z++) {
+        var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
+        var sx = Math.floor(Math.floor(game.monster[z].mesh2.position.x) / CELL_SIZE + 0.5);
         if (sz === dz && sx === dx) {
             return false;
         }
@@ -611,23 +611,23 @@ function updateBullets(game, input) {
                 //                    game.level.toggleDoor(selected.doorIndex);
                 //                }
                 //                else {
-                if (selected.name === "zombie") {
+                if (selected.name === "monster") {
                     if (game.player.gun === 0) {
-                        game.zombie[selected.index].health -= BULLET_DAMAGE0;
-                        game.zombie[selected.index].health;
+                        game.monster[selected.index].health -= BULLET_DAMAGE0;
+                        game.monster[selected.index].health;
                     }
                     else {
-                        game.zombie[selected.index].health -= BULLET_DAMAGE1;
+                        game.monster[selected.index].health -= BULLET_DAMAGE1;
                     }
 
-                    if (game.zombie[selected.index].health <= 0) {
+                    if (game.monster[selected.index].health <= 0) {
                         game.player.money += 1000;
-                        game.scene.remove(game.zombie[selected.index].mesh1);
-                        game.scene.remove(game.zombie[selected.index].mesh2);
+                        game.scene.remove(game.monster[selected.index].mesh1);
+                        game.scene.remove(game.monster[selected.index].mesh2);
                         game.zomobjects.splice(selected.index, 1);
-                        game.zombie.splice(selected.index, 1);
-                        for (var z = selected.index; z < game.zombie.length; z++) {
-                            game.zombie[z].mesh1.index -= 1;
+                        game.monster.splice(selected.index, 1);
+                        for (var z = selected.index; z < game.monster.length; z++) {
+                            game.monster[z].mesh1.index -= 1;
                         }
                     }
                 }
@@ -677,7 +677,7 @@ function updateBullets(game, input) {
             }
         }
         else {
-            if (game.needToClose !== -1 && checkZombie(game)) {
+            if (game.needToClose !== -1 && checkmonster(game)) {
                 game.level.toggleDoor(game.needToClose);
                 game.needToClose = -1;
                 input.trigger.F = 0;
@@ -736,16 +736,16 @@ function updateBullets(game, input) {
         }
 
 
-        while (z < game.zombie.length) {
-            var sz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
-            var sx = Math.floor(Math.floor(game.zombie[z].mesh2.position.x) / CELL_SIZE + 0.5);
+        while (z < game.monster.length) {
+            var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
+            var sx = Math.floor(Math.floor(game.monster[z].mesh2.position.x) / CELL_SIZE + 0.5);
             if (game.level.grid[sz][sx].roomIndex === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
-                game.scene.remove(game.zombie[z].mesh1);
-                game.scene.remove(game.zombie[z].mesh2);
+                game.scene.remove(game.monster[z].mesh1);
+                game.scene.remove(game.monster[z].mesh2);
                 game.zomobjects.splice(z, 1);
-                game.zombie.splice(z, 1);
-                for (var t = z; t < game.zombie.length; t++) {
-                    game.zombie[t].mesh1.index -= 1;
+                game.monster.splice(z, 1);
+                for (var t = z; t < game.monster.length; t++) {
+                    game.monster[t].mesh1.index -= 1;
                 }
             }
             else {
@@ -771,18 +771,18 @@ function updateBullets(game, input) {
 
 
 // ----------------------------------------------------------------------------
-// Update all the Game's Zombies
+// Update all the Game's monsters
 // ----------------------------------------------------------------------------
-function updateZombies(game) {
+function updatemonsters(game) {
     if (game.searchDelay >= 1) {
         game.searchDelay = 0;
         var visit = new Array(NUM_CELLS.y);
         for (var i = 0; i < NUM_CELLS.y; i++) {
             visit[i] = new Array(NUM_CELLS.x);
         }
-        for (var z = 0; z < game.zombie.length; z++) {
-            var oz = Math.floor(Math.floor(game.zombie[z].mesh1.position.z) / CELL_SIZE + 0.5);
-            var ox = Math.floor(Math.floor(game.zombie[z].mesh1.position.x) / CELL_SIZE + 0.5);
+        for (var z = 0; z < game.monster.length; z++) {
+            var oz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
+            var ox = Math.floor(Math.floor(game.monster[z].mesh1.position.x) / CELL_SIZE + 0.5);
             var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
 
@@ -790,7 +790,7 @@ function updateZombies(game) {
                 continue;
             }
 
-            game.zombie[z].queue = [];
+            game.monster[z].queue = [];
             for (var i = 0; i < NUM_CELLS.y; i++) {
                 for (var j = 0; j < NUM_CELLS.x; j++) {
                     visit[i][j] = 0;
@@ -798,16 +798,16 @@ function updateZombies(game) {
             }
 
 
-            game.zombie[z].queue.push(new game.Element(sz, sx, 0));
+            game.monster[z].queue.push(new game.Element(sz, sx, 0));
             var pointing = 0;
             var found = 0;
-            game.zombie[z].at = -1;
+            game.monster[z].at = -1;
             while (1) {
                 for (var i = -1; i <= 1; i++) {
                     for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
                         if (sz + i === oz && sx + j === ox) {
-                            game.zombie[z].queue.push(new game.Element(sz + i, sx + j, pointing));
-                            game.zombie[z].at = game.zombie[z].queue.length - 1;
+                            game.monster[z].queue.push(new game.Element(sz + i, sx + j, pointing));
+                            game.monster[z].at = game.monster[z].queue.length - 1;
                             found = 1;
                             break;
                         }
@@ -817,7 +817,7 @@ function updateZombies(game) {
                                 (game.level.grid[sz + i][sx + j].type !== CELL_TYPES.door || game.level.state[sz + i][sx + j] <= -2)
                                 ) {
                                 visit[sz + i][sx + j] = 1;
-                                game.zombie[z].queue.push(new game.Element(sz + i, sx + j, pointing));
+                                game.monster[z].queue.push(new game.Element(sz + i, sx + j, pointing));
                             }
                         }
                     }
@@ -829,43 +829,43 @@ function updateZombies(game) {
                     break;
                 }
                 pointing++;
-                if (pointing === game.zombie[z].queue.length) {
+                if (pointing === game.monster[z].queue.length) {
                     break;
                 }
-                sz = game.zombie[z].queue[pointing].sz;
-                sx = game.zombie[z].queue[pointing].sx;
+                sz = game.monster[z].queue[pointing].sz;
+                sx = game.monster[z].queue[pointing].sx;
             }
 
             if (found === 1) {
-                var start = game.zombie[z].at;
-                while (game.level.grid[game.zombie[z].queue[start].sz][game.zombie[z].queue[start].sx].type === CELL_TYPES.door) {
+                var start = game.monster[z].at;
+                while (game.level.grid[game.monster[z].queue[start].sz][game.monster[z].queue[start].sx].type === CELL_TYPES.door) {
                     if (start === 0) {
                         break;
                     }
-                    start = game.zombie[z].queue[start].p;
+                    start = game.monster[z].queue[start].p;
                 }
                 if (start !== 0) {
-                    var link = game.zombie[z].queue[start].p;
+                    var link = game.monster[z].queue[start].p;
                     while (1) {
-                        while (game.level.grid[game.zombie[z].queue[link].sz][game.zombie[z].queue[link].sx].type !== CELL_TYPES.door) {
-                            game.zombie[z].queue[start].p = link;
+                        while (game.level.grid[game.monster[z].queue[link].sz][game.monster[z].queue[link].sx].type !== CELL_TYPES.door) {
+                            game.monster[z].queue[start].p = link;
                             if (link === 0) {
                                 break;
                             }
-                            link = game.zombie[z].queue[link].p;
+                            link = game.monster[z].queue[link].p;
                         }
 
-                        start = game.zombie[z].queue[link].p;
+                        start = game.monster[z].queue[link].p;
                         if (start === 0) {
                             break;
                         }
-                        while (game.level.grid[game.zombie[z].queue[start].sz][game.zombie[z].queue[start].sx].type === CELL_TYPES.door) {
+                        while (game.level.grid[game.monster[z].queue[start].sz][game.monster[z].queue[start].sx].type === CELL_TYPES.door) {
                             if (start === 0) {
                                 break;
                             }
-                            start = game.zombie[z].queue[start].p;
+                            start = game.monster[z].queue[start].p;
                         }
-                        link = game.zombie[z].queue[start].p;
+                        link = game.monster[z].queue[start].p;
                     }
                 }
             }
@@ -875,75 +875,75 @@ function updateZombies(game) {
         game.searchDelay += game.clock2.getDelta();
     }
 
-    for (var z = 0; z < game.zombie.length; z++) {
-        if (game.zombie[z].at === -1) {
+    for (var z = 0; z < game.monster.length; z++) {
+        if (game.monster[z].at === -1) {
             continue;
         }
-        if (game.zombie[z].queue[game.zombie[z].at].p === 0) {
+        if (game.monster[z].queue[game.monster[z].at].p === 0) {
             moveToz = game.player.position.z;
             moveTox = game.player.position.x;
         }
         else {
-            var moveToz = game.zombie[z].queue[game.zombie[z].queue[game.zombie[z].at].p].sz * CELL_SIZE;
-            var moveTox = game.zombie[z].queue[game.zombie[z].queue[game.zombie[z].at].p].sx * CELL_SIZE;
+            var moveToz = game.monster[z].queue[game.monster[z].queue[game.monster[z].at].p].sz * CELL_SIZE;
+            var moveTox = game.monster[z].queue[game.monster[z].queue[game.monster[z].at].p].sx * CELL_SIZE;
         }
-        var dz = moveToz - game.zombie[z].mesh1.position.z;
-        var dx = moveTox - game.zombie[z].mesh1.position.x;
+        var dz = moveToz - game.monster[z].mesh1.position.z;
+        var dx = moveTox - game.monster[z].mesh1.position.x;
         if (dx * dx + dz * dz > 1e-6) {
             var direction = Math.atan2(dx, dz);
             var needMove = 1;
-            if (Math.abs(game.zombie[z].mesh1.rotation.y - direction) > 1e-6) {
-                if (Math.abs(game.zombie[z].mesh1.rotation.y - direction) > Math.PI) {
-                    if (game.zombie[z].mesh1.rotation.y > direction) {
-                        if (game.zombie[z].mesh1.rotation.y > direction + 2 * Math.PI - 0.2) {
-                            game.zombie[z].mesh1.rotation.y = direction;
-                            game.zombie[z].mesh2.rotation.y = direction;
+            if (Math.abs(game.monster[z].mesh1.rotation.y - direction) > 1e-6) {
+                if (Math.abs(game.monster[z].mesh1.rotation.y - direction) > Math.PI) {
+                    if (game.monster[z].mesh1.rotation.y > direction) {
+                        if (game.monster[z].mesh1.rotation.y > direction + 2 * Math.PI - 0.2) {
+                            game.monster[z].mesh1.rotation.y = direction;
+                            game.monster[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh1.rotation.y += 0.2;
-                            if (game.zombie[z].mesh1.rotation.y > Math.PI) {
-                                game.zombie[z].mesh1.rotation.y -= 2 * Math.PI;
-                                game.zombie[z].mesh2.rotation.y -= 2 * Math.PI;
+                            game.monster[z].mesh1.rotation.y += 0.2;
+                            if (game.monster[z].mesh1.rotation.y > Math.PI) {
+                                game.monster[z].mesh1.rotation.y -= 2 * Math.PI;
+                                game.monster[z].mesh2.rotation.y -= 2 * Math.PI;
                             }
                         }
                     }
                     else {
-                        if (game.zombie[z].mesh1.rotation.y < direction - 2 * Math.PI + 0.2) {
-                            game.zombie[z].mesh1.rotation.y = direction;
-                            game.zombie[z].mesh2.rotation.y = direction;
+                        if (game.monster[z].mesh1.rotation.y < direction - 2 * Math.PI + 0.2) {
+                            game.monster[z].mesh1.rotation.y = direction;
+                            game.monster[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh1.rotation.y -= 0.2;
-                            if (game.zombie[z].mesh1.rotation.y <= -Math.PI) {
-                                game.zombie[z].mesh1.rotation.y += 2 * Math.PI;
-                                game.zombie[z].mesh2.rotation.y += 2 * Math.PI;
+                            game.monster[z].mesh1.rotation.y -= 0.2;
+                            if (game.monster[z].mesh1.rotation.y <= -Math.PI) {
+                                game.monster[z].mesh1.rotation.y += 2 * Math.PI;
+                                game.monster[z].mesh2.rotation.y += 2 * Math.PI;
                             }
                         }
                     }
                 }
                 else {
-                    if (game.zombie[z].mesh1.rotation.y > direction) {
-                        if (game.zombie[z].mesh1.rotation.y < direction + 0.2) {
-                            game.zombie[z].mesh1.rotation.y = direction;
-                            game.zombie[z].mesh2.rotation.y = direction;
+                    if (game.monster[z].mesh1.rotation.y > direction) {
+                        if (game.monster[z].mesh1.rotation.y < direction + 0.2) {
+                            game.monster[z].mesh1.rotation.y = direction;
+                            game.monster[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh1.rotation.y -= 0.2;
-                            game.zombie[z].mesh2.rotation.y -= 0.2;
+                            game.monster[z].mesh1.rotation.y -= 0.2;
+                            game.monster[z].mesh2.rotation.y -= 0.2;
                         }
                     }
                     else {
-                        if (game.zombie[z].mesh1.rotation.y > direction - 0.2) {
-                            game.zombie[z].mesh1.rotation.y = direction;
-                            game.zombie[z].mesh2.rotation.y = direction;
+                        if (game.monster[z].mesh1.rotation.y > direction - 0.2) {
+                            game.monster[z].mesh1.rotation.y = direction;
+                            game.monster[z].mesh2.rotation.y = direction;
                         }
                         else {
                             needMove = 0;
-                            game.zombie[z].mesh1.rotation.y += 0.2;
-                            game.zombie[z].mesh2.rotation.y += 0.2;
+                            game.monster[z].mesh1.rotation.y += 0.2;
+                            game.monster[z].mesh2.rotation.y += 0.2;
                         }
                     }
                 }
@@ -952,68 +952,68 @@ function updateZombies(game) {
                 var dis = Math.sqrt(dx * dx + dz * dz);
                 var hopeTo = new THREE.Vector3();
                 var stop = 0;
-                if (dis < game.zombie[z].vel) {
-                    hopeTo.add(game.zombie[z].mesh1.position, new THREE.Vector3(dx, 0, dz));
+                if (dis < game.monster[z].vel) {
+                    hopeTo.add(game.monster[z].mesh1.position, new THREE.Vector3(dx, 0, dz));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
                     if (hx * hx + hz * hz < HURT_DISTANCE * HURT_DISTANCE / 4) {
                         stop = 1;
                     }
-                    for (var p = 0; p < game.zombie.length; p++) {
+                    for (var p = 0; p < game.monster.length; p++) {
                         if (p === z) {
                             continue;
                         }
-                        var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
-                        var hz = hopeTo.z - game.zombie[p].mesh1.position.z;
-                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE * ZOMBIE_DISTANCE) {
+                        var hx = hopeTo.x - game.monster[p].mesh1.position.x;
+                        var hz = hopeTo.z - game.monster[p].mesh1.position.z;
+                        if (hx * hx + hz * hz < monster_DISTANCE * monster_DISTANCE) {
                             stop = 1;
                             break;
                         }
                     }
 
                     if (stop === 0) {
-                        game.zombie[z].mesh1.position.x = hopeTo.x;
-                        game.zombie[z].mesh1.position.z = hopeTo.z;
-                        game.zombie[z].mesh2.position.x = hopeTo.x;
-                        game.zombie[z].mesh2.position.z = hopeTo.z;
-                        game.zombie[z].at = game.zombie[z].queue[game.zombie[z].at].p;
+                        game.monster[z].mesh1.position.x = hopeTo.x;
+                        game.monster[z].mesh1.position.z = hopeTo.z;
+                        game.monster[z].mesh2.position.x = hopeTo.x;
+                        game.monster[z].mesh2.position.z = hopeTo.z;
+                        game.monster[z].at = game.monster[z].queue[game.monster[z].at].p;
                     }
                 }
                 else {
-                    hopeTo.add(game.zombie[z].mesh1.position, new THREE.Vector3(
-                        game.zombie[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
+                    hopeTo.add(game.monster[z].mesh1.position, new THREE.Vector3(
+                        game.monster[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
                         0,
-                        game.zombie[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
+                        game.monster[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
                     var hx = hopeTo.x - game.player.position.x;
                     var hz = hopeTo.z - game.player.position.z;
                     if (hx * hx + hz * hz < HURT_DISTANCE * HURT_DISTANCE / 4) {
                         stop = 1;
                     }
-                    for (var p = 0; p < game.zombie.length; p++) {
+                    for (var p = 0; p < game.monster.length; p++) {
                         if (p === z) {
                             continue;
                         }
-                        var hx = hopeTo.x - game.zombie[p].mesh1.position.x;
-                        var hz = hopeTo.z - game.zombie[p].mesh1.position.z;
-                        if (hx * hx + hz * hz < ZOMBIE_DISTANCE * ZOMBIE_DISTANCE) {
+                        var hx = hopeTo.x - game.monster[p].mesh1.position.x;
+                        var hz = hopeTo.z - game.monster[p].mesh1.position.z;
+                        if (hx * hx + hz * hz < monster_DISTANCE * monster_DISTANCE) {
                             stop = 1;
                             break;
                         }
                     }
                     if (stop === 0) {
-                        game.zombie[z].mesh1.position.x = hopeTo.x;
-                        game.zombie[z].mesh1.position.z = hopeTo.z;
-                        game.zombie[z].mesh2.position.x = hopeTo.x;
-                        game.zombie[z].mesh2.position.z = hopeTo.z;
+                        game.monster[z].mesh1.position.x = hopeTo.x;
+                        game.monster[z].mesh1.position.z = hopeTo.z;
+                        game.monster[z].mesh2.position.x = hopeTo.x;
+                        game.monster[z].mesh2.position.z = hopeTo.z;
                     }
                 }
-                if ((moveToz - game.zombie[z].mesh1.position.z) * (moveToz - game.zombie[z].mesh1.position.z) + (moveTox - game.zombie[z].mesh1.position.x) * (moveTox - game.zombie[z].mesh1.position.x) < 1e-6) {
-                    game.zombie[z].at = game.zombie[z].queue[game.zombie[z].at].p;
+                if ((moveToz - game.monster[z].mesh1.position.z) * (moveToz - game.monster[z].mesh1.position.z) + (moveTox - game.monster[z].mesh1.position.x) * (moveTox - game.monster[z].mesh1.position.x) < 1e-6) {
+                    game.monster[z].at = game.monster[z].queue[game.monster[z].at].p;
                 }
             }
         }
     }
-} // end function updateZombies()
+} // end function updatemonsters()
 
 
 // ----------------------------------------------------------------------------

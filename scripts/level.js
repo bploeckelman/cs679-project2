@@ -41,7 +41,7 @@ function Level(numRooms, game) {
     this.missionContext = null;
     this.mapColors = {};
     this.startPos = new THREE.Vector2();
-    this.zombiePos = [];
+    this.monsterPos = [];
 
     // Static geometry groups ------------------------
     // Normal walls
@@ -607,12 +607,12 @@ function Level(numRooms, game) {
             }
         }
 
-        while (this.zombiePos.length < game.zombieNumber) {
+        while (this.monsterPos.length < game.monsterNumber) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
             if (this.grid[y][x].type === CELL_TYPES.empty && this.grid[y][x].roomIndex !== playerRoom) {
                 this.grid[y][x].type = CELL_TYPES.zomstart;
-                this.zombiePos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
+                this.monsterPos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
             }
         }
     };
@@ -753,13 +753,13 @@ function Level(numRooms, game) {
         mapContext.arc(px, py, 3, 0, 2 * Math.PI, false);
         mapContext.stroke();
 
-        // Draw the zombie
+        // Draw the monster
         mapContext.strokeStyle = "#0000ff";
         mapContext.lineWidth = 3;
-        for (var z = 0; z < game.zombie.length; z++) {
+        for (var z = 0; z < game.monster.length; z++) {
             mapContext.beginPath();
-            zx = Math.floor(game.zombie[z].mesh1.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
-            zy = Math.floor(game.zombie[z].mesh1.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+            zx = Math.floor(game.monster[z].mesh1.position.x / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
+            zy = Math.floor(game.monster[z].mesh1.position.z / CELL_SIZE * MAP_CELL_SIZE) + MAP_CELL_SIZE / 2;
             mapContext.arc(zx, zy, 3, 0, 2 * Math.PI, false);
             mapContext.stroke();
         }
