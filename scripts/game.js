@@ -226,7 +226,7 @@ function Game(renderer, canvas) {
             Amonster = {
                 x: this.level.monsterPos[z].x,
                 z: this.level.monsterPos[z].y,
-                type: 2,//randInt(1, 4),
+                type: randInt(1, 4),
                 mesh1: null,
                 health: 10 * this.Mission,
                 queue: [],
@@ -995,6 +995,13 @@ function updatemonsters(game) {
             continue;
         }
         if (game.monster[z].queue[game.monster[z].at].p === 0) {
+            if (game.monster[z].type === 2) {
+                var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
+                var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
+                if (game.level.grid[sz][sx].type === CELL_TYPES.door) {
+                    continue;
+                }
+            }
             moveToz = game.player.position.z;
             moveTox = game.player.position.x;
         }
