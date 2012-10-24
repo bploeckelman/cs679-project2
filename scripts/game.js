@@ -43,52 +43,50 @@ function Game(renderer, canvas) {
     this.preammo = 0;
     this.preTNT = 0;
     this.premoney = 9500;
+
     this.mainCanvas = document.getElementById("canvas");
+
     // Create and position the information, then add it to the document
-    this.endingInfo = document.createElement("canvas");
+    this.endingInfo    = document.createElement("canvas");
     this.endingInfo.id = "endinginfo";
-    this.endingInfo.style.position = "absolute";
-    this.endingInfo.width = canvas.width;
+    this.endingInfo.width  = canvas.width;
     this.endingInfo.height = canvas.height;
-    // TODO: have to handle window resizing
-    this.endingInfo.style.bottom = 0;
-    this.endingInfo.style.right = 0;
+    this.endingInfo.style.position = "absolute";
+    this.endingInfo.style.bottom   = 0;
+    this.endingInfo.style.right    = 0;
     document.getElementById("container").appendChild(this.endingInfo);
 
     // Save the 2d context for this canvas
     this.Context = this.endingInfo.getContext("2d");
 
     // Create and position the map canvas, then add it to the document
-    this.mapCanvas = document.createElement("canvas");
+    this.mapCanvas    = document.createElement("canvas");
     this.mapCanvas.id = "minimap";
-    this.mapCanvas.style.position = "absolute";
-    this.mapCanvas.width = MAP_CELL_SIZE * NUM_CELLS.x;
+    this.mapCanvas.width  = MAP_CELL_SIZE * NUM_CELLS.x;
     this.mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
-    // TODO: have to handle window resizing
-    this.mapCanvas.style.bottom = 0;
-    this.mapCanvas.style.right = 0;
+    this.mapCanvas.style.position = "absolute";
+    this.mapCanvas.style.bottom   = 0;
+    this.mapCanvas.style.right    = 0;
     document.getElementById("container").appendChild(this.mapCanvas);
 
     // Create and position the information, then add it to the document
-    playerInfo = document.createElement("canvas");
+    playerInfo    = document.createElement("canvas");
     playerInfo.id = "info";
-    playerInfo.style.position = "absolute";
-    playerInfo.width = canvas.width * 0.98;
+    playerInfo.width  = canvas.width * 0.98;
     playerInfo.height = canvas.height * 0.22;
-    // TODO: have to handle window resizing
-    playerInfo.style.bottom = 0;
-    playerInfo.style.right = 0;
+    playerInfo.style.position = "absolute";
+    playerInfo.style.bottom   = 0;
+    playerInfo.style.right    = 0;
     document.getElementById("container").appendChild(playerInfo);
 
     // Create and position the information, then add it to the document
-    missionInfo = document.createElement("canvas");
+    missionInfo    = document.createElement("canvas");
     missionInfo.id = "mission";
-    missionInfo.style.position = "absolute";
-    missionInfo.width = canvas.width * 1;
+    missionInfo.width  = canvas.width  * 1;
     missionInfo.height = canvas.height * 2.7;
-    // TODO: have to handle window resizing
-    missionInfo.style.bottom = 0;
-    missionInfo.style.right = 0;
+    missionInfo.style.position = "absolute";
+    missionInfo.style.bottom   = 0;
+    missionInfo.style.right    = 0;
     document.getElementById("container").appendChild(missionInfo);
 
     this.Element = {
@@ -108,7 +106,7 @@ function Game(renderer, canvas) {
     var FOV = 67,
         ASPECT = canvas.width / canvas.height,
         NEAR = 1,
-        FAR = 500;
+        FAR = 1000;
 
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
@@ -145,6 +143,7 @@ function Game(renderer, canvas) {
         // Setup scene
         this.scene = new THREE.Scene();
         this.scene.add(new THREE.AmbientLight(0x4f4f4f));
+        this.scene.fog = new THREE.Fog(0xa0a0a0, 1, 1000);
 
         // Load the test level
         this.level = new Level(10, this);
@@ -226,6 +225,8 @@ function Game(renderer, canvas) {
         console.log("Game initialized.");
     };
 
+    // Draw the ending screen text
+    // ------------------------------------------------------------------------
     this.ending = function () {
         // Clear the map
         this.Context.save();
@@ -330,32 +331,39 @@ function Game(renderer, canvas) {
 
 } // end Game object
 
+var TNT_AMOUNT  = 1,
+    TNT_COST    = 5000,
+    AMMO_AMOUNT = 10,
+    AMMO_COST   = 1000,
+    ARMOR_COST  = 8000,
+    GUN_COST    = 10000;
+
 function updateForce(game, input) {
     if (input.trigger.TNT === 1) {
-        if (game.player.money >= 5000 && game.TNTtime === -1) {
-            game.player.TNT += 1;
-            game.player.money -= 5000;
+        if (game.player.money >= TNT_COST && game.TNTtime === -1) {
+            game.player.TNT += TNT_AMOUNT;
+            game.player.money -= TNT_COST;
         }
         input.trigger.TNT = 0;
     }
     if (input.trigger.Gun === 1) {
-        if (game.player.gun === 0 && game.player.money >= 10000) {
+        if (game.player.gun === 0 && game.player.money >= GUN_COST) {
             game.player.gun = 1;
-            game.player.money -= 10000;
+            game.player.money -= GUN_COST;
         }
         input.trigger.Gun = 0;
     }
     if (input.trigger.Armor === 1) {
-        if (game.player.armor === 0 && game.player.money >= 8000) {
+        if (game.player.armor === 0 && game.player.money >= ARMOR_COST) {
             game.player.armor = 100;
-            game.player.money -= 8000;
+            game.player.money -= ARMOR_COST;
         }
         input.trigger.Armor = 0;
     }
     if (input.trigger.Ammo === 1) {
-        if (game.player.money >= 1000) {
-            game.player.ammo += 5;
-            game.player.money -= 1000;
+        if (game.player.money >= AMMO_COST) {
+            game.player.ammo += AMMO_AMOUNT;
+            game.player.money -= AMMO_COST;
         }
         input.trigger.Ammo = 0;
     }
@@ -378,7 +386,6 @@ function updatePlayer(game, input) {
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
             if (game.player.armor > 0) {
                 game.player.armor -= game.HURT_AMOUNT;
-                // TODO: handle player death when health <= 0
                 if (game.player.armor < 0) {
                     game.player.health += game.player.armor;
                     game.player.armor = 0;
@@ -387,7 +394,6 @@ function updatePlayer(game, input) {
             }
             else {
                 game.player.health -= game.HURT_AMOUNT;
-                // TODO: handle player death when health <= 0
                 if (game.player.health < 0)
                     game.player.health = 0;
                 game.player.canBeHurt = false;
@@ -457,7 +463,7 @@ function updateMovement(game, input) {
         game.player.position,
         new THREE.Vector3(
             triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-            triggerQE * input.f.y * 10, //previouly, triggerWS * input.f.y,
+            triggerQE * input.f.y * 10,
             triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
         )
     );
@@ -469,6 +475,7 @@ function updateMovement(game, input) {
     game.camera.lookAt(look);
 
     // Update the view ray (center of canvas into screen)
+    // TODO: make another ray for general view picking
     // NOTE: the near/far range is set short for doors
     //   another way to handle game would be to check the .distance
     //   property of the intersects[0].object when using ray for 
@@ -500,8 +507,6 @@ function checkZombie(game) {
 
 // ----------------------------------------------------------------------------
 // Update all the Game's Bullets 
-// TODO: add collision code for bullets
-// TODO: limit amount of ammunition!
 // ----------------------------------------------------------------------------
 var BULLET_DAMAGE0 = 5;
 var BULLET_DAMAGE1 = 10;
@@ -608,6 +613,7 @@ function updateBullets(game, input) {
         }
     }
 
+    // Handle door toggling
     if (input.trigger.F === 1) {
         var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
         var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
@@ -629,6 +635,7 @@ function updateBullets(game, input) {
         }
     }
 
+    // Handle TNT placement
     if (input.trigger.R === 1) {
         var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
         var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
@@ -645,6 +652,7 @@ function updateBullets(game, input) {
         input.trigger.R = 0;
     }
 
+    // Handle TNT update
     if (game.TNTtime > 0) {
         game.TNTtime -= game.clock3.getDelta();
         if (game.TNTtime < 0) {
@@ -662,7 +670,6 @@ function updateBullets(game, input) {
             if (game.level.grid[oz][ox].roomIndex === game.TNTRoom && game.level.grid[oz][ox].isInterior()) {
                 if (game.player.armor > 0) {
                     game.player.armor -= EXPLOSION_AMOUNT;
-                    // TODO: handle player death when health <= 0
                     if (game.player.armor < 0) {
                         game.player.health += game.player.armor;
                         game.player.armor = 0;
@@ -671,7 +678,6 @@ function updateBullets(game, input) {
                 }
                 else {
                     game.player.health -= EXPLOSION_AMOUNT;
-                    // TODO: handle player death when health <= 0
                     if (game.player.health < 0)
                         game.player.health = 0;
                     game.player.canBeHurt = false;
@@ -697,11 +703,6 @@ function updateBullets(game, input) {
             }
         }
     }
-
-
-
-
-
 
     // Update all the bullets, move backwards through array 
     // to avoid problems when removing bullets
