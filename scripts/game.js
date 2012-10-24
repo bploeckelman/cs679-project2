@@ -600,7 +600,7 @@ function checkmonster(game) {
     var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
 
     for (var z = 0; z < game.monster.length; z++) {
-        if game.monster[z].type !== 1) {
+        if (game.monster[z].type !== 1) {
             continue;
         }
         var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
