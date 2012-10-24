@@ -234,22 +234,22 @@ function Game(renderer, canvas) {
                     Amonster.vel = 0.1 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(zombieGeom, zombieMat);
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 8.5, this.level.monsterPos[z].y);
-                    Amonster.health = 10 + 3 * this.Mission;
-                    Amonster.HURT_AMOUNT = 5 + 3 * this.Mission;
+                    Amonster.health = 16 + 8 * this.Mission;
+                    Amonster.HURT_AMOUNT = 8 + 4 * this.Mission;
                     Amonster.y = 0;
                     break;
                 case 2:
-                    Amonster.vel = 0.5 * this.Mission;
+                    Amonster.vel = 0.4 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(lizardGeom, lizardMat);
-                    Amonster.health = 6 + this.Mission;
+                    Amonster.health = 4 + 2 * this.Mission;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 3, this.level.monsterPos[z].y);
-                    Amonster.HURT_AMOUNT = 3 + this.Mission;
+                    Amonster.HURT_AMOUNT = 2 + this.Mission;
                     Amonster.y = 0;
                     break;
                 case 3:
                     Amonster.vel = 0.2 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(ghostGeom, ghostMat);
-                    Amonster.health = 8 + 2 * this.Mission;
+                    Amonster.health = 8 + 4 * this.Mission;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 20, this.level.monsterPos[z].y);
                     Amonster.HURT_AMOUNT = 4 + 2 * this.Mission;
                     Amonster.y = 0;
