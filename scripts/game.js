@@ -226,25 +226,27 @@ function Game(renderer, canvas) {
             Amonster = {
                 x: this.level.monsterPos[z].x,
                 z: this.level.monsterPos[z].y,
-                type: randInt(1, 4),
+                type: 2,//randInt(1, 4),
                 mesh1: null,
-                vel: 1 * this.Mission,
                 health: 10 * this.Mission,
                 queue: [],
                 at: 0
             };
             switch (Amonster.type) {
                 case 1:
+                    Amonster.vel = 1 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(zombieGeom, zombieMat);
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 8.5, this.level.monsterPos[z].y);
                     Amonster.y = 0;
                     break;
                 case 2:
+                    Amonster.vel = 3 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(lizardGeom, lizardMat);
                     Amonster.y = 0;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 3, this.level.monsterPos[z].y);
                     break;
                 case 3:
+                    Amonster.vel = 0.8 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(ghostGeom, ghostMat);
                     Amonster.y = 0;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 20, this.level.monsterPos[z].y);
@@ -893,8 +895,10 @@ function updatemonsters(game) {
             }
 
 
-            if (game.level.grid[sz][sx].type === CELL_TYPES.door && game.level.state[sz][sx] >= 0) {
-                continue;
+            if (game.level.grid[sz][sx].type === CELL_TYPES.door) {
+                if (game.level.state[sz][sx] >= 0) {
+                    continue;
+                }
             }
 
             game.monster[z].queue = [];
@@ -910,9 +914,12 @@ function updatemonsters(game) {
             var found = 0;
             game.monster[z].at = -1;
             while (1) {
+                if (game.level.grid[sz][sx].type === CELL_TYPES.door && game.monster[z].type === 2) {
+                    break;
+                }
                 for (var i = -1; i <= 1; i++) {
                     for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
-                        if (sz + i === oz && sx + j === ox) {
+                        if (sz + i === oz && sx + j === ox && (game.monster[z].type === 1 || game.level.grid[oz][ox].type !== CELL_TYPES.door)) {
                             game.monster[z].queue.push(new game.Element(sz + i, sx + j, pointing));
                             game.monster[z].at = game.monster[z].queue.length - 1;
                             found = 1;
@@ -921,7 +928,7 @@ function updatemonsters(game) {
                         else {
                             if (game.level.grid[sz + i][sx + j].type !== CELL_TYPES.wall &&
                                 visit[sz + i][sx + j] === 0 &&
-                                (game.level.grid[sz + i][sx + j].type !== CELL_TYPES.door || game.level.state[sz + i][sx + j] <= -2)
+                                (game.level.grid[sz + i][sx + j].type !== CELL_TYPES.door || (game.level.state[sz + i][sx + j] <= -2 && game.monster[z].type === 1))
                                 ) {
                                 visit[sz + i][sx + j] = 1;
                                 game.monster[z].queue.push(new game.Element(sz + i, sx + j, pointing));

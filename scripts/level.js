@@ -7,7 +7,7 @@ var CELL_TYPES = {
     upstairs: "^",
     light: "o",
     start: "*",
-    monstart: "z"
+    monstart: "m"
 },
     MIN_ROOM_SIZE = 4,
     MAX_ROOM_SIZE = 8,
