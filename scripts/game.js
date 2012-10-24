@@ -89,6 +89,17 @@ function Game(renderer, canvas) {
     missionInfo.style.right    = 0;
     document.getElementById("container").appendChild(missionInfo);
 
+    // Create and position the 'pain' canvas: flash red on screen on player injury
+    this.painCanvas    = document.createElement("canvas");
+    this.painCanvas.id = "pain";
+    this.painCanvas.width  = canvas.width;
+    this.painCanvas.height = canvas.height;
+    this.painCanvas.style.position = "absolute";
+    this.painCanvas.style.bottom   = 0;
+    this.painCanvas.style.right    = 0;
+    this.painCanvas.alpha = 0.0;
+    document.getElementById("container").appendChild(this.painCanvas);
+
     this.Element = {
         sz: 0,
         sx: 0,
@@ -376,7 +387,8 @@ function updateForce(game, input) {
 // ----------------------------------------------------------------------------
 var HURT_DISTANCE = 18,
     HURT_TIMEOUT = 1000,
-    ZOMBIE_DISTANCE = 18;
+    ZOMBIE_DISTANCE = 18,
+    PAIN_TIMEOUT = HURT_TIMEOUT;
 function updatePlayer(game, input) {
     // Check for zombie touching
     for (var i = 0; i < game.zombie.length; ++i) {
@@ -398,6 +410,15 @@ function updatePlayer(game, input) {
                     game.player.health = 0;
                 game.player.canBeHurt = false;
             }
+
+            // Flash the pain canvas red
+            var tween = new TWEEN.Tween({ alpha: 0.8 })
+                .to({ alpha: 0.0 }, PAIN_TIMEOUT)
+                .easing(TWEEN.Easing.Circular.Out)
+                .onUpdate(function () {
+                    game.painCanvas.alpha = this.alpha;
+                })
+                .start();
             console.log("ouch! Armor = " + game.player.armor + ", " + "health = " + game.player.health);
 
             setTimeout(function () {
@@ -407,6 +428,17 @@ function updatePlayer(game, input) {
             break;
         }
     }
+
+    // Draw the pain canvas with the current alpha
+    var ctx = game.painCanvas.getContext("2d");
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, game.painCanvas.width, game.painCanvas.height);
+    ctx.restore();
+    ctx.globalAlpha = game.painCanvas.alpha;
+    ctx.fillStyle = "#ff0000";
+    ctx.fillRect(0, 0, game.painCanvas.width, game.painCanvas.height);
+    //console.log("alpha: " + game.painCanvas.alpha);
 
     // HACK: make the player a little bit taller
     if (game.player.position.y < 16) {
