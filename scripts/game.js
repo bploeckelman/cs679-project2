@@ -43,62 +43,67 @@ function Game(renderer, canvas) {
     this.preammo = 0;
     this.preTNT = 0;
     this.premoney = 9500;
+    this.modelLoaded = 0;
+    this.tempCounter1 = { number: 0 };
+    this.tempCounter2 = { number: 0 };
+    this.tempCounter3 = { number: 0 };
+
 
     this.mainCanvas = document.getElementById("canvas");
 
     // Create and position the information, then add it to the document
-    this.endingInfo    = document.createElement("canvas");
+    this.endingInfo = document.createElement("canvas");
     this.endingInfo.id = "endinginfo";
-    this.endingInfo.width  = canvas.width;
+    this.endingInfo.width = canvas.width;
     this.endingInfo.height = canvas.height;
     this.endingInfo.style.position = "absolute";
-    this.endingInfo.style.bottom   = 0;
-    this.endingInfo.style.right    = 0;
+    this.endingInfo.style.bottom = 0;
+    this.endingInfo.style.right = 0;
     document.getElementById("container").appendChild(this.endingInfo);
 
     // Save the 2d context for this canvas
     this.Context = this.endingInfo.getContext("2d");
 
     // Create and position the map canvas, then add it to the document
-    this.mapCanvas    = document.createElement("canvas");
+    this.mapCanvas = document.createElement("canvas");
     this.mapCanvas.id = "minimap";
-    this.mapCanvas.width  = MAP_CELL_SIZE * NUM_CELLS.x;
+    this.mapCanvas.width = MAP_CELL_SIZE * NUM_CELLS.x;
     this.mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
     this.mapCanvas.style.position = "absolute";
-    this.mapCanvas.style.bottom   = 0;
-    this.mapCanvas.style.right    = 0;
-    this.mapCanvas.style.top   = "20px";
+    this.mapCanvas.style.bottom = 0;
+    this.mapCanvas.style.right = 0;
+    this.mapCanvas.style.top = "20px";
     this.mapCanvas.style.right = "20px";
     document.getElementById("container").appendChild(this.mapCanvas);
 
     // Create and position the information, then add it to the document
-    playerInfo    = document.createElement("canvas");
+    playerInfo = document.createElement("canvas");
     playerInfo.id = "info";
-    playerInfo.width  = canvas.width * 0.98;
+    playerInfo.width = canvas.width * 0.98;
     playerInfo.height = canvas.height * 0.22;
     playerInfo.style.position = "absolute";
-    playerInfo.style.bottom   = 0;
-    playerInfo.style.right    = 0;
+    playerInfo.style.bottom = 0;
+    playerInfo.style.right = 0;
     document.getElementById("container").appendChild(playerInfo);
 
     // Create and position the information, then add it to the document
-    missionInfo    = document.createElement("canvas");
+    missionInfo = document.createElement("canvas");
     missionInfo.id = "mission";
-    missionInfo.width  = canvas.width  * 1;
+    missionInfo.width = canvas.width * 1;
     missionInfo.height = canvas.height * 2.7;
     missionInfo.style.position = "absolute";
-    missionInfo.style.bottom   = 0;
-    missionInfo.style.right    = 0;
+    missionInfo.style.bottom = 0;
+    missionInfo.style.right = 0;
     document.getElementById("container").appendChild(missionInfo);
 
     // Create and position the 'pain' canvas: flash red on screen on player injury
-    this.painCanvas    = document.createElement("canvas");
+    this.painCanvas = document.createElement("canvas");
     this.painCanvas.id = "pain";
-    this.painCanvas.width  = canvas.width;
+    this.painCanvas.width = canvas.width;
     this.painCanvas.height = canvas.height;
     this.painCanvas.style.position = "absolute";
-    this.painCanvas.style.bottom   = 0;
-    this.painCanvas.style.right    = 0;
+    this.painCanvas.style.bottom = 0;
+    this.painCanvas.style.right = 0;
     this.painCanvas.alpha = 0.0;
     document.getElementById("container").appendChild(this.painCanvas);
 
@@ -125,6 +130,22 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     // Game Methods -----------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    this.checkLoaded = function () {
+        if (this.modelLoaded === 0) {
+            if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length && this.tempCounter3.number === this.monster.length) {
+                this.modelLoaded = 1;
+                this.timer = 81 - this.Mission;
+                this.clock4.getDelta();
+                return;
+            }
+            else {
+                this.modelLoaded = 0;
+                return;
+            }
+        }
+    }
+
     this.init = function () {
         console.log("Game initializing...");
         if (this.newMission === 2) {
@@ -146,10 +167,8 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.timer = 81 - this.Mission;
         this.EXPLOSION_TIME = 10.5 - 0.5 * this.Mission;
         this.HURT_AMOUNT = 4 + this.Mission,
-        this.clock4.getDelta();
         this.TNTtime = -1;
         this.TNTRoom = -1;
         this.Bomb = null;
@@ -202,9 +221,6 @@ function Game(renderer, canvas) {
 
 
         var loader = new THREE.JSONLoader(true);
-        var tempCounter1 = 0;
-        var tempCounter2 = 0;
-        var tempCounter3 = 0;
 
         for (var z = 0; z < this.level.monsterPos.length; z++) {
             Amonster = {
@@ -212,7 +228,7 @@ function Game(renderer, canvas) {
                 z: this.level.monsterPos[z].y,
                 type: randInt(1, 4),
                 mesh1: null,
-                vel: 0.1 * this.Mission,
+                vel: 1 * this.Mission,
                 health: 10 * this.Mission,
                 queue: [],
                 at: 0
@@ -221,16 +237,16 @@ function Game(renderer, canvas) {
                 case 1:
                     Amonster.mesh1 = new THREE.Mesh(zombieGeom, zombieMat);
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 8.5, this.level.monsterPos[z].y);
-                    Amonster.y = 8,5;
+                    Amonster.y = 0;
                     break;
                 case 2:
                     Amonster.mesh1 = new THREE.Mesh(lizardGeom, lizardMat);
-                    Amonster.y = 3;
+                    Amonster.y = 0;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 3, this.level.monsterPos[z].y);
                     break;
                 case 3:
                     Amonster.mesh1 = new THREE.Mesh(ghostGeom, ghostMat);
-                    Amonster.y = 20;
+                    Amonster.y = 0;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 20, this.level.monsterPos[z].y);
                     break;
             }
@@ -242,53 +258,59 @@ function Game(renderer, canvas) {
 
             var Mons = this.monster;
             var LScene = this.scene;
+            this.tempCounter1.number = 0;
+            this.tempCounter2.number = 0;
+            this.tempCounter3.number = 0;
+            var tempCount1 = this.tempCounter1;
 
             loader.load("models/zombie.js", function (geometry) {
-                if (Mons[tempCounter1].type === 1) {                    
-                    Mons[tempCounter1].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCounter1].mesh2.position.set(Mons[tempCounter1].x, Mons[tempCounter1].y, Mons[tempCounter1].z);
-                    Mons[tempCounter1].mesh2.scale.set(12.5, 10, 12.5);
-                    Mons[tempCounter1].mesh2.name = "monster";
-                    LScene.add(Mons[tempCounter1].mesh2);
+                if (Mons[tempCount1.number].type === 1) {
+                    Mons[tempCount1.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Mons[tempCount1.number].mesh2.position.set(Mons[tempCount1.number].x, Mons[tempCount1.number].y, Mons[tempCount1.number].z);
+                    Mons[tempCount1.number].mesh2.scale.set(12.5, 10, 12.5);
+                    Mons[tempCount1.number].mesh2.name = "monster";
+                    LScene.add(Mons[tempCount1.number].mesh2);
                 }
-                tempCounter1++;
+                tempCount1.number++;
             });
 
+            var tempCount2 = this.tempCounter2;
             loader.load("models/basicGun.js", function (geometry) {
-                if (Mons[tempCounter2].type === 2) {                  
-                    Mons[tempCounter2].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCounter2].mesh2.position.set(Mons[tempCounter2].x, Mons[tempCounter2].y, Mons[tempCounter2].z);
-                    Mons[tempCounter2].mesh2.scale.set(2, 2, 2);
-                    Mons[tempCounter2].mesh2.name = "monster";
-                    LScene.add(Mons[tempCounter2].mesh2);
+                if (Mons[tempCount2.number].type === 2) {
+                    Mons[tempCount2.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Mons[tempCount2.number].mesh2.position.set(Mons[tempCount2.number].x, Mons[tempCount2.number].y, Mons[tempCount2.number].z);
+                    Mons[tempCount2.number].mesh2.scale.set(2, 2, 2);
+                    Mons[tempCount2.number].mesh2.name = "monster";
+                    LScene.add(Mons[tempCount2.number].mesh2);
                 }
-                tempCounter2++;
+                tempCount2.number++;
             });
 
+            var tempCount3 = this.tempCounter3;
             loader.load("models/advancedGun.js", function (geometry) {
-                if (Mons[tempCounter3].type === 3) {
-                    Mons[tempCounter3].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCounter3].mesh2.position.set(Mons[tempCounter3].x, Mons[tempCounter3].y, Mons[tempCounter3].z);
-                    Mons[tempCounter3].mesh2.scale.set(2, 2, 2);
-                    Mons[tempCounter3].mesh2.name = "monster";
-                    LScene.add(Mons[tempCounter3].mesh2);
+                if (Mons[tempCount3.number].type === 3) {
+                    Mons[tempCount3.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y, Mons[tempCount3.number].z);
+                    Mons[tempCount3.number].mesh2.scale.set(2, 2, 2);
+                    Mons[tempCount3.number].mesh2.name = "monster";
+                    LScene.add(Mons[tempCount3.number].mesh2);
                 }
-                tempCounter3++;
+                tempCount3.number++;
             });
         };
-		
-		//setup gun
-		var myPlayer = this.player;
-		var myScene = this.scene;
-		//var gunLoader = new THREE.JSONLoader(true);
-		loader.load("models/basicGun.js", function(geometry){
-			var gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-			gunMesh.position.set(myPlayer.position.x+1, myPlayer.position.y-1, myPlayer.position.z-1);
-			gunMesh.scale.set(.3, .3, .3);
-			gunMesh.rotation.y = (Math.PI/36);
-			myScene.add(gunMesh);
-		});
-		
+
+        //setup gun
+        var myPlayer = this.player;
+        var myScene = this.scene;
+        //var gunLoader = new THREE.JSONLoader(true);
+        loader.load("models/basicGun.js", function (geometry) {
+            var gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+            gunMesh.position.set(myPlayer.position.x + 1, myPlayer.position.y - 1, myPlayer.position.z - 1);
+            gunMesh.scale.set(.3, .3, .3);
+            gunMesh.rotation.y = (Math.PI / 36);
+            myScene.add(gunMesh);
+        });
+
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -304,6 +326,13 @@ function Game(renderer, canvas) {
         this.scene.add(this.lights[0]);
 
         //console.log("# Objects: " + game.objects.length);
+
+        if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length && this.tempCounter3.number === this.monster.length) {
+            this.modelLoaded = 1;
+        }
+        else {
+            this.modelLoaded = 0;
+        }
         console.log("Game initialized.");
     };
 
@@ -349,10 +378,18 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     var intervalTime = 3;
     this.update = function (input) {
+        if (this.modelLoaded === 0 && this.newMission === 0) {
+            this.checkLoaded();
+            return 0;
+        }
+
         if (this.newMission > 0) {
             if (this.player === null) {
                 this.init();
                 console.log("Mission: " + this.Mission);
+                if (this.modelLoaded === 0) {
+                    return 0;
+                }
             }
             else {
                 if (this.interval === -1) {
@@ -369,12 +406,16 @@ function Game(renderer, canvas) {
                         this.preTNT = this.player.TNT;
                         this.premoney = this.player.money;
                         this.init();
-                        console.log("Mission: " + this.Mission);
                         this.clear();
+                        console.log("Mission: " + this.Mission);
+                        if (this.modelLoaded === 0) {
+                            return 0;
+                        }
                     }
                 }
             }
         }
+
         this.timer -= this.clock4.getDelta();
         if (this.timer < 0) {
             this.timer = 0;
@@ -413,12 +454,12 @@ function Game(renderer, canvas) {
 
 } // end Game object
 
-var TNT_AMOUNT  = 1,
-    TNT_COST    = 5000,
+var TNT_AMOUNT = 1,
+    TNT_COST = 5000,
     AMMO_AMOUNT = 10,
-    AMMO_COST   = 1000,
-    ARMOR_COST  = 8000,
-    GUN_COST    = 10000;
+    AMMO_COST = 1000,
+    ARMOR_COST = 8000,
+    GUN_COST = 10000;
 
 function updateForce(game, input) {
     if (input.trigger.TNT === 1) {
@@ -458,7 +499,7 @@ function updateForce(game, input) {
 // ----------------------------------------------------------------------------
 var HURT_DISTANCE = 18,
     HURT_TIMEOUT = 1000,
-    monster_DISTANCE = 18,
+    MONSTER_DISTANCE = 18,
     PAIN_TIMEOUT = HURT_TIMEOUT;
 function updatePlayer(game, input) {
     // Check for monster touching
@@ -600,7 +641,7 @@ function checkmonster(game) {
     var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
 
     for (var z = 0; z < game.monster.length; z++) {
-        if game.monster[z].type !== 1) {
+        if (game.monster[z].type !== 1) {
             continue;
         }
         var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
@@ -672,7 +713,6 @@ function updateBullets(game, input) {
                 if (selected.name === "monster") {
                     if (game.player.gun === 0) {
                         game.monster[selected.index].health -= BULLET_DAMAGE0;
-                        game.monster[selected.index].health;
                     }
                     else {
                         game.monster[selected.index].health -= BULLET_DAMAGE1;
@@ -831,6 +871,7 @@ function updateBullets(game, input) {
 // ----------------------------------------------------------------------------
 // Update all the Game's monsters
 // ----------------------------------------------------------------------------
+var detectDistance = 200;
 function updatemonsters(game) {
     if (game.searchDelay >= 1) {
         game.searchDelay = 0;
@@ -843,6 +884,14 @@ function updatemonsters(game) {
             var ox = Math.floor(Math.floor(game.monster[z].mesh1.position.x) / CELL_SIZE + 0.5);
             var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
+            if (game.monster[z].type === 3) {
+                game.monster[z].queue.push(new game.Element(sz, sx, 0));
+                game.monster[z].queue.push(new game.Element(oz, ox, 0));
+                game.monster[z].at = 1;
+                found = 1;
+                continue;
+            }
+
 
             if (game.level.grid[sz][sx].type === CELL_TYPES.door && game.level.state[sz][sx] >= 0) {
                 continue;
@@ -894,7 +943,7 @@ function updatemonsters(game) {
                 sx = game.monster[z].queue[pointing].sx;
             }
 
-            if (found === 1) {
+            if (found === 1 && game.monster[z].type !== 3) {
                 var start = game.monster[z].at;
                 while (game.level.grid[game.monster[z].queue[start].sz][game.monster[z].queue[start].sx].type === CELL_TYPES.door) {
                     if (start === 0) {
@@ -934,6 +983,7 @@ function updatemonsters(game) {
     }
 
     for (var z = 0; z < game.monster.length; z++) {
+        var needMove = 0;
         if (game.monster[z].at === -1) {
             continue;
         }
@@ -1012,18 +1062,16 @@ function updatemonsters(game) {
                 var stop = 0;
                 if (dis < game.monster[z].vel) {
                     hopeTo.add(game.monster[z].mesh1.position, new THREE.Vector3(dx, 0, dz));
-                    var hx = hopeTo.x - game.player.position.x;
-                    var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < HURT_DISTANCE * HURT_DISTANCE / 4) {
+                    var hdist = hopeTo.distanceTo(game.player.position);
+                    if (hdist < HURT_DISTANCE / 2) {
                         stop = 1;
                     }
                     for (var p = 0; p < game.monster.length; p++) {
                         if (p === z) {
                             continue;
                         }
-                        var hx = hopeTo.x - game.monster[p].mesh1.position.x;
-                        var hz = hopeTo.z - game.monster[p].mesh1.position.z;
-                        if (hx * hx + hz * hz < monster_DISTANCE * monster_DISTANCE) {
+                        hdist = hopeTo.distanceTo(game.monster[p].mesh1.position);
+                        if (hdist < MONSTER_DISTANCE) {
                             stop = 1;
                             break;
                         }
@@ -1038,24 +1086,27 @@ function updatemonsters(game) {
                     }
                 }
                 else {
-                    hopeTo.add(game.monster[z].mesh1.position, new THREE.Vector3(
-                        game.monster[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
-                        0,
-                        game.monster[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
-                    var hx = hopeTo.x - game.player.position.x;
-                    var hz = hopeTo.z - game.player.position.z;
-                    if (hx * hx + hz * hz < HURT_DISTANCE * HURT_DISTANCE / 4) {
+                    if (dis > detectDistance && game.monster[z].type === 3) {
                         stop = 1;
                     }
-                    for (var p = 0; p < game.monster.length; p++) {
-                        if (p === z) {
-                            continue;
-                        }
-                        var hx = hopeTo.x - game.monster[p].mesh1.position.x;
-                        var hz = hopeTo.z - game.monster[p].mesh1.position.z;
-                        if (hx * hx + hz * hz < monster_DISTANCE * monster_DISTANCE) {
+                    else {
+                        hopeTo.add(game.monster[z].mesh1.position, new THREE.Vector3(
+                            game.monster[z].vel * dx / Math.sqrt(dx * dx + dz * dz),
+                            0,
+                            game.monster[z].vel * dz / Math.sqrt(dx * dx + dz * dz)));
+                        var hdist = hopeTo.distanceTo(game.player.position);
+                        if (hdist < HURT_DISTANCE / 2) {
                             stop = 1;
-                            break;
+                        }
+                        for (var p = 0; p < game.monster.length; p++) {
+                            if (p === z) {
+                                continue;
+                            }
+                            hdist = hopeTo.distanceTo(game.monster[p].mesh1.position);
+                            if (hdist < MONSTER_DISTANCE) {
+                                stop = 1;
+                                break;
+                            }
                         }
                     }
                     if (stop === 0) {

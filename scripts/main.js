@@ -55,11 +55,15 @@
 
     // Enter main loop
     (function mainLoop() {
-        stats.begin();
-        game.update(inputData);
-        requestFrame(mainLoop);
-        game.render();
-        stats.end();
+        if (game.update(inputData) === 0) {
+            requestFrame(mainLoop);
+        }
+        else {
+            stats.begin();
+            requestFrame(mainLoop);
+            game.render();
+            stats.end();
+        }
     })();
 
     window.onresize = function (event) {
