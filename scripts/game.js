@@ -18,7 +18,7 @@ function Game(renderer, canvas) {
     this.camera = null;
     this.viewRay = null;
     this.objects = [];
-    this.zomobjects = [];
+    this.monobjects = [];
     this.lights = [];
     this.bullets = [];
     this.bulletDelay = 0;
@@ -135,7 +135,7 @@ function Game(renderer, canvas) {
         this.camera = null;
         this.viewRay = null;
         this.objects = [];
-        this.zomobjects = [];
+        this.monobjects = [];
         this.lights = [];
         this.bullets = [];
         this.bulletDelay = 0;
@@ -236,42 +236,42 @@ function Game(renderer, canvas) {
             }
             Amonster.mesh1.name = "monster";
             this.monster.push(Amonster);
-            this.zomobjects.push(Amonster.mesh1);
+            this.monobjects.push(Amonster.mesh1);
             this.scene.add(Amonster.mesh1);
             Amonster.mesh1.index = z;
 
-            var Zoms = this.monster;
+            var Mons = this.monster;
             var LScene = this.scene;
 
             loader.load("models/zombie.js", function (geometry) {
-                if (Zoms[tempCounter1].type === 1) {                    
-                    Zoms[tempCounter1].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Zoms[tempCounter1].mesh2.position.set(Zoms[tempCounter1].x, Zoms[tempCounter1].y, Zoms[tempCounter1].z);
-                    Zoms[tempCounter1].mesh2.scale.set(12.5, 10, 12.5);
-                    Zoms[tempCounter1].mesh2.name = "monster";
-                    LScene.add(Zoms[tempCounter1].mesh2);
+                if (Mons[tempCounter1].type === 1) {                    
+                    Mons[tempCounter1].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Mons[tempCounter1].mesh2.position.set(Mons[tempCounter1].x, Mons[tempCounter1].y, Mons[tempCounter1].z);
+                    Mons[tempCounter1].mesh2.scale.set(12.5, 10, 12.5);
+                    Mons[tempCounter1].mesh2.name = "monster";
+                    LScene.add(Mons[tempCounter1].mesh2);
                 }
                 tempCounter1++;
             });
 
             loader.load("models/basicGun.js", function (geometry) {
-                if (Zoms[tempCounter2].type === 2) {                  
-                    Zoms[tempCounter2].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Zoms[tempCounter2].mesh2.position.set(Zoms[tempCounter2].x, Zoms[tempCounter2].y, Zoms[tempCounter2].z);
-                    Zoms[tempCounter2].mesh2.scale.set(2, 2, 2);
-                    Zoms[tempCounter2].mesh2.name = "monster";
-                    LScene.add(Zoms[tempCounter2].mesh2);
+                if (Mons[tempCounter2].type === 2) {                  
+                    Mons[tempCounter2].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Mons[tempCounter2].mesh2.position.set(Mons[tempCounter2].x, Mons[tempCounter2].y, Mons[tempCounter2].z);
+                    Mons[tempCounter2].mesh2.scale.set(2, 2, 2);
+                    Mons[tempCounter2].mesh2.name = "monster";
+                    LScene.add(Mons[tempCounter2].mesh2);
                 }
                 tempCounter2++;
             });
 
             loader.load("models/advancedGun.js", function (geometry) {
-                if (Zoms[tempCounter3].type === 3) {
-                    Zoms[tempCounter3].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Zoms[tempCounter3].mesh2.position.set(Zoms[tempCounter3].x, Zoms[tempCounter3].y, Zoms[tempCounter3].z);
-                    Zoms[tempCounter3].mesh2.scale.set(2, 2, 2);
-                    Zoms[tempCounter3].mesh2.name = "monster";
-                    LScene.add(Zoms[tempCounter3].mesh2);
+                if (Mons[tempCounter3].type === 3) {
+                    Mons[tempCounter3].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                    Mons[tempCounter3].mesh2.position.set(Mons[tempCounter3].x, Mons[tempCounter3].y, Mons[tempCounter3].z);
+                    Mons[tempCounter3].mesh2.scale.set(2, 2, 2);
+                    Mons[tempCounter3].mesh2.name = "monster";
+                    LScene.add(Mons[tempCounter3].mesh2);
                 }
                 tempCounter3++;
             });
@@ -600,6 +600,9 @@ function checkmonster(game) {
     var dx = game.level.geometry.doors[game.needToClose].centerx / CELL_SIZE;
 
     for (var z = 0; z < game.monster.length; z++) {
+        if game.monster[z].type !== 1) {
+            continue;
+        }
         var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
         var sx = Math.floor(Math.floor(game.monster[z].mesh2.position.x) / CELL_SIZE + 0.5);
         if (sz === dz && sx === dx) {
@@ -642,7 +645,7 @@ function updateBullets(game, input) {
         else {
             // Toggle doors if there are any directly in line of sight 
             var intersects1 = input.viewRay.intersectObjects(game.objects),
-                intersects2 = input.viewRay.intersectObjects(game.zomobjects),
+                intersects2 = input.viewRay.intersectObjects(game.monobjects),
                 selected = null;
             if (intersects1.length > 0 && intersects2.length === 0) {
                 selected = null; // intersects1[0].object;                
@@ -679,7 +682,7 @@ function updateBullets(game, input) {
                         game.player.money += 1000;
                         game.scene.remove(game.monster[selected.index].mesh1);
                         game.scene.remove(game.monster[selected.index].mesh2);
-                        game.zomobjects.splice(selected.index, 1);
+                        game.monobjects.splice(selected.index, 1);
                         game.monster.splice(selected.index, 1);
                         for (var z = selected.index; z < game.monster.length; z++) {
                             game.monster[z].mesh1.index -= 1;
@@ -797,7 +800,7 @@ function updateBullets(game, input) {
             if (game.level.grid[sz][sx].roomIndex === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
                 game.scene.remove(game.monster[z].mesh1);
                 game.scene.remove(game.monster[z].mesh2);
-                game.zomobjects.splice(z, 1);
+                game.monobjects.splice(z, 1);
                 game.monster.splice(z, 1);
                 for (var t = z; t < game.monster.length; t++) {
                     game.monster[t].mesh1.index -= 1;

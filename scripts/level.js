@@ -7,7 +7,7 @@ var CELL_TYPES = {
     upstairs: "^",
     light: "o",
     start: "*",
-    zomstart: "z"
+    monstart: "z"
 },
     MIN_ROOM_SIZE = 4,
     MAX_ROOM_SIZE = 8,
@@ -299,7 +299,7 @@ function Level(numRooms, game) {
                     continue;
                 } else if (cell.type === CELL_TYPES.empty
                         || cell.type === CELL_TYPES.start
-                        || cell.type === CELL_TYPES.zomstart) {
+                        || cell.type === CELL_TYPES.monstart) {
                     this.generateFloorGeometry(xx, yy);
                     this.generateCeilingGeometry(xx, yy);
                 } else if (cell.type === CELL_TYPES.wall) {
@@ -611,7 +611,7 @@ function Level(numRooms, game) {
             x = randInt(1, NUM_CELLS.x - 1);
             y = randInt(1, NUM_CELLS.y - 1);
             if (this.grid[y][x].type === CELL_TYPES.empty && this.grid[y][x].roomIndex !== playerRoom) {
-                this.grid[y][x].type = CELL_TYPES.zomstart;
+                this.grid[y][x].type = CELL_TYPES.monstart;
                 this.monsterPos.push(new THREE.Vector2(x * CELL_SIZE, y * CELL_SIZE));
             }
         }
@@ -740,7 +740,7 @@ function Level(numRooms, game) {
                     continue;
                 }
 
-                if (cell.type !== CELL_TYPES.nothing && cell.type !== CELL_TYPES.start && cell.type !== CELL_TYPES.zomstart) {
+                if (cell.type !== CELL_TYPES.nothing && cell.type !== CELL_TYPES.start && cell.type !== CELL_TYPES.monstart) {
                     mapContext.fillStyle = color;
                     mapContext.fillRect(xx, yy, MAP_CELL_SIZE, MAP_CELL_SIZE);
                 }
@@ -877,7 +877,7 @@ function Cell(x, y, type) {
     this.isInterior = function () {
         // Don't include stairs, as they don't belong next to a door 
         return (this.type === CELL_TYPES.empty
-             || this.type === CELL_TYPES.light || this.type === CELL_TYPES.start || this.type === CELL_TYPES.zomstart);
+             || this.type === CELL_TYPES.light || this.type === CELL_TYPES.start || this.type === CELL_TYPES.monstart);
     };
 }
 
