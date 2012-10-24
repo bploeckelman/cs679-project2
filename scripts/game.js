@@ -65,8 +65,8 @@ function Game(renderer, canvas) {
     this.mapCanvas.width = MAP_CELL_SIZE * NUM_CELLS.x;
     this.mapCanvas.height = MAP_CELL_SIZE * NUM_CELLS.y;
     // TODO: have to handle window resizing
-    this.mapCanvas.style.bottom = 0;
-    this.mapCanvas.style.right = 0;
+    this.mapCanvas.style.top = "20px";
+    this.mapCanvas.style.right = "20px";
     document.getElementById("container").appendChild(this.mapCanvas);
 
     // Create and position the information, then add it to the document
@@ -102,12 +102,13 @@ function Game(renderer, canvas) {
         this.p = p;
     }
 
+
     // ------------------------------------------------------------------------
     // Private constants ------------------------------------------------------
     // ------------------------------------------------------------------------
     var FOV = 67,
         ASPECT = canvas.width / canvas.height,
-        NEAR = 1,
+        NEAR = .01,
         FAR = 500;
 
     // ------------------------------------------------------------------------
@@ -208,6 +209,19 @@ function Game(renderer, canvas) {
                 tempCounter++;
             });
         };
+		
+		//setup gun
+		var myPlayer = this.player;
+		var myScene = this.scene;
+		//var gunLoader = new THREE.JSONLoader(true);
+		loader.load("models/basicGun.js", function(geometry){
+			var gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+			gunMesh.position.set(myPlayer.position.x+1, myPlayer.position.y-1, myPlayer.position.z-1);
+			gunMesh.scale.set(.3, .3, .3);
+			gunMesh.rotation.y = (Math.PI/36);
+			myScene.add(gunMesh);
+		});
+		
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -461,6 +475,8 @@ function updateMovement(game, input) {
             triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
         )
     );
+
+
 
     // Update camera position/lookat 
     game.camera.position = game.player.position;
