@@ -636,7 +636,7 @@ function updateMovement(game, input) {
     input.viewRay = new THREE.Ray(
         game.player.position,                             // origin
         rayVec.subSelf(game.player.position).normalize(), // direction
-        0, 64                                             // near, far
+        0, 1000                                           // near, far
     );
 }
 
