@@ -489,8 +489,12 @@ function Game(renderer, canvas) {
             this.timer = 0;
         }
         if (this.monster.length === 0 || this.player.health === 0 || this.timer === 0) {
+            if ((this.player.health === 0 || this.timer === 0) && this.firstOver === 0) {
+                playSound("sound/dead.mp3");
+                this.firstOver++;
+            }
             this.ending();
-            if (this.Mission === this.maxMission) {
+            if (this.Mission === this.maxMission && this.monster.length === 0) {
                 if (this.firstOver === 0) {
                     this.firstOver = 1;
                 }
@@ -635,6 +639,7 @@ function updatePlayer(game, input) {
         // Hurt the player if a monster is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
+            var dead = 0;
             if (game.player.armor > 0) {
                 game.player.armor -= game.monster[i].HURT_AMOUNT;
                 if (game.player.armor < 0) {
@@ -645,9 +650,14 @@ function updatePlayer(game, input) {
             }
             else {
                 game.player.health -= game.monster[i].HURT_AMOUNT;
-                if (game.player.health < 0)
+                if (game.player.health < 0) {
+                    dead = 1;
                     game.player.health = 0;
+                }
                 game.player.canBeHurt = false;
+            }
+            if (dead === 0) {
+                playSound("sound/ouch.mp3");
             }
 
             // Flash the pain canvas red
@@ -862,6 +872,7 @@ function updateBullets(game, input) {
 
                 // Damage intersected monster
                 if (selected.name === "monster") {
+                    var mondead = 0;
                     var monster = game.monster[selected.index];
                     monster.health -= (game.player.gun === 0) ? BULLET_DAMAGE0 : BULLET_DAMAGE1;
                     // Spawn a blood particle system
@@ -909,6 +920,7 @@ function updateBullets(game, input) {
                     game.scene.add(psys);
 
                     if (game.monster[selected.index].health <= 0) {
+                        mondead = 1;
                         game.player.money += 2000;
                         game.scene.remove(game.monster[selected.index].mesh1);
                         game.scene.remove(game.monster[selected.index].mesh2);
@@ -918,6 +930,13 @@ function updateBullets(game, input) {
                             game.monster[z].mesh1.index -= 1;
                         }
                     }
+                    if (mondead == 0) {
+                        playSound("sound/monsterbleed.mp3");
+                    }
+                    else {
+                        playSound("sound/monsterdead.mp3");
+                    }
+
                 }
                 //}
             }
@@ -1041,6 +1060,7 @@ function updateBullets(game, input) {
             var oz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var ox = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
             if (game.level.grid[oz][ox].roomIndex === game.TNTRoom && game.level.grid[oz][ox].isInterior()) {
+                var dead = 0;
                 if (game.player.armor > 0) {
                     game.player.armor -= EXPLOSION_AMOUNT;
                     if (game.player.armor < 0) {
@@ -1051,9 +1071,15 @@ function updateBullets(game, input) {
                 }
                 else {
                     game.player.health -= EXPLOSION_AMOUNT;
-                    if (game.player.health < 0)
+                    if (game.player.health < 0) {
+                        dead = 1;
                         game.player.health = 0;
+                    }
                     game.player.canBeHurt = false;
+                }
+                console.log(dead);
+                if (dead === 0) {
+                    playSound("sound/ouch.mp3");
                 }
             }
 
