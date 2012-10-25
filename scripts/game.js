@@ -659,17 +659,16 @@ function updatePlayer(game, input) {
             }
             if (dead === 0) {
                 playSound("sound/ouch.mp3");
+                // Flash the pain canvas red
+                var tween = new TWEEN.Tween({ alpha: 0.8 })
+                    .to({ alpha: 0.0 }, PAIN_TIMEOUT)
+                    .easing(TWEEN.Easing.Circular.Out)
+                    .onUpdate(function () {
+                        game.painCanvas.alpha = this.alpha;
+                    })
+                    .start();
+                console.log("ouch! Armor = " + game.player.armor + ", " + "health = " + game.player.health);
             }
-
-            // Flash the pain canvas red
-            var tween = new TWEEN.Tween({ alpha: 0.8 })
-                .to({ alpha: 0.0 }, PAIN_TIMEOUT)
-                .easing(TWEEN.Easing.Circular.Out)
-                .onUpdate(function () {
-                    game.painCanvas.alpha = this.alpha;
-                })
-                .start();
-            console.log("ouch! Armor = " + game.player.armor + ", " + "health = " + game.player.health);
 
             setTimeout(function () {
                 game.player.canBeHurt = true;
