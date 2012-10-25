@@ -308,19 +308,32 @@ function Game(renderer, canvas) {
                 tempCount3.number++;
             });
         };
+		
+		// Setup gun
+        var game = this;
+        loader.load("models/basicGun.js", function(geometry){
+            // Setup dummy node to orient gun in correct direction
+            var dummy = new THREE.Object3D();
+            dummy.position.set(
+            game.player.position.x,
+            game.player.position.y,
+            game.player.position.z);
 
-        //setup gun
-        var myPlayer = this.player;
-        var myScene = this.scene;
-        //var gunLoader = new THREE.JSONLoader(true);
-        loader.load("models/basicGun.js", function (geometry) {
-            var gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-            gunMesh.position.set(myPlayer.position.x + 1, myPlayer.position.y - 1, myPlayer.position.z - 1);
-            gunMesh.scale.set(.3, .3, .3);
-            gunMesh.rotation.y = (Math.PI / 36);
-            myScene.add(gunMesh);
+            // Setup gun mesh
+            game.player.gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+            game.player.gunMesh.position.set(0.6, -0.9, -1.4); // offset from dummy pos
+            game.player.gunMesh.scale.set(.15, .15, .15);
+            game.player.gunMesh.rotation.y = Math.PI;
+            game.player.gunMesh.dummy = dummy;
+
+            // Make the gun mesh a child object of the dummy node
+            dummy.add(game.player.gunMesh);
+            game.player.gunMesh.dummy = dummy;
+
+            // Make the dummy node a child object of the camera
+            game.camera.add(game.player.gunMesh.dummy);
+            game.scene.add(game.player.gunMesh.dummy);
         });
-
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
@@ -594,6 +607,17 @@ function updatePlayer(game, input) {
         game.player.position.x,
         game.player.position.y + 32,
         game.player.position.z);
+
+    // Orient the gun with the camera view direction
+    // (offset from dummy node by game.player.gunMesh.position)
+    game.player.gunMesh.dummy.position.set(
+        game.camera.position.x,
+        game.camera.position.y,
+        game.camera.position.z);
+    game.player.gunMesh.dummy.rotation.set(
+        game.camera.rotation.x,
+        game.camera.rotation.y,
+        game.camera.rotation.z);
 }
 
 
@@ -643,8 +667,6 @@ function updateMovement(game, input) {
             triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
         )
     );
-
-
 
     // Update camera position/lookat 
     game.camera.position = game.player.position;
