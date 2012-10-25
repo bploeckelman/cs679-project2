@@ -49,6 +49,8 @@ function Game(renderer, canvas) {
     this.preTNT = 0;
     this.premoney = 7000;
     this.modelLoaded = 0;
+    this.stopTime = 1;
+    this.firstLoad = 1;
     this.tempCounter1 = { number: 0 };
     this.tempCounter2 = { number: 0 };
     this.tempCounter3 = { number: 0 };
@@ -478,7 +480,9 @@ function Game(renderer, canvas) {
             }
         }
 
-        this.timer -= this.clock4.getDelta();
+        if (this.stopTime === 0) {
+            this.timer -= this.clock4.getDelta();
+        }
         if (this.timer < 0) {
             this.timer = 0;
         }
@@ -527,6 +531,27 @@ function Game(renderer, canvas) {
         TWEEN.update();
     };
 
+    this.drawInstruction = function (input) {
+        // Draw the instruction
+        var ctx = this.instructionCanvas.getContext("2d");
+        if (input.trigger.Help === 1) {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, this.instructionCanvas.width, this.instructionCanvas.height);
+            ctx.restore();
+            ctx.globalAlpha = this.instructionCanvas.alpha;
+            ctx.fillStyle = "#fffffff";
+            ctx.drawImage(INSTRUCTION_TEXTURE,
+                this.instructionCanvas.width / 2 - INSTRUCTION_TEXTURE.width / 2,
+                this.instructionCanvas.height / 2 - INSTRUCTION_TEXTURE.height / 2);
+        }
+        else {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, this.endingInfo.width, this.endingInfo.height);
+            ctx.restore();
+        }
+    }
 
     // Draw the scene as seen through the current camera
     // ------------------------------------------------------------------------
@@ -545,27 +570,7 @@ function Game(renderer, canvas) {
             this.crosshairCanvas.width  / 2 - CROSSHAIR_TEXTURE.width  / 2,
             this.crosshairCanvas.height / 2 - CROSSHAIR_TEXTURE.height / 2);
 
-
-        // Draw the instruction
-        console.log(input.trigger.Help);
-        var ctx = this.instructionCanvas.getContext("2d");
-        if (input.trigger.Help === 1) {
-            ctx.save();
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, this.instructionCanvas.width, this.instructionCanvas.height);
-            ctx.restore();
-            ctx.globalAlpha = this.instructionCanvas.alpha;
-            ctx.fillStyle = "#fffffff";
-            ctx.drawImage(INSTRUCTION_TEXTURE,
-                this.instructionCanvas.width / 2 - INSTRUCTION_TEXTURE.width / 2,
-                this.instructionCanvas.height / 2 - INSTRUCTION_TEXTURE.height / 2);
-        }
-        else {            
-            ctx.save();
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, this.endingInfo.width, this.endingInfo.height);
-            ctx.restore();
-        }
+        this.drawInstruction(input);
         ++this.numFrames;
     }
 }; // end Game object

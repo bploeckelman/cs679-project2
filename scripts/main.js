@@ -48,18 +48,21 @@
 
 
 
-    // Setup input handlers and populate input data object
-    setupInput(inputData);
-    // Create Game object
+     // Create Game object
     game = new Game(renderer, canvas);
+
+    // Setup input handlers and populate input data object
+    setupInput(inputData, game);
 
     // Enter main loop
     (function mainLoop() {
-        if (game.update(inputData) === 0) {
+        if ((game.stopTime === 1 && game.firstLoad === 0) || game.update(inputData) === 0) {
+            game.drawInstruction(inputData);
             requestFrame(mainLoop);
         }
         else {
             stats.begin();
+            game.firstLoad = 0;
             requestFrame(mainLoop);
             game.render(inputData);
             stats.end();
@@ -81,7 +84,7 @@
 // ----------------------------------------------------------------------------
 // Setup input handlers and populate input data object
 // ----------------------------------------------------------------------------
-function setupInput(data) {
+function setupInput(data, game) {
     // Setup input data structure
     data.viewRay = null;
     data.click = 0;
@@ -97,7 +100,9 @@ function setupInput(data) {
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
-        event.preventDefault();
+        if (event.keyCode != 116) {
+            event.preventDefault();
+        }
         switch (event.keyCode) {
             case 87: data.trigger.W = 1; break;
             case 83: data.trigger.S = 1; break;
@@ -112,7 +117,17 @@ function setupInput(data) {
             case 72: data.trigger.Armor = 1; break;
             case 66: data.trigger.Ammo = 1; break;
             case 82: data.trigger.R = 1; break;
-            case 112: data.trigger.Help = 1 - data.trigger.Help;break;
+            case 112:
+                data.trigger.Help = 1 - data.trigger.Help;
+                game.stopTime = 1 - game.stopTime;
+                if (game.stopTime === 0) {
+                    game.clock.getDelta();
+                    game.clock2.getDelta();
+                    game.clock3.getDelta();
+                    game.clock4.getDelta();
+                    game.clock5.getDelta();
+                }
+                break;
         }
     }, false);
 
