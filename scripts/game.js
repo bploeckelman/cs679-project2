@@ -113,6 +113,17 @@ function Game(renderer, canvas) {
     this.painCanvas.alpha = 0.0;
     document.getElementById("container").appendChild(this.painCanvas);
 
+    // Create and position the 'flash' canvas: flash white on screen when TNT explodes
+    this.flashCanvas = document.createElement("canvas");
+    this.flashCanvas.id = "flash";
+    this.flashCanvas.width = canvas.width;
+    this.flashCanvas.height = canvas.height;
+    this.flashCanvas.style.position = "absolute";
+    this.flashCanvas.style.bottom = 0;
+    this.flashCanvas.style.right = 0;
+    this.flashCanvas.alpha = 0.0;
+    document.getElementById("container").appendChild(this.flashCanvas);
+
     // Create and position the crosshair canvas
     this.crosshairCanvas    = document.createElement("canvas");
     this.crosshairCanvas.id = "crosshair";
@@ -184,7 +195,7 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.EXPLOSION_TIME = 10.5 - 0.5 * this.Mission;
+        this.EXPLOSION_TIME = this.Mission;
         this.TNTtime = -1;
         this.TNTRoom = -1;
         this.Bomb = null;
@@ -739,7 +750,8 @@ function checkmonster(game) {
 // ----------------------------------------------------------------------------
 var BULLET_DAMAGE0 = 5;
 var BULLET_DAMAGE1 = 10;
-var EXPLOSION_AMOUNT = 50;
+var EXPLOSION_AMOUNT = 10;
+var FLASH_TIMEOUT = 10000;
 function updateBullets(game, input) {
     var refireTime = 0.2,
         bullet,
@@ -933,7 +945,6 @@ function updateBullets(game, input) {
             game.scene.remove(game.Bomb);
             game.Bomb = null;
             game.TNTtime = -1;
-            var z = 0;
             var oz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
             var ox = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
             if (game.level.grid[oz][ox].roomIndex === game.TNTRoom && game.level.grid[oz][ox].isInterior()) {
@@ -951,14 +962,25 @@ function updateBullets(game, input) {
                         game.player.health = 0;
                     game.player.canBeHurt = false;
                 }
+
+                // Flash the canvas white
+                var tween = new TWEEN.Tween({ alpha: 0.8 })
+                .to({ alpha: 0.0 }, FLASH_TIMEOUT)
+                .easing(TWEEN.Easing.Circular.Out)
+                .onUpdate(function () {
+                    game.flashCanvas.alpha = this.alpha;
+                    console.log(this.alpha);
+                })
+                .start();
+                console.log(PAIN_TIMEOUT);
             }
         }
 
-
+        var z = 0;
         while (z < game.monster.length) {
             var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
             var sx = Math.floor(Math.floor(game.monster[z].mesh2.position.x) / CELL_SIZE + 0.5);
-            if (game.level.grid[sz][sx].roomIndex === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
+            if (game.level.grid[sz][sx].roomIndextr === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
                 game.scene.remove(game.monster[z].mesh1);
                 game.scene.remove(game.monster[z].mesh2);
                 game.monobjects.splice(z, 1);
@@ -972,6 +994,16 @@ function updateBullets(game, input) {
             }
         }
     }
+
+    // Draw the pain canvas with the current alpha
+    var ctx = game.flashCanvas.getContext("2d");
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, game.flashCanvas.width, game.flashCanvas.height);
+    ctx.restore();
+    ctx.globalAlpha = game.flashCanvas.alpha;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, game.flashCanvas.width, game.flashCanvas.height);
 
     // Update all the bullets, move backwards through array 
     // to avoid problems when removing bullets
