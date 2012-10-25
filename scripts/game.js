@@ -781,7 +781,11 @@ function checkmonster(game) {
         }
     }
 
-    return true;
+    return true;F
+}
+
+this.playSound = function (soundFile) {
+    document.getElementById("sound").innerHTML = "<embed src=\"" + soundFile + "\" hidden=\"true\" autostart=\"true\" loop=\"false\" />";
 }
 
 // ----------------------------------------------------------------------------
@@ -815,6 +819,8 @@ function updateBullets(game, input) {
             game.bulletDelay += game.clock.getDelta();
         }
         else {
+            refireTime = 0;
+            playSound("sound/hit.wav");
             // Toggle doors if there are any directly in line of sight 
             var intersects1 = input.viewRay.intersectObjects(game.objects),
                 intersects2 = input.viewRay.intersectObjects(game.monobjects),
