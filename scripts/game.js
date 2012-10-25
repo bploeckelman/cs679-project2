@@ -820,7 +820,13 @@ function updateBullets(game, input) {
         }
         else {
             refireTime = 0;
-            playSound("sound/gunshot.mp3");
+            if (game.player.gun === 0) {
+                playSound("sound/gunshot.mp3");
+            }
+            else {
+                playSound("sound/advancedgunshot.mp3");
+            }
+
             // Toggle doors if there are any directly in line of sight 
             var intersects1 = input.viewRay.intersectObjects(game.objects),
                 intersects2 = input.viewRay.intersectObjects(game.monobjects),
