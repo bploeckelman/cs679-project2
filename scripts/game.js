@@ -1,4 +1,5 @@
 var MAX_LIGHTS = 20;
+var BLOOD_TEXTURE = THREE.ImageUtils.loadTexture("images/splatter.png");
 
 function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
@@ -46,6 +47,10 @@ function Game(renderer, canvas) {
     this.tempCounter1 = { number: 0 };
     this.tempCounter2 = { number: 0 };
     this.tempCounter3 = { number: 0 };
+
+    // Particle System related vars
+    this.bloodParticlesCount = 100;
+    this.particleSystems = [];
 
 
     this.mainCanvas = document.getElementById("canvas");
@@ -338,6 +343,7 @@ function Game(renderer, canvas) {
         else {
             this.modelLoaded = 0;
         }
+
         console.log("Game initialized.");
     };
 
@@ -445,6 +451,27 @@ function Game(renderer, canvas) {
         updatemonsters(this);
         handleCollisions(this, input);
         updatePlayer(this, input);
+
+        // Update particle systems
+        for (var i = this.particleSystems.length - 1; i >= 0; --i) {
+            var psys = this.particleSystems[i];
+
+            // Remove old systems
+            if (psys.complete) {
+                this.scene.remove(psys);
+                this.particleSystems.splice(i, 1);        
+            } else {
+                // Update the particles
+                for (var j = 0; j < psys.geometry.vertices.length; ++j) {
+                    var particle = psys.geometry.vertices[j];
+                    particle.velocity.y -= 0.05;
+                    particle.x += particle.velocity.x;
+                    particle.y += particle.velocity.y;
+                    particle.z += particle.velocity.z;
+                }
+                psys.geometry.__dirtyVertices = true;
+            }
+        }
 
         TWEEN.update();
     };
@@ -715,13 +742,54 @@ function updateBullets(game, input) {
                 //                    game.level.toggleDoor(selected.doorIndex);
                 //                }
                 //                else {
+
+                // Damage intersected monster
                 if (selected.name === "monster") {
-                    if (game.player.gun === 0) {
-                        game.monster[selected.index].health -= BULLET_DAMAGE0;
+                    var monster = game.monster[selected.index];
+                    monster.health -= (game.player.gun === 0) ? BULLET_DAMAGE0 : BULLET_DAMAGE1;
+                    // Spawn a blood particle system
+                    var pgeom = new THREE.Geometry();
+                    for (var i = 0; i < game.bloodParticlesCount; ++i) {
+                        var particle = new THREE.Vector3(
+                                monster.mesh1.position.x,
+                                monster.mesh1.position.y,
+                                monster.mesh1.position.z
+                            );
+                        particle.velocity = new THREE.Vector3(
+                            Math.random() * 0.5 - 0.25,
+                            Math.random() * 0.75,
+                            Math.random() * 0.5 - 0.25);
+                        pgeom.vertices.push(particle);
                     }
-                    else {
-                        game.monster[selected.index].health -= BULLET_DAMAGE1;
-                    }
+
+                    var pmat = new THREE.ParticleBasicMaterial({
+                        size: 10,
+                        sizeAttenuation: true,
+                        map: BLOOD_TEXTURE,
+                        blending: THREE.NormalBlending,//AdditiveBlending,
+                        transparent: true,
+                        depthWrite: false,
+                        depthTest: false
+                    });
+
+                    var psys = new THREE.ParticleSystem(pgeom, pmat);
+                    psys.sortParticles = true;
+                    psys.complete = false;
+
+                    // Shrink the size of the particles in the system over time
+                    var tween = new TWEEN.Tween({ size: psys.material.size })
+                        .to({ size: 0.0 }, PAIN_TIMEOUT)
+                        .easing(TWEEN.Easing.Circular.Out)
+                        .onUpdate(function () {
+                            psys.material.size = this.size;
+                        })
+                        .onComplete(function () {
+                            psys.complete = true;
+                        })
+                        .start();
+
+                    game.particleSystems.push(psys);
+                    game.scene.add(psys);
 
                     if (game.monster[selected.index].health <= 0) {
                         game.player.money += 2000;
