@@ -30,6 +30,8 @@ function Game(renderer, canvas) {
     this.bulletDelay = 0;
     this.level = null;
     this.player = null;
+    this.MAX_PLAYER_HEALTH = 100;
+    this.MAX_PLAYER_ARMOR = 100;
     this.monster = [];
     this.oldplayer = new THREE.Vector3();
     this.searchDelay = 0;
@@ -91,8 +93,8 @@ function Game(renderer, canvas) {
     // Create and position the information, then add it to the document
     playerInfo = document.createElement("canvas");
     playerInfo.id = "info";
-    playerInfo.width = canvas.width * 0.98;
-    playerInfo.height = canvas.height * 0.22;
+    playerInfo.width = canvas.width;
+    playerInfo.height = canvas.height;
     playerInfo.style.position = "absolute";
     playerInfo.style.bottom = 0;
     playerInfo.style.right = 0;
@@ -234,7 +236,7 @@ function Game(renderer, canvas) {
         this.player.position.set(
             this.level.startPos.x, 16, this.level.startPos.y);
         this.player.canBeHurt = true;
-        this.player.health = 100;
+        this.player.health = this.MAX_PLAYER_HEALTH;
         this.player.armor = 0;
         this.player.ammo = this.preammo;
         this.player.gun = 0;
@@ -608,7 +610,7 @@ function updateForce(game, input) {
     if (input.trigger.Armor === 1) {
         if (game.player.armor === 0 && game.player.money >= ARMOR_COST) {
             playSound("sound/bell.mp3");
-            game.player.armor = 100;
+            game.player.armor = game.MAX_PLAYER_ARMOR;
             game.player.money -= ARMOR_COST;
         }
         input.trigger.Armor = 0;

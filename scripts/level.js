@@ -777,47 +777,87 @@ function Level(numRooms, game) {
 
     // Update player
     // --------------------------------
+    var PLAYER_INFO_TOP = 5,
+        INFO_ITEM_HEIGHT = 15,
+        INFO_BAR_HEIGHT = 10,
+        INFO_BAR_WIDTH = 50;
     this.updatePlayer = function () {
-        // Clear the map
+        // Clear the HUD 
         playerContext.save();
         playerContext.setTransform(1, 0, 0, 1, 0, 0);
         playerContext.clearRect(0, 0, playerInfo.width, playerInfo.height);
         playerContext.restore();
 
-        // Blend the map a bit
+        // Setup the styles for HUD text
+        playerContext.font = "15px Arial";
+        playerContext.textBaseline = "top";
+
+        // Draw each section of the player's info:
+        // ---------------------------------------
+
+        // Health
+        var healthPercent = game.player.health / game.MAX_PLAYER_HEALTH;
+        playerContext.fillStyle = "#ffffff";
+        playerContext.fillText("health:", 2, 2);
+
         playerContext.globalAlpha = 0.5;
-        playerContext.strokeStyle = "#ff7f00";
-        playerContext.font = '40px Arial';
-        playerContext.textBaseline = 'middle';
-        playerContext.textAlign = 'center';
-        playerContext.strokeText("Health:", playerInfo.width * 1 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.health, playerInfo.width * 2.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Armor:", playerInfo.width * 4.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.armor, playerInfo.width * 6 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Time:", playerInfo.width * 7.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10), playerInfo.width * 9 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText("Ammo:", playerInfo.width * 11 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.ammo, playerInfo.width * 12.5 / 20, playerInfo.height / 1.5);
-        if (game.TNTtime === -1) {
-            playerContext.strokeText("T:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
-            playerContext.strokeText(game.player.TNT, playerInfo.width * 14.5 / 20, playerInfo.height / 1.5);
+        playerContext.strokeStyle = "#ffffff";
+        playerContext.strokeRect(50, PLAYER_INFO_TOP + 1, INFO_BAR_WIDTH, INFO_BAR_HEIGHT);
+        playerContext.fillStyle = "#ff0000";
+        playerContext.fillRect(51, PLAYER_INFO_TOP + 2,
+                healthPercent * (INFO_BAR_WIDTH - 2), INFO_BAR_HEIGHT - 2);
+        playerContext.globalAlpha = 1.0;
+
+        // Armor
+        var armorPercent = game.player.armor / game.MAX_PLAYER_ARMOR;
+        playerContext.fillStyle = "#ffffff";
+        playerContext.fillText("armor:", 2, INFO_ITEM_HEIGHT + 2);
+
+        playerContext.globalAlpha = 0.5;
+        playerContext.strokeStyle = "#ffffff";
+        playerContext.strokeRect(50, PLAYER_INFO_TOP + 1 + INFO_ITEM_HEIGHT,
+                INFO_BAR_WIDTH, INFO_BAR_HEIGHT);
+        playerContext.fillStyle = "#ff0000";
+        playerContext.fillRect(51, PLAYER_INFO_TOP + 2 + INFO_ITEM_HEIGHT,
+                armorPercent * (INFO_BAR_WIDTH - 2), INFO_BAR_HEIGHT - 2);
+        playerContext.globalAlpha = 1.0;
+
+        // Ammo
+        playerContext.fillStyle = "#ffffff";
+        playerContext.fillText("ammo:", 2, 2 * INFO_ITEM_HEIGHT + 2);
+        playerContext.fillStyle = "#00ff00";
+        playerContext.fillText(game.player.ammo, 50, 2 * INFO_ITEM_HEIGHT + 2);
+
+        // TNT + counter
+        playerContext.fillStyle = "#ffffff";
+        playerContext.fillText("TNT:", 2, 3 * INFO_ITEM_HEIGHT + 2);
+
+        var timeFrac = Math.floor((game.TNTtime - Math.floor(game.TNTtime)) * 10),
+            tntString = "" + game.player.TNT;
+        if (game.TNTtime !== -1) {
+            tntString += "   countdown: " + Math.floor(game.TNTtime) + "." + timeFrac;
         }
-        else {
-            playerContext.strokeText("R:", playerInfo.width * 13.5 / 20, playerInfo.height / 1.5);
-            playerContext.strokeText(Math.floor(game.TNTtime) + "." + Math.floor((game.TNTtime - Math.floor(game.TNTtime)) * 10), playerInfo.width * 14.5 / 20, playerInfo.height / 1.5);
-        }
-        playerContext.strokeText("$:", playerInfo.width * 15.5 / 20, playerInfo.height / 1.5);
-        playerContext.strokeText(game.player.money, playerInfo.width * 16.5 / 20, playerInfo.height / 1.5);
+
+        playerContext.fillStyle = "#00ff00";
+        playerContext.fillText(tntString, 50, 3 * INFO_ITEM_HEIGHT + 2);
+
+        // Money
+        playerContext.fillStyle = "#ffffff";
+        playerContext.fillText("money:", 2, 4 * INFO_ITEM_HEIGHT + 2);
+        playerContext.fillStyle = "#00ff00";
+        playerContext.fillText("$" + game.player.money, 50, 4 * INFO_ITEM_HEIGHT + 2);
     };
 
+    // Update mission info
+    // ------------------------------------------
     this.updateMission = function () {
-        // Clear the map
+        // Clear the HUD 
         missionContext.save();
         missionContext.setTransform(1, 0, 0, 1, 0, 0);
         missionContext.clearRect(0, 0, missionInfo.width, missionInfo.height);
         missionContext.restore();
 
-        // Blend the map a bit
+        // Draw the mission number
         missionContext.globalAlpha = 0.5;
         missionContext.fillStyle = "#00ff00";
         missionContext.font = '30px Arial';
@@ -825,6 +865,12 @@ function Level(numRooms, game) {
         missionContext.textAlign = 'center';
         missionContext.fillText("Mission", missionInfo.width * 9.5 / 20, missionInfo.height / 1.5);
         missionContext.fillText(game.Mission, missionInfo.width * 11 / 20, missionInfo.height / 1.5);
+
+        // Draw the mission timer
+        var timeRemaining = "Time Remaining: " + Math.floor(game.timer) + "." + Math.floor(game.timer - Math.floor(game.timer)) * 10;
+        missionContext.font = "15px Arial";
+        missionContext.fillStyle = "#ff0000";
+        missionContext.fillText(timeRemaining, missionInfo.width * 0.48, missionInfo.height / 1.46);
     };
 
 
@@ -835,11 +881,6 @@ function Level(numRooms, game) {
         this.updateMinimap();
         this.updatePlayer();
         this.updateMission();
-
-        // Draw the player's healthbar
-        // TODO: use another 2d canvas for gui stuff like this, like the minimap
-        //var healthText = document.getElementById("healthbar");
-        //healthText.innerText = "player health: " + game.player.health + "%";
     };
 
 

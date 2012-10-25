@@ -28,11 +28,6 @@
     document.getElementsByTagName("body")[0].style.padding = "0";
     document.getElementsByTagName("body")[0].style.overflow = "hidden";
 
-    //document.getElementById("healthbar").style.width = "25%";
-    //document.getElementById("healthbar").style.margin = "auto 0px";
-    //document.getElementById("healthbar").style.text_align = "center";
-    //document.getElementById("healthbar").style.color = "rgb(255,0,0)";
-
     // Setup sizes and add the renderer to the document 
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
@@ -40,13 +35,13 @@
     document.getElementById("container").appendChild(renderer.domElement);
 
     // Setup stats (fps and ms render time graphs)
+    /*
     stats.setMode(0); // mode 0 = fps, mode 1 = ms render time
     stats.domElement.style.position = "absolute";
     stats.domElement.style.top = canvas.offsetTop + 4 + "px";
     stats.domElement.style.left = canvas.offsetLeft + "px";
     document.getElementById("container").appendChild(stats.domElement);
-
-
+    */
 
      // Create Game object
     game = new Game(renderer, canvas);
@@ -61,11 +56,11 @@
             requestFrame(mainLoop);
         }
         else {
-            stats.begin();
+            //stats.begin();
             game.firstLoad = 0;
             requestFrame(mainLoop);
             game.render(inputData);
-            stats.end();
+            //stats.end();
         }
     })();
 
