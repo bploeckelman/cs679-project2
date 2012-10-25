@@ -787,7 +787,7 @@ function checkmonster(game) {
         }
     }
 
-    return true;F
+    return true; F
 }
 
 this.playSound = function (soundFile) {
@@ -963,26 +963,38 @@ function updateBullets(game, input) {
                             game.needToClose = -2 - game.level.state[sz][sx];
                         }
                         else {
-                            game.level.toggleDoor(game.level.state[sz][sx]);
+                            if (game.level.geometry.doors[game.level.state[sz][sx]].canToggle) {
+                                game.level.toggleDoor(game.level.state[sz][sx]);
+                                playSound("sound/door.mp3");
+                            }
                             input.trigger.F = 0;
                         }
                     }
                     else {
                         if (game.needToClose !== -1 && checkmonster(game)) {
-                            game.level.toggleDoor(game.needToClose);
-                            game.needToClose = -1;
-                            input.trigger.F = 0;
+                            if (game.level.geometry.doors[game.needToClose].canToggle) {
+                                game.level.toggleDoor(game.needToClose);
+                                game.needToClose = -1;
+                                playSound("sound/door.mp3");
+                                input.trigger.F = 0;
+                            }
                         }
                     }
                 }
                 else {
                     if (game.level.state[sz + z][sx + x] !== -1) {
                         if (game.level.state[sz + z][sx + x] < 0) {
-                            game.level.toggleDoor(-2 - game.level.state[sz + z][sx + x]);
+                            if (game.level.geometry.doors[-2 - game.level.state[sz + z][sx + x]].canToggle) {
+                                game.level.toggleDoor(-2 - game.level.state[sz + z][sx + x]);
+                                playSound("sound/door.mp3");
+                            }
                             input.trigger.F = 0;
                         }
                         else {
-                            game.level.toggleDoor(game.level.state[sz + z][sx + x]);
+                            if (game.level.geometry.doors[game.level.state[sz + z][sx + x]].canToggle) {
+                                game.level.toggleDoor(game.level.state[sz + z][sx + x]);
+                                playSound("sound/door.mp3");
+                            }
                             input.trigger.F = 0;
                         }
                     }
