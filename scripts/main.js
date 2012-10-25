@@ -61,7 +61,7 @@
         else {
             stats.begin();
             requestFrame(mainLoop);
-            game.render();
+            game.render(inputData);
             stats.end();
         }
     })();
@@ -93,10 +93,11 @@ function setupInput(data) {
     data.f = new THREE.Vector3();
     data.v = 0;
     data.hold = 0;
-    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0 };
+    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0, Help:  1};
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
+        event.preventDefault();
         switch (event.keyCode) {
             case 87: data.trigger.W = 1; break;
             case 83: data.trigger.S = 1; break;
@@ -111,11 +112,13 @@ function setupInput(data) {
             case 72: data.trigger.Armor = 1; break;
             case 66: data.trigger.Ammo = 1; break;
             case 82: data.trigger.R = 1; break;
+            case 112: data.trigger.Help = 1 - data.trigger.Help;break;
         }
     }, false);
 
     // Hookup key input
     document.addEventListener("keyup", function (event) {
+	event.preventDefault();
         switch (event.keyCode) {
             case 87: data.trigger.W = 0; break;
             case 83: data.trigger.S = 0; break;
@@ -127,12 +130,14 @@ function setupInput(data) {
     }, false);
 
     document.addEventListener("mousedown", function (event) {
+	event.preventDefault();
         if (!canvas.pointerLockEnabled) {
             canvas.requestPointerLock();
         }
         data.click = 1;
     }, false);
     document.addEventListener("mouseup", function (event) {
+	event.preventDefault();
         data.click = 0;
     }, false);
 

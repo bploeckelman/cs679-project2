@@ -2,6 +2,9 @@ var MAX_LIGHTS = 20;
 var BLOOD_TEXTURE = THREE.ImageUtils.loadTexture("images/splatter.png");
 var CROSSHAIR_TEXTURE = new Image();//THREE.ImageUtils.loadTexture("images/crosshair.png");
 CROSSHAIR_TEXTURE.src = "images/crosshair.png";
+var INSTRUCTION_TEXTURE = new Image();//THREE.ImageUtils.loadTexture("images/instruction.png");
+INSTRUCTION_TEXTURE.src = "images/instruction.png";
+
 
 function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
@@ -134,6 +137,17 @@ function Game(renderer, canvas) {
     this.crosshairCanvas.style.right  = 0;
     this.crosshairCanvas.alpha = 0.2;
     document.getElementById("container").appendChild(this.crosshairCanvas);
+
+    // Create and position the instruction canvas
+    this.instructionCanvas = document.createElement("canvas");
+    this.instructionCanvas.id = "instruction";
+    this.instructionCanvas.width = canvas.width;
+    this.instructionCanvas.height = canvas.height
+    this.instructionCanvas.style.position = "absolute";
+    this.instructionCanvas.style.bottom = 0;
+    this.instructionCanvas.style.right = 0;
+    this.instructionCanvas.alpha = 1;
+    document.getElementById("container").appendChild(this.instructionCanvas);
 
     this.Element = {
         sz: 0,
@@ -333,7 +347,7 @@ function Game(renderer, canvas) {
             });
         };
 		
-		// Setup gun
+        // Setup gun
         var game = this;
         loader.load("models/basicGun.js", function(geometry){
             // Setup dummy node to orient gun in correct direction
@@ -516,7 +530,7 @@ function Game(renderer, canvas) {
 
     // Draw the scene as seen through the current camera
     // ------------------------------------------------------------------------
-    this.render = function () {
+    this.render = function (input) {
         this.renderer.render(this.scene, this.camera);
 
         // Draw the crosshair
@@ -531,10 +545,30 @@ function Game(renderer, canvas) {
             this.crosshairCanvas.width  / 2 - CROSSHAIR_TEXTURE.width  / 2,
             this.crosshairCanvas.height / 2 - CROSSHAIR_TEXTURE.height / 2);
 
-        ++this.numFrames;
-    };
 
-} // end Game object
+        // Draw the instruction
+        console.log(input.trigger.Help);
+        var ctx = this.instructionCanvas.getContext("2d");
+        if (input.trigger.Help === 1) {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, this.instructionCanvas.width, this.instructionCanvas.height);
+            ctx.restore();
+            ctx.globalAlpha = this.instructionCanvas.alpha;
+            ctx.fillStyle = "#fffffff";
+            ctx.drawImage(INSTRUCTION_TEXTURE,
+                this.instructionCanvas.width / 2 - INSTRUCTION_TEXTURE.width / 2,
+                this.instructionCanvas.height / 2 - INSTRUCTION_TEXTURE.height / 2);
+        }
+        else {            
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, this.endingInfo.width, this.endingInfo.height);
+            ctx.restore();
+        }
+        ++this.numFrames;
+    }
+}; // end Game object
 
 var TNT_AMOUNT = 1,
     TNT_COST = 1500,
