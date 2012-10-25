@@ -585,6 +585,7 @@ var TNT_AMOUNT = 1,
 function updateForce(game, input) {
     if (input.trigger.TNT === 1) {
         if (game.player.money >= TNT_COST && game.TNTtime === -1) {
+            playSound("sound/bell.mp3");
             game.player.TNT += TNT_AMOUNT;
             game.player.money -= TNT_COST;
         }
@@ -592,6 +593,7 @@ function updateForce(game, input) {
     }
     if (input.trigger.Gun === 1) {
         if (game.player.gun === 0 && game.player.money >= GUN_COST) {
+            playSound("sound/bell.mp3");
             game.player.gun = 1;
             game.player.money -= GUN_COST;
         }
@@ -599,6 +601,7 @@ function updateForce(game, input) {
     }
     if (input.trigger.Armor === 1) {
         if (game.player.armor === 0 && game.player.money >= ARMOR_COST) {
+            playSound("sound/bell.mp3");
             game.player.armor = 100;
             game.player.money -= ARMOR_COST;
         }
@@ -606,6 +609,7 @@ function updateForce(game, input) {
     }
     if (input.trigger.Ammo === 1) {
         if (game.player.money >= AMMO_COST) {
+            playSound("sound/bell.mp3");
             game.player.ammo += AMMO_AMOUNT;
             game.player.money -= AMMO_COST;
         }
