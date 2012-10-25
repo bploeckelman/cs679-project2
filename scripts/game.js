@@ -38,6 +38,7 @@ function Game(renderer, canvas) {
     this.timer = 0;
     this.interval = -1;
     this.TNTtime = 0;
+    this.lastTNT = 0;
     this.EXPLOSION_TIME = 0;
     this.monsterNumber = 0;
     this.TNTRoom = 0;
@@ -213,6 +214,7 @@ function Game(renderer, canvas) {
         this.needToClose = -1;
         this.EXPLOSION_TIME = this.Mission;
         this.TNTtime = -1;
+        this.lastTNTtime = -1;
         this.TNTRoom = -1;
         this.Bomb = null;
 
@@ -996,6 +998,8 @@ function updateBullets(game, input) {
         if (game.TNTtime < 0 && game.player.TNT >= 1 && game.level.grid[sz][sx].isInterior()) {
             game.player.TNT -= 1;
             game.TNTtime = game.EXPLOSION_TIME;
+            game.lastTNTtime = game.EXPLOSION_TIME;
+            playSound("sound/timer.mp3");
             game.clock3.getDelta();
             game.TNTRoom = game.level.grid[sz][sx].roomIndex;
             game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
@@ -1008,6 +1012,10 @@ function updateBullets(game, input) {
 
     // Handle TNT update
     if (game.TNTtime > 0) {
+        if (Math.floor(game.TNTtime) !== game.lastTNTtime) {
+            game.lastTNTtime = Math.floor(game.TNTtime);
+            playSound("sound/timer.mp3");
+        }
         game.TNTtime -= game.clock3.getDelta();
         if (game.TNTtime < 0) {
             game.TNTtime = 0;
