@@ -133,7 +133,6 @@ function setupInput(data, game) {
 
     // Hookup key input
     document.addEventListener("keyup", function (event) {
-	event.preventDefault();
         switch (event.keyCode) {
             case 87: data.trigger.W = 0; break;
             case 83: data.trigger.S = 0; break;
@@ -145,14 +144,12 @@ function setupInput(data, game) {
     }, false);
 
     document.addEventListener("mousedown", function (event) {
-	event.preventDefault();
         if (!canvas.pointerLockEnabled) {
             canvas.requestPointerLock();
         }
         data.click = 1;
     }, false);
     document.addEventListener("mouseup", function (event) {
-	event.preventDefault();
         data.click = 0;
     }, false);
 

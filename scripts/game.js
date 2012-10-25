@@ -796,7 +796,7 @@ var BULLET_DAMAGE1 = 10;
 var EXPLOSION_AMOUNT = 10;
 var FLASH_TIMEOUT = 10000;
 function updateBullets(game, input) {
-    var refireTime = 0.2,
+    var refireTime = 0.3,
         bullet,
         bulletVel = 10,
         bulletGeom = new THREE.SphereGeometry(0.2, 10, 10),
@@ -820,7 +820,7 @@ function updateBullets(game, input) {
         }
         else {
             refireTime = 0;
-            playSound("sound/hit.wav");
+            playSound("sound/gunshot.mp3");
             // Toggle doors if there are any directly in line of sight 
             var intersects1 = input.viewRay.intersectObjects(game.objects),
                 intersects2 = input.viewRay.intersectObjects(game.monobjects),
