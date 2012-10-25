@@ -1043,18 +1043,17 @@ function updateBullets(game, input) {
                         game.player.health = 0;
                     game.player.canBeHurt = false;
                 }
-
-                // Flash the canvas white
-                var tween = new TWEEN.Tween({ alpha: 0.8 })
-                .to({ alpha: 0.0 }, FLASH_TIMEOUT)
-                .easing(TWEEN.Easing.Circular.Out)
-                .onUpdate(function () {
-                    game.flashCanvas.alpha = this.alpha;
-                    console.log(this.alpha);
-                })
-                .start();
-                console.log(PAIN_TIMEOUT);
             }
+
+            // Flash the canvas white
+            var tween = new TWEEN.Tween({ alpha: 0.8 })
+            .to({ alpha: 0.0 }, FLASH_TIMEOUT)
+            .easing(TWEEN.Easing.Circular.Out)
+            .onUpdate(function () {
+                game.flashCanvas.alpha = this.alpha;
+            })
+            .start();
+            playSound("sound/explosion.mp3");
         }
 
         var z = 0;
