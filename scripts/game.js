@@ -1,5 +1,7 @@
 var MAX_LIGHTS = 20;
 var BLOOD_TEXTURE = THREE.ImageUtils.loadTexture("images/splatter.png");
+var CROSSHAIR_TEXTURE = new Image();//THREE.ImageUtils.loadTexture("images/crosshair.png");
+CROSSHAIR_TEXTURE.src = "images/crosshair.png";
 
 function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
@@ -110,6 +112,17 @@ function Game(renderer, canvas) {
     this.painCanvas.style.right = 0;
     this.painCanvas.alpha = 0.0;
     document.getElementById("container").appendChild(this.painCanvas);
+
+    // Create and position the crosshair canvas
+    this.crosshairCanvas    = document.createElement("canvas");
+    this.crosshairCanvas.id = "crosshair";
+    this.crosshairCanvas.width  = canvas.width;
+    this.crosshairCanvas.height = canvas.height
+    this.crosshairCanvas.style.position = "absolute";
+    this.crosshairCanvas.style.bottom = 0;
+    this.crosshairCanvas.style.right  = 0;
+    this.crosshairCanvas.alpha = 0.2;
+    document.getElementById("container").appendChild(this.crosshairCanvas);
 
     this.Element = {
         sz: 0,
@@ -494,6 +507,19 @@ function Game(renderer, canvas) {
     // ------------------------------------------------------------------------
     this.render = function () {
         this.renderer.render(this.scene, this.camera);
+
+        // Draw the crosshair
+        var ctx = this.crosshairCanvas.getContext("2d");
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, this.crosshairCanvas.width, this.crosshairCanvas.height);
+        ctx.restore();
+        ctx.globalAlpha = this.crosshairCanvas.alpha;
+        ctx.fillStyle = "#fffffff";
+        ctx.drawImage(CROSSHAIR_TEXTURE,
+            this.crosshairCanvas.width  / 2 - CROSSHAIR_TEXTURE.width  / 2,
+            this.crosshairCanvas.height / 2 - CROSSHAIR_TEXTURE.height / 2);
+
         ++this.numFrames;
     };
 
