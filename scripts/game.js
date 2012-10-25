@@ -130,13 +130,13 @@ function Game(renderer, canvas) {
     document.getElementById("container").appendChild(this.flashCanvas);
 
     // Create and position the crosshair canvas
-    this.crosshairCanvas    = document.createElement("canvas");
+    this.crosshairCanvas = document.createElement("canvas");
     this.crosshairCanvas.id = "crosshair";
-    this.crosshairCanvas.width  = canvas.width;
+    this.crosshairCanvas.width = canvas.width;
     this.crosshairCanvas.height = canvas.height
     this.crosshairCanvas.style.position = "absolute";
     this.crosshairCanvas.style.bottom = 0;
-    this.crosshairCanvas.style.right  = 0;
+    this.crosshairCanvas.style.right = 0;
     this.crosshairCanvas.alpha = 0.2;
     document.getElementById("container").appendChild(this.crosshairCanvas);
 
@@ -348,10 +348,10 @@ function Game(renderer, canvas) {
                 tempCount3.number++;
             });
         };
-		
+
         // Setup gun
         var game = this;
-        loader.load("models/basicGun.js", function(geometry){
+        loader.load("models/basicGun.js", function (geometry) {
             // Setup dummy node to orient gun in correct direction
             var dummy = new THREE.Object3D();
             dummy.position.set(
@@ -514,7 +514,7 @@ function Game(renderer, canvas) {
             // Remove old systems
             if (psys.complete) {
                 this.scene.remove(psys);
-                this.particleSystems.splice(i, 1);        
+                this.particleSystems.splice(i, 1);
             } else {
                 // Update the particles
                 for (var j = 0; j < psys.geometry.vertices.length; ++j) {
@@ -567,7 +567,7 @@ function Game(renderer, canvas) {
         ctx.globalAlpha = this.crosshairCanvas.alpha;
         ctx.fillStyle = "#fffffff";
         ctx.drawImage(CROSSHAIR_TEXTURE,
-            this.crosshairCanvas.width  / 2 - CROSSHAIR_TEXTURE.width  / 2,
+            this.crosshairCanvas.width / 2 - CROSSHAIR_TEXTURE.width / 2,
             this.crosshairCanvas.height / 2 - CROSSHAIR_TEXTURE.height / 2);
 
         this.drawInstruction(input);
@@ -937,20 +937,38 @@ function updateBullets(game, input) {
     if (input.trigger.F === 1) {
         var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
         var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
-        if (game.level.state[sz][sx] !== -1) {
-            if (game.level.state[sz][sx] < 0) {
-                game.needToClose = -2 - game.level.state[sz][sx];
-            }
-            else {
-                game.level.toggleDoor(game.level.state[sz][sx]);
-                input.trigger.F = 0;
-            }
-        }
-        else {
-            if (game.needToClose !== -1 && checkmonster(game)) {
-                game.level.toggleDoor(game.needToClose);
-                game.needToClose = -1;
-                input.trigger.F = 0;
+        for (var z = -1; z <= 1; z++) {
+            for (var x = -1; x <= 1; x++) {
+                if (x === 0 && z === 0) {
+                    if (game.level.state[sz][sx] !== -1) {
+                        if (game.level.state[sz][sx] < 0) {
+                            game.needToClose = -2 - game.level.state[sz][sx];
+                        }
+                        else {
+                            game.level.toggleDoor(game.level.state[sz][sx]);
+                            input.trigger.F = 0;
+                        }
+                    }
+                    else {
+                        if (game.needToClose !== -1 && checkmonster(game)) {
+                            game.level.toggleDoor(game.needToClose);
+                            game.needToClose = -1;
+                            input.trigger.F = 0;
+                        }
+                    }
+                }
+                else {
+                    if (game.level.state[sz + z][sx + x] !== -1) {
+                        if (game.level.state[sz + z][sx + x] < 0) {
+                            game.level.toggleDoor(-2 - game.level.state[sz + z][sx + x]);
+                            input.trigger.F = 0;
+                        }
+                        else {
+                            game.level.toggleDoor(game.level.state[sz + z][sx + x]);
+                            input.trigger.F = 0;
+                        }
+                    }
+                }
             }
         }
     }
