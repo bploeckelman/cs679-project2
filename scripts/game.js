@@ -638,6 +638,7 @@ function updatePlayer(game, input) {
         var dist = game.player.position.distanceTo(game.monster[i].mesh1.position);
         // Hurt the player if a monster is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
+        console.log(game.player.canBeHurt);
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
             var dead = 0;
             if (game.player.armor > 0) {
@@ -1081,6 +1082,9 @@ function updateBullets(game, input) {
                 if (dead === 0) {
                     playSound("sound/ouch.mp3");
                 }
+                setTimeout(function () {
+                    game.player.canBeHurt = true;
+                }, HURT_TIMEOUT);
             }
 
             // Flash the canvas white
@@ -1092,23 +1096,23 @@ function updateBullets(game, input) {
             })
             .start();
             playSound("sound/explosion.mp3");
-        }
 
-        var z = 0;
-        while (z < game.monster.length) {
-            var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
-            var sx = Math.floor(Math.floor(game.monster[z].mesh2.position.x) / CELL_SIZE + 0.5);
-            if (game.level.grid[sz][sx].roomIndextr === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
-                game.scene.remove(game.monster[z].mesh1);
-                game.scene.remove(game.monster[z].mesh2);
-                game.monobjects.splice(z, 1);
-                game.monster.splice(z, 1);
-                for (var t = z; t < game.monster.length; t++) {
-                    game.monster[t].mesh1.index -= 1;
+            var z = 0;
+            while (z < game.monster.length) {
+                var sz = Math.floor(Math.floor(game.monster[z].mesh1.position.z) / CELL_SIZE + 0.5);
+                var sx = Math.floor(Math.floor(game.monster[z].mesh2.position.x) / CELL_SIZE + 0.5);
+                if (game.level.grid[sz][sx].roomIndex === game.TNTRoom && game.level.grid[sz][sx].isInterior()) {
+                    game.scene.remove(game.monster[z].mesh1);
+                    game.scene.remove(game.monster[z].mesh2);
+                    game.monobjects.splice(z, 1);
+                    game.monster.splice(z, 1);
+                    for (var t = z; t < game.monster.length; t++) {
+                        game.monster[t].mesh1.index -= 1;
+                    }
                 }
-            }
-            else {
-                z++;
+                else {
+                    z++;
+                }
             }
         }
     }
