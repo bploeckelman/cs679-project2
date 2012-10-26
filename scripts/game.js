@@ -185,7 +185,7 @@ function Game(renderer, canvas) {
             if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length &&
                 this.tempCounter3.number === this.monster.length && this.tempCounter4.number === 1) {
                 this.modelLoaded = 1;
-                this.timer = 80 + 10 * this.Mission;
+                this.timer = 80 + 20 * this.Mission;
                 this.clock4.getDelta();
                 return;
             }
@@ -451,6 +451,7 @@ function Game(renderer, canvas) {
 
         if (this.newMission > 0) {
             if (this.player === null) {
+                this.modelLoaded = 0;
                 this.init();
                 console.log("Mission: " + this.Mission);
                 if (this.modelLoaded === 0) {
@@ -491,7 +492,7 @@ function Game(renderer, canvas) {
         }
         if (this.monster.length === 0 || this.player.health === 0 || this.timer === 0) {
             if ((this.player.health === 0 || this.timer === 0) && this.firstOver === 0) {
-                playSound("sound/dead.mp3", game);
+                playSound("sound/dead.mp3", this);
                 this.firstOver++;
             }
             this.ending();
