@@ -58,6 +58,7 @@ function Game(renderer, canvas) {
     this.tempCounter1 = { number: 0 };
     this.tempCounter2 = { number: 0 };
     this.tempCounter3 = { number: 0 };
+    this.tempCounter4 = { number: 0 };
 
     // Particle System related vars
     this.bloodParticlesCount = 100;
@@ -181,7 +182,8 @@ function Game(renderer, canvas) {
 
     this.checkLoaded = function () {
         if (this.modelLoaded === 0) {
-            if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length && this.tempCounter3.number === this.monster.length) {
+            if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length &&
+                this.tempCounter3.number === this.monster.length && this.tempCounter4.number === 1) {
                 this.modelLoaded = 1;
                 this.timer = 80 + 10 * this.Mission;
                 this.clock4.getDelta();
@@ -316,6 +318,7 @@ function Game(renderer, canvas) {
             this.tempCounter1.number = 0;
             this.tempCounter2.number = 0;
             this.tempCounter3.number = 0;
+            this.tempCounter4.number = 0;
             var tempCount1 = this.tempCounter1;
 
             loader.load("models/zombie.js", function (geometry) {
@@ -345,7 +348,7 @@ function Game(renderer, canvas) {
             loader.load("models/ghost.js", function (geometry) {
                 if (Mons[tempCount3.number].type === 3) {
                     Mons[tempCount3.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y+18, Mons[tempCount3.number].z);
+                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y + 18, Mons[tempCount3.number].z);
                     Mons[tempCount3.number].mesh2.scale.set(3, 3, 3);
                     Mons[tempCount3.number].mesh2.name = "monster";
                     LScene.add(Mons[tempCount3.number].mesh2);
@@ -356,6 +359,7 @@ function Game(renderer, canvas) {
 
         // Setup gun
         var game = this;
+        var tempCount4 = this.tempCounter4;
         loader.load("models/basicGun.js", function (geometry) {
             // Setup dummy node to orient gun in correct direction
             var dummy = new THREE.Object3D();
@@ -378,6 +382,7 @@ function Game(renderer, canvas) {
             // Make the dummy node a child object of the camera
             game.camera.add(game.player.gunMesh.dummy);
             game.scene.add(game.player.gunMesh.dummy);
+            tempCount4.number++;
         });
 
         // Setup camera
@@ -394,14 +399,6 @@ function Game(renderer, canvas) {
         this.scene.add(this.lights[0]);
 
         //console.log("# Objects: " + game.objects.length);
-
-        if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length && this.tempCounter3.number === this.monster.length) {
-            this.modelLoaded = 1;
-        }
-        else {
-            this.modelLoaded = 0;
-        }
-
         console.log("Game initialized.");
     };
 
