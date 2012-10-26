@@ -43,7 +43,7 @@
     document.getElementById("container").appendChild(stats.domElement);
     */
 
-     // Create Game object
+    // Create Game object
     game = new Game(renderer, canvas);
 
     // Setup input handlers and populate input data object
@@ -91,7 +91,7 @@ function setupInput(data, game) {
     data.f = new THREE.Vector3();
     data.v = 0;
     data.hold = 0;
-    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0, Help:  1};
+    data.trigger = { W: 0, S: 0, A: 0, D: 0, Q: 0, E: 0, F: 0, Jump: 0, TNT: 0, Gun: 0, Armor: 0, Ammo: 0, R: 0, Help: 1 };
 
     // Hookup key input
     document.addEventListener("keydown", function (event) {
@@ -103,8 +103,6 @@ function setupInput(data, game) {
             case 83: data.trigger.S = 1; break;
             case 65: data.trigger.A = 1; break;
             case 68: data.trigger.D = 1; break;
-            case 81: data.trigger.Q = 1; break;
-            case 69: data.trigger.E = 1; break;
             case 70: data.trigger.F = 1; break;
             case 32: data.trigger.Jump = 1; break;
             case 84: data.trigger.TNT = 1; break;
@@ -121,6 +119,7 @@ function setupInput(data, game) {
                     game.clock3.getDelta();
                     game.clock4.getDelta();
                     game.clock5.getDelta();
+                    game.clock6.getDelta();
                 }
                 break;
         }
@@ -133,8 +132,6 @@ function setupInput(data, game) {
             case 83: data.trigger.S = 0; break;
             case 65: data.trigger.A = 0; break;
             case 68: data.trigger.D = 0; break;
-            case 81: data.trigger.Q = 0; break;
-            case 69: data.trigger.E = 0; break;
         }
     }, false);
 

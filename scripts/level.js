@@ -580,24 +580,24 @@ function Level(numRooms, game) {
             game.scene.add(light);
 
             // Add a mesh to represent the light (mostly for debug purposes)
-			
-			//var lightMesh;
-			var loader = new THREE.JSONLoader(true);
-			loader.load("models/candle.js", function (geometry) {
-          
-           		var lightMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-			    lightMesh.position.set(x, CELL_SIZE/2-5.3, y); // offset from dummy pos
-				lightMesh.scale.set(2, 2, 2);
-				game.scene.add(lightMesh);
-        	});
-			
-          	loader.load("models/table.js", function (geometry) {
-          
-           		var tableMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-			    tableMesh.position.set(x, 0, y); // offset from dummy pos
-				tableMesh.scale.set(2.5, 4.5, 2.5);
-				game.scene.add(tableMesh);
-        	});
+
+            //var lightMesh;
+            var loader = new THREE.JSONLoader(true);
+            loader.load("models/candle.js", function (geometry) {
+
+                var lightMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                lightMesh.position.set(x, CELL_SIZE / 2 - 5.3, y); // offset from dummy pos
+                lightMesh.scale.set(2, 2, 2);
+                game.scene.add(lightMesh);
+            });
+
+            loader.load("models/table.js", function (geometry) {
+
+                var tableMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                tableMesh.position.set(x, 0, y); // offset from dummy pos
+                tableMesh.scale.set(2.5, 4.5, 2.5);
+                game.scene.add(tableMesh);
+            });
         } else {
             console.warn("Unable to add light, already at max # of lights");
         }

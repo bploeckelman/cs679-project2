@@ -4,7 +4,6 @@
     <title>CS679 - Project 2</title>
     <meta charset="utf8">
 </head>
-
 <body>
     <div id="container">
         <canvas id="canvas" tabindex="1"></canvas>
@@ -14,10 +13,34 @@
         <script type="text/javascript" src="scripts/stats.min.js"></script>
         <script type="text/javascript" src="scripts/Tween.js"></script>
         <script type="text/javascript" src="scripts/utilities.js"></script>
+        <script id="fragment_shader" type="x-shader/x-fragment">
+
+			uniform float time;
+			uniform vec2 resolution;
+
+			varying vec2 vUv;
+
+			void main( void ) {
+				vec2 position = -1.0 + 2.0 * vUv;
+				float red = abs( sin( position.x * position.y + time / 5.0 ) );
+				float green = abs( sin( position.x * position.y + time / 4.0 ) );
+				float blue = abs( sin( position.x * position.y + time / 3.0 ) );
+				gl_FragColor = vec4( 1, green, blue, 1.0 );
+			}
+		</script>
+
+        <script id="vertex_shader" type="x-shader/x-vertex">
+	        varying vec2 vUv;
+	        void main()
+	        {
+	            vUv = uv;
+	            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+	            gl_Position = projectionMatrix * mvPosition;
+	        }
+        </script>
         <script type="text/javascript" src="scripts/level.js"></script>
         <script type="text/javascript" src="scripts/game.js"></script>
         <script type="text/javascript" src="scripts/main.js"></script>
-
         <audio id="background" src="sound/background.mp3" loop autoplay />
         <audio id="foreground0" autoplay />
         <audio id="foreground1" autoplay />
@@ -26,5 +49,4 @@
         <audio id="foreground4" autoplay />
     </div>
 </body>
-
 </html>

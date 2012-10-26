@@ -1,8 +1,8 @@
 var MAX_LIGHTS = 20;
 var BLOOD_TEXTURE = THREE.ImageUtils.loadTexture("images/splatter.png");
-var CROSSHAIR_TEXTURE = new Image();//THREE.ImageUtils.loadTexture("images/crosshair.png");
+var CROSSHAIR_TEXTURE = new Image(); //THREE.ImageUtils.loadTexture("images/crosshair.png");
 CROSSHAIR_TEXTURE.src = "images/crosshair.png";
-var INSTRUCTION_TEXTURE = new Image();//THREE.ImageUtils.loadTexture("images/instruction.png");
+var INSTRUCTION_TEXTURE = new Image(); //THREE.ImageUtils.loadTexture("images/instruction.png");
 INSTRUCTION_TEXTURE.src = "images/instruction.png";
 
 
@@ -20,6 +20,7 @@ function Game(renderer, canvas) {
     this.clock3 = new THREE.Clock();
     this.clock4 = new THREE.Clock();
     this.clock5 = new THREE.Clock();
+    this.clock6 = new THREE.Clock();
     this.scene = null;
     this.camera = null;
     this.viewRay = null;
@@ -64,6 +65,9 @@ function Game(renderer, canvas) {
     this.bloodParticlesCount = 100;
     this.particleSystems = [];
 
+    this.shaderMaterial = null;
+    this.globeSet = [];
+    this.globeList = [];
 
     this.mainCanvas = document.getElementById("canvas");
 
@@ -257,13 +261,13 @@ function Game(renderer, canvas) {
         zombieMat = new THREE.MeshLambertMaterial({ map: texture });
         zombieMat.transparent = true;
 
-        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");//this is the bounding box of lizard, replace it with transparent image later
+        texture = new THREE.ImageUtils.loadTexture("images/transparent.png"); //this is the bounding box of lizard, replace it with transparent image later
 
         var lizardGeom = new THREE.CubeGeometry(9, 6, 15);
         lizardMat = new THREE.MeshLambertMaterial({ map: texture });
         lizardMat.transparent = true;
 
-        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");//this is the bounding box of ghost, replace it with transparent image later
+        texture = new THREE.ImageUtils.loadTexture("images/transparent.png"); //this is the bounding box of ghost, replace it with transparent image later
 
         var ghostGeom = new THREE.CubeGeometry(9, 13, 4);
         ghostMat = new THREE.MeshLambertMaterial({ map: texture });
@@ -398,6 +402,18 @@ function Game(renderer, canvas) {
             this.player.position.z);
         this.scene.add(this.lights[0]);
 
+        this.shaderMaterial = new THREE.ShaderMaterial({
+            vertexShader: document.getElementById('vertex_shader').textContent,
+            fragmentShader: document.getElementById('fragment_shader').textContent
+        });
+
+        this.globeSet = new Array(NUM_CELLS.y);
+        for (var i = 0; i < NUM_CELLS.y; i++) {
+            this.globeSet[i] = new Array(NUM_CELLS.x);
+            for (var j = 0; j < NUM_CELLS.x; j++) {
+                this.globeSet[i][j] = [];
+            }
+        }
         //console.log("# Objects: " + game.objects.length);
         console.log("Game initialized.");
     };
@@ -513,7 +529,8 @@ function Game(renderer, canvas) {
         updateForce(this, input);
         this.level.update();
 
-
+        updateHealth(this);
+        updateglobe(this);
         updateMovement(this, input);
         updateBullets(this, input);
         updatemonsters(this);
@@ -587,6 +604,45 @@ function Game(renderer, canvas) {
         ++this.numFrames;
     }
 }; // end Game object
+
+var GLOBE_CURE = 5;
+function updateHealth(game) {
+    var sz = Math.floor(Math.floor(game.player.position.z) / CELL_SIZE + 0.5);
+    var sx = Math.floor(Math.floor(game.player.position.x) / CELL_SIZE + 0.5);
+    if (game.globeSet[sz][sx].length !== 0) {
+        for (var i = 0; i < game.globeSet[sz][sx].length; i++) {
+            game.scene.remove(game.globeSet[sz][sx][i]);
+            game.player.health += GLOBE_CURE;
+            if (game.player.health >= game.MAX_PLAYER_HEALTH) {
+                game.player.health = game.MAX_PLAYER_HEALTH;
+            }
+            console.log("ouch! Armor = " + game.player.armor + ", " + "health = " + game.player.health);
+        }
+        game.globeSet[sz][sx] = [];
+        var j = 0;
+        while (j < game.globeList.length / 2) {
+            if (game.globeList[2 * j] === sz && game.globeList[2 * j + 1] === sx) {
+                game.globeList.splice(2 * j, 2);
+            }
+            else {
+                j++;
+            }
+        }
+    }
+
+}
+
+
+function updateglobe(game) {
+    var delta = game.clock6.getDelta();
+    for (var i = 0; i < game.globeList.length / 2; i++) {
+        for (var l = 0; l < game.globeSet[game.globeList[2 * i]][game.globeList[2 * i + 1]].length; l++) {
+            game.globeSet[game.globeList[2 * i]][game.globeList[2 * i + 1]][l].rotation.y += delta * 0.5;
+            game.globeSet[game.globeList[2 * i]][game.globeList[2 * i + 1]][l].rotation.x -= delta * 0.5;
+            game.globeSet[game.globeList[2 * i]][game.globeList[2 * i + 1]][l].rotation.z -= delta * 0.5;
+        }
+    }
+}
 
 var TNT_AMOUNT = 1,
     TNT_COST = 1500,
@@ -926,7 +982,7 @@ function updateBullets(game, input) {
                         size: 10,
                         sizeAttenuation: true,
                         map: BLOOD_TEXTURE,
-                        blending: THREE.NormalBlending,//AdditiveBlending,
+                        blending: THREE.NormalBlending, //AdditiveBlending,
                         transparent: true,
                         depthWrite: false,
                         depthTest: false
@@ -957,6 +1013,21 @@ function updateBullets(game, input) {
                         game.scene.remove(game.monster[selected.index].mesh1);
                         game.scene.remove(game.monster[selected.index].mesh2);
                         game.monobjects.splice(selected.index, 1);
+                        var globe = new THREE.Mesh(new THREE.CubeGeometry(5, 5, 5), game.shaderMaterial);
+                        if (game.globeList.length === 0) {
+                            game.clock6.getDelta();
+                        }
+                        var sz = Math.floor(Math.floor(game.monster[selected.index].mesh1.position.z) / CELL_SIZE + 0.5);
+                        var sx = Math.floor(Math.floor(game.monster[selected.index].mesh1.position.x) / CELL_SIZE + 0.5);
+                        if (game.globeSet[sz][sx].length === 0) {
+                            game.globeList.push(sz);
+                            game.globeList.push(sx);
+                        }
+                        game.globeSet[sz][sx].push(globe);
+                        globe.position.x = game.monster[selected.index].mesh1.position.x;
+                        globe.position.y = 10;
+                        globe.position.z = game.monster[selected.index].mesh1.position.z;
+                        game.scene.add(globe);
                         game.monster.splice(selected.index, 1);
                         for (var z = selected.index; z < game.monster.length; z++) {
                             game.monster[z].mesh1.index -= 1;
@@ -1226,7 +1297,7 @@ function updatemonsters(game) {
                     break;
                 }
                 for (var i = -1; i <= 1; i++) {
-                    for (var j = -1 + Math.abs(i) ; j <= 1 - Math.abs(i) ; j++) {
+                    for (var j = -1 + Math.abs(i); j <= 1 - Math.abs(i); j++) {
                         if (sz + i === oz && sx + j === ox && (game.monster[z].type === 1 || game.level.grid[oz][ox].type !== CELL_TYPES.door)) {
                             game.monster[z].queue.push(new game.Element(sz + i, sx + j, pointing));
                             game.monster[z].at = game.monster[z].queue.length - 1;
