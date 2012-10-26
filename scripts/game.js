@@ -260,7 +260,7 @@ function Game(renderer, canvas) {
         lizardMat = new THREE.MeshLambertMaterial({ map: texture });
         lizardMat.transparent = true;
 
-        texture = new THREE.ImageUtils.loadTexture("images/disturb.jpg");//this is the bounding box of ghost, replace it with transparent image later
+        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
 
         var ghostGeom = new THREE.CubeGeometry(9, 13, 4);
         ghostMat = new THREE.MeshLambertMaterial({ map: texture });
@@ -341,11 +341,11 @@ function Game(renderer, canvas) {
             });
 
             var tempCount3 = this.tempCounter3;
-            loader.load("models/advancedGun.js", function (geometry) {
+            loader.load("models/ghost.js", function (geometry) {
                 if (Mons[tempCount3.number].type === 3) {
                     Mons[tempCount3.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y, Mons[tempCount3.number].z);
-                    Mons[tempCount3.number].mesh2.scale.set(2, 2, 2);
+                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y+18, Mons[tempCount3.number].z);
+                    Mons[tempCount3.number].mesh2.scale.set(3, 3, 3);
                     Mons[tempCount3.number].mesh2.name = "monster";
                     LScene.add(Mons[tempCount3.number].mesh2);
                 }
