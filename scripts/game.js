@@ -254,7 +254,7 @@ function Game(renderer, canvas) {
         zombieMat = new THREE.MeshLambertMaterial({ map: texture });
         zombieMat.transparent = true;
 
-        texture = new THREE.ImageUtils.loadTexture("images/crate.gif");//this is the bounding box of lizard, replace it with transparent image later
+        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
 
         var lizardGeom = new THREE.CubeGeometry(9, 6, 15);
         lizardMat = new THREE.MeshLambertMaterial({ map: texture });
