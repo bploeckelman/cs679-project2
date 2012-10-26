@@ -1459,11 +1459,11 @@ function handleCollisions(game, input) {
                         continue;
                     }
                     g++;
-                }
-                else {
+                } else {
                     g++;
                 }
             }
+
             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < 1e-6) {
                 if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                     var i = 0;
