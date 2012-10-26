@@ -189,7 +189,7 @@ function Game(renderer, canvas) {
             if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length &&
                 this.tempCounter3.number === this.monster.length && this.tempCounter4.number === 1) {
                 this.modelLoaded = 1;
-                this.timer = 80 + 20 * this.Mission;
+                this.timer = 30 + 20 * this.Mission;
                 this.clock4.getDelta();
                 return;
             }
@@ -217,7 +217,7 @@ function Game(renderer, canvas) {
         this.level = null;
         this.player = null;
         this.monster = [];
-        this.monsterNumber = this.Mission * 3;
+        this.monsterNumber = this.Mission * 4;
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
@@ -233,7 +233,7 @@ function Game(renderer, canvas) {
         this.scene.fog = new THREE.Fog(0xa0a0a0, 1, 1000);
 
         // Load the test level
-        this.level = new Level(this.Mission * 2 + 10, this);
+        this.level = new Level(this.Mission * 3 + 2, this);
 
         // Setup player
         this.player = new THREE.Mesh(
@@ -287,7 +287,7 @@ function Game(renderer, canvas) {
             };
             switch (Amonster.type) {
                 case 1:
-                    Amonster.vel = 0.1 * this.Mission;
+                    Amonster.vel = 0.2 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(zombieGeom, zombieMat);
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 8.5, this.level.monsterPos[z].y);
                     Amonster.health = 16 + 8 * this.Mission;
@@ -295,7 +295,7 @@ function Game(renderer, canvas) {
                     Amonster.y = 0;
                     break;
                 case 2:
-                    Amonster.vel = 0.4 * this.Mission;
+                    Amonster.vel = 0.5 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(lizardGeom, lizardMat);
                     Amonster.health = 4 + 2 * this.Mission;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 3, this.level.monsterPos[z].y);
@@ -303,7 +303,7 @@ function Game(renderer, canvas) {
                     Amonster.y = 0;
                     break;
                 case 3:
-                    Amonster.vel = 0.2 * this.Mission;
+                    Amonster.vel = 0.3 * this.Mission;
                     Amonster.mesh1 = new THREE.Mesh(ghostGeom, ghostMat);
                     Amonster.health = 8 + 4 * this.Mission;
                     Amonster.mesh1.position = new THREE.Vector3(this.level.monsterPos[z].x, 20, this.level.monsterPos[z].y);
@@ -803,6 +803,7 @@ function updatePlayer(game, input) {
 // ----------------------------------------------------------------------------
 // Update based on player movement: camera, player position/jumping, view ray
 // ----------------------------------------------------------------------------
+var PLAYER_MOVE_SPEED = 1.2;
 function updateMovement(game, input) {
     var triggerAD = input.trigger.A - input.trigger.D,
         triggerWS = input.trigger.W - input.trigger.S,
@@ -841,9 +842,9 @@ function updateMovement(game, input) {
     game.player.position.add(
         game.player.position,
         new THREE.Vector3(
-            triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-            triggerQE * input.f.y * 10,
-            triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
+            PLAYER_MOVE_SPEED * (triggerWS * input.f.x + triggerAD * input.f.z / xzNorm),
+            0, //triggerQE * input.f.y * 10,
+            PLAYER_MOVE_SPEED * (triggerWS * input.f.z - triggerAD * input.f.x / xzNorm)
         )
     );
 

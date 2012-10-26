@@ -59,7 +59,11 @@ function Level(numRooms, game) {
     // Private constants ------------------------------------------------------
     // ------------------------------------------------------------------------
     var DOOR_TIMEOUT = 750, // milliseconds between door toggles
-        FLOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/tile.png"),
+        FLOOR_TEXTURE1 = THREE.ImageUtils.loadTexture("images/floor1.png"),
+        FLOOR_TEXTURE2 = THREE.ImageUtils.loadTexture("images/floor2.png"),
+        FLOOR_TEXTURE3 = THREE.ImageUtils.loadTexture("images/floor3.png"),
+        FLOOR_TEXTURE4 = THREE.ImageUtils.loadTexture("images/floor4.png"),
+        FLOOR_TEXTURE5 = THREE.ImageUtils.loadTexture("images/floor5.png"),
         CEIL_TEXTURE = THREE.ImageUtils.loadTexture("images/stone.png"),
         WALL_TEXTURE1 = THREE.ImageUtils.loadTexture("images/brick1.png"),
         WALL_TEXTURE2 = THREE.ImageUtils.loadTexture("images/brick2.png"),
@@ -73,6 +77,23 @@ function Level(numRooms, game) {
         LINTEL_TEXTURE5 = THREE.ImageUtils.loadTexture("images/brick5.png"),
         DOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/door.png"),
         FILL_TEXTURE = THREE.ImageUtils.loadTexture("images/brown.png");
+
+    FLOOR_TEXTURE1.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE2.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE3.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE4.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE5.repeat = new THREE.Vector2(2,2);
+
+    FLOOR_TEXTURE1.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE1.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE2.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE2.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE3.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE3.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE4.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE4.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE5.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE5.wrapT = THREE.RepeatWrapping;
 
     LINTEL_TEXTURE1.repeat = new THREE.Vector2(1, 2);
     LINTEL_TEXTURE2.repeat = new THREE.Vector2(1, 2);
@@ -379,10 +400,20 @@ function Level(numRooms, game) {
     // TODO: had problems merging plane geometry...
     // -------------------------------- 
     var PLANE_GEOMETRY = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-        FLOOR_MATERIAL = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE });
+        FLOOR_MATERIAL1 = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE1 });
+        FLOOR_MATERIAL2 = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE2 });
+        FLOOR_MATERIAL3 = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE3 });
+        FLOOR_MATERIAL4 = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE4 });
+        FLOOR_MATERIAL5 = new THREE.MeshLambertMaterial({ map: FLOOR_TEXTURE5 });
 
     this.generateFloorGeometry = function (x, y) {
-        var mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL);
+        var mesh = null;
+        if (game.Mission === 1) mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL1);
+        if (game.Mission === 2) mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL2);
+        if (game.Mission === 3) mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL3);
+        if (game.Mission === 4) mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL4);
+        if (game.Mission >=  5) mesh = new THREE.Mesh(PLANE_GEOMETRY, FLOOR_MATERIAL5);
+
         mesh.rotation.x = -Math.PI / 2;
         mesh.position.set(x, 0, y);
 
