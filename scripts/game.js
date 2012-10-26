@@ -47,7 +47,7 @@ function Game(renderer, canvas) {
     this.Bomb = null;
     this.newMission = 2;
     this.Mission = 0;
-    this.maxMission = 5;
+    this.maxMission = 2;
     this.preammo = 0;
     this.preTNT = 0;
     this.premoney = 7000;
@@ -491,18 +491,23 @@ function Game(renderer, canvas) {
             this.timer = 0;
         }
         if (this.monster.length === 0 || this.player.health === 0 || this.timer === 0) {
-            if ((this.player.health === 0 || this.timer === 0) && this.firstOver === 0) {
-                playSound("sound/dead.mp3", this);
-                this.firstOver++;
-            }
             this.ending();
-            if (this.Mission === this.maxMission && this.monster.length === 0) {
-                if (this.firstOver === 0) {
-                    this.firstOver = 1;
+            if (this.firstOver === 0) {
+                if (this.player.health === 0 || this.timer === 0) {
+                    playSound("sound/dead.mp3", this);
                 }
                 else {
-                    return;
+                    if (this.Mission !== this.maxMission) {
+                        playSound("sound/levelup.mp3", this);
+                    }
+                    else {
+                        document.getElementById("background").src = "sound/cheering.mp3";
+                    }
                 }
+                this.firstOver++;
+            }
+            else {
+                return;
             }
         }
         updateForce(this, input);
@@ -1063,7 +1068,7 @@ function updateBullets(game, input) {
             var loader = new THREE.JSONLoader(true);
             loader.load("models/dynamite.js", function (geometry) {
                 game.Bomb = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                game.Bomb.rotation.x = Math.PI/2;
+                game.Bomb.rotation.x = Math.PI / 2;
                 game.Bomb.scale.set(3, 3, 3);
                 game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
                 game.scene.add(game.Bomb);
