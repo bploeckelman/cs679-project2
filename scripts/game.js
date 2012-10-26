@@ -185,7 +185,7 @@ function Game(renderer, canvas) {
             if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length &&
                 this.tempCounter3.number === this.monster.length && this.tempCounter4.number === 1) {
                 this.modelLoaded = 1;
-                this.timer = 80 + 20 * this.Mission;
+                this.timer = 30 + 20 * this.Mission;
                 this.clock4.getDelta();
                 return;
             }
@@ -229,7 +229,7 @@ function Game(renderer, canvas) {
         this.scene.fog = new THREE.Fog(0xa0a0a0, 1, 1000);
 
         // Load the test level
-        this.level = new Level(this.Mission * 2 + 10, this);
+        this.level = new Level(this.Mission * 3 + 2, this);
 
         // Setup player
         this.player = new THREE.Mesh(
@@ -747,6 +747,7 @@ function updatePlayer(game, input) {
 // ----------------------------------------------------------------------------
 // Update based on player movement: camera, player position/jumping, view ray
 // ----------------------------------------------------------------------------
+var PLAYER_MOVE_SPEED = 1.2;
 function updateMovement(game, input) {
     var triggerAD = input.trigger.A - input.trigger.D,
         triggerWS = input.trigger.W - input.trigger.S,
@@ -785,9 +786,9 @@ function updateMovement(game, input) {
     game.player.position.add(
         game.player.position,
         new THREE.Vector3(
-            triggerWS * input.f.x + triggerAD * input.f.z / xzNorm,
-            triggerQE * input.f.y * 10,
-            triggerWS * input.f.z - triggerAD * input.f.x / xzNorm
+            PLAYER_MOVE_SPEED * (triggerWS * input.f.x + triggerAD * input.f.z / xzNorm),
+            0, //triggerQE * input.f.y * 10,
+            PLAYER_MOVE_SPEED * (triggerWS * input.f.z - triggerAD * input.f.x / xzNorm)
         )
     );
 
