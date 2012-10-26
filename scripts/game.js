@@ -47,7 +47,7 @@ function Game(renderer, canvas) {
     this.Bomb = null;
     this.newMission = 2;
     this.Mission = 0;
-    this.maxMission = 2;
+    this.maxMission = 5;
     this.preammo = 0;
     this.preTNT = 0;
     this.premoney = 7000;
