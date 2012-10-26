@@ -61,13 +61,30 @@ function Level(numRooms, game) {
     var DOOR_TIMEOUT = 750, // milliseconds between door toggles
         FLOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/tile.png"),
         CEIL_TEXTURE = THREE.ImageUtils.loadTexture("images/stone.png"),
-        WALL_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
-        LINTEL_TEXTURE = THREE.ImageUtils.loadTexture("images/brick.png"),
+        WALL_TEXTURE1 = THREE.ImageUtils.loadTexture("images/brick1.png"),
+        WALL_TEXTURE2 = THREE.ImageUtils.loadTexture("images/brick2.png"),
+        WALL_TEXTURE3 = THREE.ImageUtils.loadTexture("images/brick3.png"),
+        WALL_TEXTURE4 = THREE.ImageUtils.loadTexture("images/brick4.png"),
+        WALL_TEXTURE5 = THREE.ImageUtils.loadTexture("images/brick5.png"),
+        LINTEL_TEXTURE1 = THREE.ImageUtils.loadTexture("images/brick1.png"),
+        LINTEL_TEXTURE2 = THREE.ImageUtils.loadTexture("images/brick2.png"),
+        LINTEL_TEXTURE3 = THREE.ImageUtils.loadTexture("images/brick3.png"),
+        LINTEL_TEXTURE4 = THREE.ImageUtils.loadTexture("images/brick4.png"),
+        LINTEL_TEXTURE5 = THREE.ImageUtils.loadTexture("images/brick5.png"),
         DOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/door.png"),
         FILL_TEXTURE = THREE.ImageUtils.loadTexture("images/brown.png");
 
-    LINTEL_TEXTURE.repeat = new THREE.Vector2(1, 2);
-    LINTEL_TEXTURE.wrapT = THREE.RepeatWrapping;
+    LINTEL_TEXTURE1.repeat = new THREE.Vector2(1, 2);
+    LINTEL_TEXTURE2.repeat = new THREE.Vector2(1, 2);
+    LINTEL_TEXTURE3.repeat = new THREE.Vector2(1, 2);
+    LINTEL_TEXTURE4.repeat = new THREE.Vector2(1, 2);
+    LINTEL_TEXTURE5.repeat = new THREE.Vector2(1, 2);
+
+    LINTEL_TEXTURE1.wrapT = THREE.RepeatWrapping;
+    LINTEL_TEXTURE2.wrapT = THREE.RepeatWrapping;
+    LINTEL_TEXTURE3.wrapT = THREE.RepeatWrapping;
+    LINTEL_TEXTURE4.wrapT = THREE.RepeatWrapping;
+    LINTEL_TEXTURE5.wrapT = THREE.RepeatWrapping;
 
     // ------------------------------------------------------------------------
     // Level Methods ----------------------------------------------------------
@@ -319,9 +336,32 @@ function Level(numRooms, game) {
                 }
             }
 
+        // Pick materials based on mission #
+        var wallMaterial = null, lintelMaterial = null;
+        if (game.Mission === 1) {
+            wallMaterial = WALL_MATERIAL1;
+            lintelMaterial = WALL_FULL_MATERIAL1;
+        }
+        if (game.Mission === 2) {
+            wallMaterial = WALL_MATERIAL2;
+            lintelMaterial = WALL_FULL_MATERIAL2;
+        }
+        if (game.Mission === 3) {
+            wallMaterial = WALL_MATERIAL3;
+            lintelMaterial = WALL_FULL_MATERIAL3;
+        }
+        if (game.Mission === 4) {
+            wallMaterial = WALL_MATERIAL4;
+            lintelMaterial = WALL_FULL_MATERIAL4;
+        }
+        if (game.Mission >= 5) {
+            wallMaterial = WALL_MATERIAL5;
+            lintelMaterial = WALL_FULL_MATERIAL5;
+        }
+
         // Create merged geometry groups
-        this.wallGroup = new THREE.Mesh(this.wallGeometry, WALL_MATERIAL);
-        this.lintelGroup = new THREE.Mesh(this.lintelGeometry, WALL_FULL_MATERIAL);
+        this.wallGroup = new THREE.Mesh(this.wallGeometry, wallMaterial);
+        this.lintelGroup = new THREE.Mesh(this.lintelGeometry, lintelMaterial);
         this.fillGroup = new THREE.Mesh(this.fillGeometry, FILL_MATERIAL);
 
         // Add merged geometry groups to game object array
@@ -370,8 +410,16 @@ function Level(numRooms, game) {
     // --------------------------------
     // TODO: Clean this up...
     var NORMAL_MATERIAL = new THREE.MeshNormalMaterial(),
-        WALL_MATERIAL = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE }),
-        WALL_FULL_MATERIAL = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE }),
+        WALL_MATERIAL1 = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE1 }),
+        WALL_MATERIAL2 = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE2 }),
+        WALL_MATERIAL3 = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE3 }),
+        WALL_MATERIAL4 = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE4 }),
+        WALL_MATERIAL5 = new THREE.MeshLambertMaterial({ map: LINTEL_TEXTURE5 }),
+        WALL_FULL_MATERIAL1 = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE1 }),
+        WALL_FULL_MATERIAL2 = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE2 }),
+        WALL_FULL_MATERIAL3 = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE3 }),
+        WALL_FULL_MATERIAL4 = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE4 }),
+        WALL_FULL_MATERIAL5 = new THREE.MeshLambertMaterial({ map: WALL_TEXTURE5 }),
     // Geometry -----
         WALL_GEOMETRY = new THREE.CubeGeometry(CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE,
             1, 2, 1, NORMAL_MATERIAL, TOPLESS_CUBE),

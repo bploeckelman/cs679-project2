@@ -229,7 +229,7 @@ function Game(renderer, canvas) {
         this.scene.fog = new THREE.Fog(0xa0a0a0, 1, 1000);
 
         // Load the test level
-        this.level = new Level(10, this);
+        this.level = new Level(this.Mission * 2 + 10, this);
 
         // Setup player
         this.player = new THREE.Mesh(
