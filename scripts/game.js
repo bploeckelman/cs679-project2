@@ -54,6 +54,7 @@ function Game(renderer, canvas) {
     this.modelLoaded = 0;
     this.stopTime = 1;
     this.firstLoad = 1;
+    this.channel = 0;
     this.tempCounter1 = { number: 0 };
     this.tempCounter2 = { number: 0 };
     this.tempCounter3 = { number: 0 };
@@ -492,7 +493,7 @@ function Game(renderer, canvas) {
         }
         if (this.monster.length === 0 || this.player.health === 0 || this.timer === 0) {
             if ((this.player.health === 0 || this.timer === 0) && this.firstOver === 0) {
-                playSound("sound/dead.mp3");
+                playSound("sound/dead.mp3", game);
                 this.firstOver++;
             }
             this.ending();
@@ -593,7 +594,7 @@ var TNT_AMOUNT = 1,
 function updateForce(game, input) {
     if (input.trigger.TNT === 1) {
         if (game.player.money >= TNT_COST && game.TNTtime === -1) {
-            playSound("sound/bell.mp3");
+            playSound("sound/bell.mp3", game);
             game.player.TNT += TNT_AMOUNT;
             game.player.money -= TNT_COST;
         }
@@ -601,7 +602,7 @@ function updateForce(game, input) {
     }
     if (input.trigger.Gun === 1) {
         if (game.player.gun === 0 && game.player.money >= GUN_COST) {
-            playSound("sound/bell.mp3");
+            playSound("sound/bell.mp3", game);
             game.player.gun = 1;
             game.player.money -= GUN_COST;
 			game.scene.remove(game.player.gunMesh.dummy);
@@ -634,7 +635,7 @@ function updateForce(game, input) {
     }
     if (input.trigger.Armor === 1) {
         if (game.player.armor === 0 && game.player.money >= ARMOR_COST) {
-            playSound("sound/bell.mp3");
+            playSound("sound/bell.mp3", game);
             game.player.armor = game.MAX_PLAYER_ARMOR;
             game.player.money -= ARMOR_COST;
         }
@@ -642,7 +643,7 @@ function updateForce(game, input) {
     }
     if (input.trigger.Ammo === 1) {
         if (game.player.money >= AMMO_COST) {
-            playSound("sound/bell.mp3");
+            playSound("sound/bell.mp3", game);
             game.player.ammo += AMMO_AMOUNT;
             game.player.money -= AMMO_COST;
         }
@@ -665,7 +666,6 @@ function updatePlayer(game, input) {
         var dist = game.player.position.distanceTo(game.monster[i].mesh1.position);
         // Hurt the player if a monster is close enough
         // and the player hasn't taken damage less than HURT_TIMEOUT ms ago
-        console.log(game.player.canBeHurt);
         if (dist < HURT_DISTANCE && game.player.canBeHurt) {
             var dead = 0;
             if (game.player.armor > 0) {
@@ -685,7 +685,7 @@ function updatePlayer(game, input) {
                 game.player.canBeHurt = false;
             }
             if (dead === 0) {
-                playSound("sound/ouch.mp3");
+                playSound("sound/ouch.mp3", game);
                 // Flash the pain canvas red
                 var tween = new TWEEN.Tween({ alpha: 0.8 })
                     .to({ alpha: 0.0 }, PAIN_TIMEOUT)
@@ -827,8 +827,9 @@ function checkmonster(game) {
     return true; F
 }
 
-this.playSound = function (soundFile) {
-    document.getElementById("sound").innerHTML = "<embed src=\"" + soundFile + "\" hidden=\"true\" autostart=\"true\" loop=\"false\" />";
+this.playSound = function (soundFile, game) {
+    document.getElementById("foreground" + game.channel).src = soundFile;
+    game.channel = (game.channel + 1) % 5;
 }
 
 // ----------------------------------------------------------------------------
@@ -864,10 +865,10 @@ function updateBullets(game, input) {
         else {
             refireTime = 0;
             if (game.player.gun === 0) {
-                playSound("sound/gunshot.mp3");
+                playSound("sound/gunshot.mp3", game);
             }
             else {
-                playSound("sound/advancedgunshot.mp3");
+                playSound("sound/advancedgunshot.mp3", game);
             }
 
             // Toggle doors if there are any directly in line of sight 
@@ -958,10 +959,10 @@ function updateBullets(game, input) {
                         }
                     }
                     if (mondead == 0) {
-                        playSound("sound/monsterbleed.mp3");
+                        playSound("sound/monsterbleed.mp3", game);
                     }
                     else {
-                        playSound("sound/monsterdead.mp3");
+                        playSound("sound/monsterdead.mp3", game);
                     }
 
                 }
@@ -1011,7 +1012,7 @@ function updateBullets(game, input) {
                         else {
                             if (game.level.geometry.doors[game.level.state[sz][sx]].canToggle) {
                                 game.level.toggleDoor(game.level.state[sz][sx]);
-                                playSound("sound/door.mp3");
+                                playSound("sound/door.mp3", game);
                             }
                             input.trigger.F = 0;
                         }
@@ -1021,7 +1022,7 @@ function updateBullets(game, input) {
                             if (game.level.geometry.doors[game.needToClose].canToggle) {
                                 game.level.toggleDoor(game.needToClose);
                                 game.needToClose = -1;
-                                playSound("sound/door.mp3");
+                                playSound("sound/door.mp3", game);
                                 input.trigger.F = 0;
                             }
                         }
@@ -1032,14 +1033,14 @@ function updateBullets(game, input) {
                         if (game.level.state[sz + z][sx + x] < 0) {
                             if (game.level.geometry.doors[-2 - game.level.state[sz + z][sx + x]].canToggle) {
                                 game.level.toggleDoor(-2 - game.level.state[sz + z][sx + x]);
-                                playSound("sound/door.mp3");
+                                playSound("sound/door.mp3", game);
                             }
                             input.trigger.F = 0;
                         }
                         else {
                             if (game.level.geometry.doors[game.level.state[sz + z][sx + x]].canToggle) {
                                 game.level.toggleDoor(game.level.state[sz + z][sx + x]);
-                                playSound("sound/door.mp3");
+                                playSound("sound/door.mp3", game);
                             }
                             input.trigger.F = 0;
                         }
@@ -1057,7 +1058,7 @@ function updateBullets(game, input) {
             game.player.TNT -= 1;
             game.TNTtime = game.EXPLOSION_TIME;
             game.lastTNTtime = game.EXPLOSION_TIME;
-            playSound("sound/timer.mp3");
+            playSound("sound/timer.mp3", game);
             game.clock3.getDelta();
             game.TNTRoom = game.level.grid[sz][sx].roomIndex;
             game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
@@ -1072,7 +1073,7 @@ function updateBullets(game, input) {
     if (game.TNTtime > 0) {
         if (Math.floor(game.TNTtime) !== game.lastTNTtime) {
             game.lastTNTtime = Math.floor(game.TNTtime);
-            playSound("sound/timer.mp3");
+            playSound("sound/timer.mp3", game);
         }
         game.TNTtime -= game.clock3.getDelta();
         if (game.TNTtime < 0) {
@@ -1104,9 +1105,8 @@ function updateBullets(game, input) {
                     }
                     game.player.canBeHurt = false;
                 }
-                console.log(dead);
                 if (dead === 0) {
-                    playSound("sound/ouch.mp3");
+                    playSound("sound/ouch.mp3", game);
                 }
                 setTimeout(function () {
                     game.player.canBeHurt = true;
@@ -1121,7 +1121,7 @@ function updateBullets(game, input) {
                 game.flashCanvas.alpha = this.alpha;
             })
             .start();
-            playSound("sound/explosion.mp3");
+            playSound("sound/explosion.mp3", game);
 
             var z = 0;
             while (z < game.monster.length) {
