@@ -255,13 +255,13 @@ function Game(renderer, canvas) {
         zombieMat = new THREE.MeshLambertMaterial({ map: texture });
         zombieMat.transparent = true;
 
-        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
+        texture = new THREE.ImageUtils.loadTexture("images/crate.gif");//this is the bounding box of lizard, replace it with transparent image later
 
         var lizardGeom = new THREE.CubeGeometry(9, 6, 15);
         lizardMat = new THREE.MeshLambertMaterial({ map: texture });
         lizardMat.transparent = true;
 
-        texture = new THREE.ImageUtils.loadTexture("images/transparent.png");
+        texture = new THREE.ImageUtils.loadTexture("images/disturb.jpg");//this is the bounding box of ghost, replace it with transparent image later
 
         var ghostGeom = new THREE.CubeGeometry(9, 13, 4);
         ghostMat = new THREE.MeshLambertMaterial({ map: texture });
@@ -342,11 +342,11 @@ function Game(renderer, canvas) {
             });
 
             var tempCount3 = this.tempCounter3;
-            loader.load("models/ghost.js", function (geometry) {
+            loader.load("models/advancedGun.js", function (geometry) {
                 if (Mons[tempCount3.number].type === 3) {
                     Mons[tempCount3.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y+18, Mons[tempCount3.number].z);
-                    Mons[tempCount3.number].mesh2.scale.set(3, 3, 3);
+                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y, Mons[tempCount3.number].z);
+                    Mons[tempCount3.number].mesh2.scale.set(2, 2, 2);
                     Mons[tempCount3.number].mesh2.name = "monster";
                     LScene.add(Mons[tempCount3.number].mesh2);
                 }
@@ -605,31 +605,31 @@ function updateForce(game, input) {
             playSound("sound/bell.mp3", game);
             game.player.gun = 1;
             game.player.money -= GUN_COST;
-			game.scene.remove(game.player.gunMesh.dummy);
-			var loader = new THREE.JSONLoader(true);
-			loader.load("models/advancedGun.js", function (geometry) {
+            game.scene.remove(game.player.gunMesh.dummy);
+            var loader = new THREE.JSONLoader(true);
+            loader.load("models/advancedGun.js", function (geometry) {
                 var dummy = new THREE.Object3D();
-				dummy.position.set(
+                dummy.position.set(
 				game.player.position.x,
 				game.player.position.y,
 				game.player.position.z);
-	
-				// Setup gun mesh
-				game.player.gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-				game.player.gunMesh.position.set(.85, -0.9, -1.4); // offset from dummy pos
-				game.player.gunMesh.scale.set(.25, .25, .25);
-				
-				game.player.gunMesh.dummy = dummy;
-	
-				// Make the gun mesh a child object of the dummy node
-				dummy.add(game.player.gunMesh);
-				game.player.gunMesh.dummy = dummy;
-	
-				// Make the dummy node a child object of the camera
-				game.camera.add(game.player.gunMesh.dummy);
-				game.scene.add(game.player.gunMesh.dummy);
-                
-			});
+
+                // Setup gun mesh
+                game.player.gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                game.player.gunMesh.position.set(.85, -0.9, -1.4); // offset from dummy pos
+                game.player.gunMesh.scale.set(.25, .25, .25);
+
+                game.player.gunMesh.dummy = dummy;
+
+                // Make the gun mesh a child object of the dummy node
+                dummy.add(game.player.gunMesh);
+                game.player.gunMesh.dummy = dummy;
+
+                // Make the dummy node a child object of the camera
+                game.camera.add(game.player.gunMesh.dummy);
+                game.scene.add(game.player.gunMesh.dummy);
+
+            });
         }
         input.trigger.Gun = 0;
     }
@@ -824,7 +824,7 @@ function checkmonster(game) {
         }
     }
 
-    return true; F
+    return true;
 }
 
 this.playSound = function (soundFile, game) {
@@ -1448,6 +1448,22 @@ function handleCollisions(game, input) {
             var directionVector = game.player.geometry.vertices[vertexIndex].clone();
             var ray = new THREE.Ray(game.player.position, directionVector.clone().normalize());
             var collisionResults = ray.intersectObjects(game.objects);
+            var g = 0;
+            while (g < collisionResults.length) {
+                if (collisionResults[g].object.name === "door") {
+                    var index = collisionResults[g].object.doorIndex;
+                    var dz = game.level.geometry.doors[index].centerz / CELL_SIZE;
+                    var dx = game.level.geometry.doors[index].centerx / CELL_SIZE;
+                    if (game.level.state[dz][dx] < 0) {
+                        collisionResults.splice(g, 1);
+                        continue;
+                    }
+                    g++;
+                }
+                else {
+                    g++;
+                }
+            }
             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < 1e-6) {
                 if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                     var i = 0;
