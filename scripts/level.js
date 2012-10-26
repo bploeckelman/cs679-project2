@@ -875,14 +875,14 @@ function Level(numRooms, game) {
         missionContext.font = '30px Arial';
         missionContext.textBaseline = 'middle';
         missionContext.textAlign = 'center';
-        missionContext.fillText("Mission", missionInfo.width * 9.5 / 20, missionInfo.height / 1.5);
-        missionContext.fillText(game.Mission, missionInfo.width * 11 / 20, missionInfo.height / 1.5);
+        var missionLevel = "Mission " + game.Mission;
+        missionContext.fillText(missionLevel, missionInfo.width / 2, missionInfo.height / 1.5);
 
         // Draw the mission timer
-        var timeRemaining = "Time Remaining: " + Math.floor(game.timer) + "." + Math.floor(game.timer - Math.floor(game.timer)) * 10;
-        missionContext.font = "15px Arial";
+        var timeRemaining = "Time Remaining: " + Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10);
+        missionContext.font = "20px Arial";
         missionContext.fillStyle = "#ff0000";
-        missionContext.fillText(timeRemaining, missionInfo.width * 0.48, missionInfo.height / 1.46);
+        missionContext.fillText(timeRemaining, missionInfo.width / 2, missionInfo.height / 1.44);
     };
 
 
