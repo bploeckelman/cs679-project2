@@ -11,7 +11,7 @@ var CELL_TYPES = {
 },
     MIN_ROOM_SIZE = 4,
     MAX_ROOM_SIZE = 8,
-    MAP_CELL_SIZE = 8,
+    MAP_CELL_SIZE = 10,
     CELL_SIZE = 32,
     NUM_CELLS = new THREE.Vector2(25, 25),
     CELL_TYPE_KEYS = Object.keys(CELL_TYPES),
@@ -532,12 +532,24 @@ function Level(numRooms, game) {
             game.scene.add(light);
 
             // Add a mesh to represent the light (mostly for debug purposes)
-            mesh = new THREE.Mesh(
-                new THREE.SphereGeometry(1),
-                new THREE.MeshBasicMaterial({ color: color })
-            );
-            mesh.position.set(x, CELL_SIZE / 2, y);
-            game.scene.add(mesh);
+			
+			//var lightMesh;
+			var loader = new THREE.JSONLoader(true);
+			loader.load("models/candle.js", function (geometry) {
+          
+           		var lightMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+			    lightMesh.position.set(x, CELL_SIZE/2-5.3, y); // offset from dummy pos
+				lightMesh.scale.set(2, 2, 2);
+				game.scene.add(lightMesh);
+        	});
+			
+          	loader.load("models/table.js", function (geometry) {
+          
+           		var tableMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+			    tableMesh.position.set(x, 0, y); // offset from dummy pos
+				tableMesh.scale.set(2.5, 4.5, 2.5);
+				game.scene.add(tableMesh);
+        	});
         } else {
             console.warn("Unable to add light, already at max # of lights");
         }
