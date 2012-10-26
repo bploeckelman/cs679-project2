@@ -1448,6 +1448,22 @@ function handleCollisions(game, input) {
             var directionVector = game.player.geometry.vertices[vertexIndex].clone();
             var ray = new THREE.Ray(game.player.position, directionVector.clone().normalize());
             var collisionResults = ray.intersectObjects(game.objects);
+            var g = 0;
+            while (g < collisionResults.length) {
+                if (collisionResults[g].object.name === "door") {
+                    var index = collisionResults[g].object.doorIndex;
+                    var dz = game.level.geometry.doors[index].centerz / CELL_SIZE;
+                    var dx = game.level.geometry.doors[index].centerx / CELL_SIZE;
+                    if (game.level.state[dz][dx] < 0) {
+                        collisionResults.splice(g, 1);
+                        continue;
+                    }
+                    g++;
+                } else {
+                    g++;
+                }
+            }
+
             if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < 1e-6) {
                 if (collisionResults.length > 0 && collisionResults[0].distance - directionVector.length() < -1e-6) {
                     var i = 0;
