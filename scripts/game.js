@@ -217,7 +217,7 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.EXPLOSION_TIME = this.Mission;
+        this.EXPLOSION_TIME = 3;
         this.TNTtime = -1;
         this.lastTNTtime = -1;
         this.TNTRoom = -1;
@@ -1060,9 +1060,14 @@ function updateBullets(game, input) {
             playSound("sound/timer.mp3", game);
             game.clock3.getDelta();
             game.TNTRoom = game.level.grid[sz][sx].roomIndex;
-            game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
-            game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
-            game.scene.add(game.Bomb);
+            var loader = new THREE.JSONLoader(true);
+            loader.load("models/dynamite.js", function (geometry) {
+                game.Bomb = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+                game.Bomb.rotation.x = Math.PI/2;
+                game.Bomb.scale.set(3, 3, 3);
+                game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
+                game.scene.add(game.Bomb);
+            });
             game.TNTindex = game.scene.length - 1;
         }
         input.trigger.R = 0;
