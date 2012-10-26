@@ -78,6 +78,23 @@ function Level(numRooms, game) {
         DOOR_TEXTURE = THREE.ImageUtils.loadTexture("images/door.png"),
         FILL_TEXTURE = THREE.ImageUtils.loadTexture("images/brown.png");
 
+    FLOOR_TEXTURE1.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE2.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE3.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE4.repeat = new THREE.Vector2(2,2);
+    FLOOR_TEXTURE5.repeat = new THREE.Vector2(2,2);
+
+    FLOOR_TEXTURE1.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE1.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE2.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE2.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE3.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE3.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE4.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE4.wrapT = THREE.RepeatWrapping;
+    FLOOR_TEXTURE5.wrapS = THREE.RepeatWrapping;
+    FLOOR_TEXTURE5.wrapT = THREE.RepeatWrapping;
+
     LINTEL_TEXTURE1.repeat = new THREE.Vector2(1, 2);
     LINTEL_TEXTURE2.repeat = new THREE.Vector2(1, 2);
     LINTEL_TEXTURE3.repeat = new THREE.Vector2(1, 2);
