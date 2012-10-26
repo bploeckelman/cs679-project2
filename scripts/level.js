@@ -880,7 +880,8 @@ function Level(numRooms, game) {
 
         // Draw the mission timer
         var timeRemaining = "Time Remaining: " + Math.floor(game.timer) + "." + Math.floor((game.timer - Math.floor(game.timer)) * 10);
-        missionContext.font = "20px Arial";
+		missionContext.font = "20px Arial";
+
         missionContext.fillStyle = "#ff0000";
         missionContext.fillText(timeRemaining, missionInfo.width / 2, missionInfo.height / 1.44);
     };

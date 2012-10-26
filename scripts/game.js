@@ -58,7 +58,7 @@ function Game(renderer, canvas) {
     this.tempCounter1 = { number: 0 };
     this.tempCounter2 = { number: 0 };
     this.tempCounter3 = { number: 0 };
-    this.tempCounter4 = { number: 0 };
+	this.tempCounter4 = { number: 0 };
 
     // Particle System related vars
     this.bloodParticlesCount = 100;
@@ -184,6 +184,7 @@ function Game(renderer, canvas) {
         if (this.modelLoaded === 0) {
             if (this.tempCounter1.number === this.monster.length && this.tempCounter2.number === this.monster.length &&
                 this.tempCounter3.number === this.monster.length && this.tempCounter4.number === 1) {
+
                 this.modelLoaded = 1;
                 this.timer = 80 + 10 * this.Mission;
                 this.clock4.getDelta();
@@ -217,7 +218,7 @@ function Game(renderer, canvas) {
         this.searchDelay = 1;
         this.firstOver = 0;
         this.needToClose = -1;
-        this.EXPLOSION_TIME = this.Mission;
+        this.EXPLOSION_TIME = 3;
         this.TNTtime = -1;
         this.lastTNTtime = -1;
         this.TNTRoom = -1;
@@ -318,7 +319,7 @@ function Game(renderer, canvas) {
             this.tempCounter1.number = 0;
             this.tempCounter2.number = 0;
             this.tempCounter3.number = 0;
-            this.tempCounter4.number = 0;
+			this.tempCounter4.number = 0;
             var tempCount1 = this.tempCounter1;
 
             loader.load("models/zombie.js", function (geometry) {
@@ -348,7 +349,7 @@ function Game(renderer, canvas) {
             loader.load("models/ghost.js", function (geometry) {
                 if (Mons[tempCount3.number].type === 3) {
                     Mons[tempCount3.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
-                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y + 18, Mons[tempCount3.number].z);
+                    Mons[tempCount3.number].mesh2.position.set(Mons[tempCount3.number].x, Mons[tempCount3.number].y+18, Mons[tempCount3.number].z);
                     Mons[tempCount3.number].mesh2.scale.set(3, 3, 3);
                     Mons[tempCount3.number].mesh2.name = "monster";
                     LScene.add(Mons[tempCount3.number].mesh2);
@@ -359,7 +360,7 @@ function Game(renderer, canvas) {
 
         // Setup gun
         var game = this;
-        var tempCount4 = this.tempCounter4;
+		var tempCount4 = this.tempCounter4;
         loader.load("models/basicGun.js", function (geometry) {
             // Setup dummy node to orient gun in correct direction
             var dummy = new THREE.Object3D();
@@ -382,7 +383,6 @@ function Game(renderer, canvas) {
             // Make the dummy node a child object of the camera
             game.camera.add(game.player.gunMesh.dummy);
             game.scene.add(game.player.gunMesh.dummy);
-            tempCount4.number++;
         });
 
         // Setup camera
@@ -471,7 +471,7 @@ function Game(renderer, canvas) {
                         this.preammo = this.player.ammo;
                         this.preTNT = this.player.TNT;
                         this.premoney = this.player.money;
-                        this.modelLoaded = 0;
+						this.modelLoaded = 0;
                         this.init();
                         this.clear();
                         console.log("Mission: " + this.Mission);
@@ -1059,9 +1059,19 @@ function updateBullets(game, input) {
             playSound("sound/timer.mp3", game);
             game.clock3.getDelta();
             game.TNTRoom = game.level.grid[sz][sx].roomIndex;
-            game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
-            game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
-            game.scene.add(game.Bomb);
+			
+
+			var loader = new THREE.JSONLoader(true);
+			loader.load("models/dynamite.js", function (geometry) {
+          		game.Bomb = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+				game.Bomb.rotation.x = Math.PI/2;
+				game.Bomb.scale.set(3, 3, 3);
+			    game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
+            	game.scene.add(game.Bomb);
+        	});
+            //game.Bomb = new THREE.Mesh(game.bombGeom, game.bombMat);
+            //game.Bomb.position.set(game.player.position.x, 2.5, game.player.position.z);
+            //game.scene.add(game.Bomb);
             game.TNTindex = game.scene.length - 1;
         }
         input.trigger.R = 0;
