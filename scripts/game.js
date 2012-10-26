@@ -329,11 +329,11 @@ function Game(renderer, canvas) {
             });
 
             var tempCount2 = this.tempCounter2;
-            loader.load("models/basicGun.js", function (geometry) {
+            loader.load("models/snake.js", function (geometry) {
                 if (Mons[tempCount2.number].type === 2) {
                     Mons[tempCount2.number].mesh2 = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
                     Mons[tempCount2.number].mesh2.position.set(Mons[tempCount2.number].x, Mons[tempCount2.number].y, Mons[tempCount2.number].z);
-                    Mons[tempCount2.number].mesh2.scale.set(2, 2, 2);
+                    Mons[tempCount2.number].mesh2.scale.set(1.3, 1.3, .8);
                     Mons[tempCount2.number].mesh2.name = "monster";
                     LScene.add(Mons[tempCount2.number].mesh2);
                 }
@@ -604,6 +604,31 @@ function updateForce(game, input) {
             playSound("sound/bell.mp3");
             game.player.gun = 1;
             game.player.money -= GUN_COST;
+			game.scene.remove(game.player.gunMesh.dummy);
+			var loader = new THREE.JSONLoader(true);
+			loader.load("models/advancedGun.js", function (geometry) {
+                var dummy = new THREE.Object3D();
+				dummy.position.set(
+				game.player.position.x,
+				game.player.position.y,
+				game.player.position.z);
+	
+				// Setup gun mesh
+				game.player.gunMesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial);
+				game.player.gunMesh.position.set(.85, -0.9, -1.4); // offset from dummy pos
+				game.player.gunMesh.scale.set(.25, .25, .25);
+				
+				game.player.gunMesh.dummy = dummy;
+	
+				// Make the gun mesh a child object of the dummy node
+				dummy.add(game.player.gunMesh);
+				game.player.gunMesh.dummy = dummy;
+	
+				// Make the dummy node a child object of the camera
+				game.camera.add(game.player.gunMesh.dummy);
+				game.scene.add(game.player.gunMesh.dummy);
+                
+			});
         }
         input.trigger.Gun = 0;
     }
