@@ -442,7 +442,7 @@ function Game(renderer, canvas) {
 
     // Update everything in the scene
     // ------------------------------------------------------------------------
-    var intervalTime = 3;
+    var intervalTime = 1;
     this.update = function (input) {
         if (this.modelLoaded === 0 && this.newMission === 0) {
             this.checkLoaded();
@@ -471,6 +471,7 @@ function Game(renderer, canvas) {
                         this.preammo = this.player.ammo;
                         this.preTNT = this.player.TNT;
                         this.premoney = this.player.money;
+                        this.modelLoaded = 0;
                         this.init();
                         this.clear();
                         console.log("Mission: " + this.Mission);
